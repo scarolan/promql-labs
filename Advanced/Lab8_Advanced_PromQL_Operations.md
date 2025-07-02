@@ -141,14 +141,14 @@ To compare current memory usage with memory usage from one day ago and calculate
 
 2. **For testing in environments with limited historical data:**
    ```
-   # Use 1h offset instead of 1d
+   # Use 10m offset instead of 1d
    (
-     (100 * (1 - (node_memory_MemAvailable_bytes{instance="localhost:9100"} / node_memory_MemTotal_bytes{instance="localhost:9100"})))
-     -
-     (100 * (1 - (node_memory_MemAvailable_bytes{instance="localhost:9100"} offset 1h / node_memory_MemTotal_bytes{instance="localhost:9100"} offset 1h)))
+   (100 * (1 - (node_memory_MemAvailable_bytes{instance="localhost:9100"} / node_memory_MemTotal_bytes{instance="localhost:9100"})))
+   -
+   (100 * (1 - (node_memory_MemAvailable_bytes{instance="localhost:9100"} offset 10m / node_memory_MemTotal_bytes{instance="localhost:9100"} offset 10m)))
    )
    /
-   (100 * (1 - (node_memory_MemAvailable_bytes{instance="localhost:9100"} offset 1h / node_memory_MemTotal_bytes{instance="localhost:9100"} offset 1h)))
+   (100 * (1 - (node_memory_MemAvailable_bytes{instance="localhost:9100"} offset 10m / node_memory_MemTotal_bytes{instance="localhost:9100"} offset 10m)))
    * 100
    ```
 
