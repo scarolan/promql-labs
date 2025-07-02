@@ -22,7 +22,7 @@
 
    **Creating Your First Recording Rule:**
    
-   In your Killercoda environment, follow these steps:
+   Follow these steps on your Ubuntu 22.04 server or Killercoda environment:
    
    1. Create a rules directory if it doesn't exist:
       ```
@@ -35,13 +35,20 @@
    
    4. Open the main Prometheus configuration file at `/etc/prometheus/prometheus.yml` with your text editor.
       
-   5. Ensure there's a rule_files section that includes your new rule file:
-      ```yaml
-      rule_files:
-        - "/etc/prometheus/rules/*.yml"
-      ```
-      
-      If the section doesn't exist or doesn't include your path, add it and save.
+  5. Find the `rule_files` section in the main Prometheus configuration file. It should look like this:
+    ```yaml
+    # Load rules once and periodically evaluate them according to the global 'evaluation_interval'.
+    rule_files:
+      # - "first_rules.yml"
+      # - "second_rules.yml"
+    ```
+
+    Remove or comment out the example entries and add your new rule file path:
+    ```yaml
+    # Load rules once and periodically evaluate them according to the global 'evaluation_interval'.
+    rule_files:
+      - "/etc/prometheus/rules/*.yml"
+    ```
       
    6. Reload Prometheus configuration:
       ```
