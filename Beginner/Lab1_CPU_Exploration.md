@@ -61,4 +61,4 @@ By examining different modes, you can understand how your CPU resources are bein
 
 ---
 
-# 🌟 [Click here to continue to Lab 2: Calculating CPU Use Rates](../Beginner/Lab2_CPU_Rates.md)
+# 🌟 [Continue to Lab 2: Calculating CPU Use Rates](../Beginner/Lab2_CPU_Rates.md)

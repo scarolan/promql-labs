@@ -101,4 +101,4 @@ To compare current memory usage with memory usage from one day ago and calculate
 
 ---
 
-# 🌟 [Click here to continue to Lab 9: Histograms and Quantiles](../Advanced/Lab9_Histograms_Quantiles.md)
+# 🌟 [Continue to Lab 9: Histograms and Quantiles](../Advanced/Lab9_Histograms_Quantiles.md)

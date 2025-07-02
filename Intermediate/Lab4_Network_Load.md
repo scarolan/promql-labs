@@ -6,7 +6,7 @@
 
 ---
 
-# 🌟 [Click here to continue to Lab 5: Advanced CPU Analysis & Anomaly Detection](../Advanced/Lab5_Advanced_CPU_Anomaly.md)ery network traffic and system load metrics
+# 🌟 [Continue to Lab 5: Advanced CPU Analysis & Anomaly Detection](../Advanced/Lab5_Advanced_CPU_Anomaly.md)ery network traffic and system load metrics
 - Use advanced PromQL aggregations
 - Build multi-metric dashboards
 

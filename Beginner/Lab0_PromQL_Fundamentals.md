@@ -93,4 +93,4 @@ For mathematical and logical operations:
 
 ---
 
-# 🌟 [Click here to continue to Lab 1: Exploring CPU Metrics](../Beginner/Lab1_CPU_Exploration.md)
+# 🌟 [Continue to Lab 1: Exploring CPU Metrics](../Beginner/Lab1_CPU_Exploration.md)

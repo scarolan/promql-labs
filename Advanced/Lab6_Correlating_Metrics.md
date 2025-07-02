@@ -78,4 +78,4 @@ To write a PromQL query that returns a warning when both CPU and memory usage ex
 
 ---
 
-# 🌟 [Click here to continue to Lab 7: Recording Rules and Alerting](../Advanced/Lab7_Recording_Rules_Alerting.md)
+# 🌟 [Continue to Lab 7: Recording Rules and Alerting](../Advanced/Lab7_Recording_Rules_Alerting.md)

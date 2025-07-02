@@ -112,4 +112,4 @@ groups:
 
 ---
 
-# 🌟 [Click here to continue to Lab 8: Advanced PromQL Operations](../Advanced/Lab8_Advanced_PromQL_Operations.md)
+# 🌟 [Continue to Lab 8: Advanced PromQL Operations](../Advanced/Lab8_Advanced_PromQL_Operations.md)
