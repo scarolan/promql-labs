@@ -35,7 +35,7 @@
    > **Tip:** When creating composite dashboards, consider using a shared legend and consistent color scheme across panels. For example, use red for CPU, blue for memory, and green for network. This makes it easier to visually correlate metrics at a glance.
 3. **Troubleshoot a simulated incident:**
    - Imagine a sudden CPU spike. What do the other metrics show at the same time?
-   - (Optional) If you have CLI access to a Linux machine, you can generate a real CPU load with:
+   - (Optional) If you have CLI access to a Linux machine, you can generate real CPU load with:
      ```
      stress-ng --cpu 1 --cpu-load 80 --timeout 60s
      ```
