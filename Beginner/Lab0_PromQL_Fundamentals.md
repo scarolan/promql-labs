@@ -34,7 +34,8 @@
    
    # Step 2: Get available memory in bytes
    node_memory_MemAvailable_bytes{instance="localhost:9100"}
-     # Step 3: Calculate used memory (total - available)
+     
+   # Step 3: Calculate used memory (total - available)
    (node_memory_MemTotal_bytes{instance="localhost:9100"} - node_memory_MemAvailable_bytes{instance="localhost:9100"})
    
    # Step 4: Divide by total to get the fraction used (between 0 and 1)
