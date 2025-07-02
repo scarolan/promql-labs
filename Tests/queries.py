@@ -1,0 +1,220 @@
+# PromQL Queries for Testing
+# This file contains all the queries from our labs for automated testing
+
+# Lab 0 - PromQL Fundamentals
+lab0_queries = [
+    {
+        "name": "Basic metric query",
+        "query": "node_memory_MemTotal_bytes",
+        "expected_type": "vector"
+    },
+    {
+        "name": "Filter by instance",
+        "query": "node_memory_MemTotal_bytes{instance=\"$INSTANCE\"}",
+        "expected_type": "vector"
+    },
+    {
+        "name": "Regex filter",
+        "query": "node_memory_MemTotal_bytes{instance=~\"local.*\"}",
+        "expected_type": "vector"
+    },
+    {
+        "name": "Basic arithmetic",
+        "query": "(node_memory_MemTotal_bytes{instance=\"$INSTANCE\"} - node_memory_MemAvailable_bytes{instance=\"$INSTANCE\"}) / node_memory_MemTotal_bytes{instance=\"$INSTANCE\"}",
+        "expected_type": "vector"
+    },
+    {
+        "name": "Percentage calculation",
+        "query": "100 * ((node_memory_MemTotal_bytes{instance=\"$INSTANCE\"} - node_memory_MemAvailable_bytes{instance=\"$INSTANCE\"}) / node_memory_MemTotal_bytes{instance=\"$INSTANCE\"})",
+        "expected_type": "vector"
+    },
+    {
+        "name": "Time range query",
+        "query": "node_cpu_seconds_total{instance=\"$INSTANCE\"}[5m]",
+        "expected_type": "matrix"
+    },
+    {
+        "name": "Sum function",
+        "query": "sum(node_cpu_seconds_total{instance=\"$INSTANCE\",mode=\"system\"})",
+        "expected_type": "vector"
+    },
+    {
+        "name": "Average function",
+        "query": "avg(node_cpu_seconds_total{instance=\"$INSTANCE\",mode=\"system\"})",
+        "expected_type": "vector"
+    },
+    {
+        "name": "Count cores",
+        "query": "count without(cpu, mode) (node_cpu_seconds_total{instance=\"$INSTANCE\"})",
+        "expected_type": "vector"
+    }
+]
+
+# Lab 1 - CPU Exploration
+lab1_queries = [
+    {
+        "name": "Raw CPU metric",
+        "query": "node_cpu_seconds_total",
+        "expected_type": "vector"
+    },
+    {
+        "name": "Filtered by instance",
+        "query": "node_cpu_seconds_total{instance=\"$INSTANCE\"}",
+        "expected_type": "vector"
+    },
+    {
+        "name": "Filtered by instance and mode",
+        "query": "node_cpu_seconds_total{instance=\"$INSTANCE\", mode=\"user\"}",
+        "expected_type": "vector"
+    }
+]
+
+# Lab 2 - CPU Rates
+lab2_queries = [
+    {
+        "name": "CPU rate",
+        "query": "rate(node_cpu_seconds_total{instance=\"$INSTANCE\"}[5m])",
+        "expected_type": "vector"
+    },
+    {
+        "name": "Sum by mode",
+        "query": "sum by (mode) (rate(node_cpu_seconds_total{instance=\"$INSTANCE\"}[5m]))",
+        "expected_type": "vector"
+    }
+]
+
+# Lab 3 - Memory and Filesystem
+lab3_queries = [
+    {
+        "name": "Memory total",
+        "query": "node_memory_MemTotal_bytes{instance=\"$INSTANCE\"}",
+        "expected_type": "vector"
+    },
+    {
+        "name": "Memory available",
+        "query": "node_memory_MemAvailable_bytes{instance=\"$INSTANCE\"}",
+        "expected_type": "vector"
+    },
+    {
+        "name": "Memory usage %",
+        "query": "100 * (1 - (node_memory_MemAvailable_bytes{instance=\"$INSTANCE\"} / node_memory_MemTotal_bytes{instance=\"$INSTANCE\"}))",
+        "expected_type": "vector"
+    },
+    {
+        "name": "Filesystem size",
+        "query": "node_filesystem_size_bytes{instance=\"$INSTANCE\",fstype!=\"tmpfs\",mountpoint!=\"/run\"}",
+        "expected_type": "vector"
+    },
+    {
+        "name": "Filesystem free",
+        "query": "node_filesystem_free_bytes{instance=\"$INSTANCE\",fstype!=\"tmpfs\",mountpoint!=\"/run\"}",
+        "expected_type": "vector"
+    },
+    {
+        "name": "Disk usage % for root",
+        "query": "100 * (1 - (node_filesystem_free_bytes{instance=\"$INSTANCE\",mountpoint=\"/\"} / node_filesystem_size_bytes{instance=\"$INSTANCE\",mountpoint=\"/\"}))",
+        "expected_type": "vector"
+    }
+]
+
+# Lab 4 - Network and Load
+lab4_queries = [
+    {
+        "name": "Network receive rate",
+        "query": "rate(node_network_receive_bytes_total{instance=\"$INSTANCE\",device!=\"lo\"}[5m])",
+        "expected_type": "vector"
+    },
+    {
+        "name": "Network transmit rate",
+        "query": "rate(node_network_transmit_bytes_total{instance=\"$INSTANCE\",device!=\"lo\"}[5m])",
+        "expected_type": "vector"
+    },
+    {
+        "name": "Load 1m",
+        "query": "node_load1{instance=\"$INSTANCE\"}",
+        "expected_type": "vector"
+    },
+    {
+        "name": "Load 5m",
+        "query": "node_load5{instance=\"$INSTANCE\"}",
+        "expected_type": "vector"
+    },
+    {
+        "name": "Load 15m",
+        "query": "node_load15{instance=\"$INSTANCE\"}",
+        "expected_type": "vector"
+    },
+    {
+        "name": "Aggregated network receive",
+        "query": "sum by (instance) (rate(node_network_receive_bytes_total{instance=\"$INSTANCE\",device!=\"lo\"}[5m]))",
+        "expected_type": "vector"
+    },
+    {
+        "name": "Aggregated network transmit",
+        "query": "sum by (instance) (rate(node_network_transmit_bytes_total{instance=\"$INSTANCE\",device!=\"lo\"}[5m]))",
+        "expected_type": "vector"
+    }
+]
+
+# Lab 5 - Advanced CPU Anomaly Detection
+lab5_queries = [
+    {        "name": "CPU saturation detection",
+        "query": "max_over_time((100 * (1 - (sum by (instance) (rate(node_cpu_seconds_total{instance=\"$INSTANCE\",mode=\"idle\"}[5m])) / count by (instance) (node_cpu_seconds_total{instance=\"$INSTANCE\",mode=\"idle\"}))))[30m:1m])",
+        "expected_type": "vector"
+    },
+    {
+        "name": "CPU spikes using increase",
+        "query": "increase(node_cpu_seconds_total{instance=\"$INSTANCE\",mode=\"user\"}[10m])",
+        "expected_type": "vector"
+    }
+]
+
+# Lab 6 - Correlating Metrics
+lab6_queries = [
+    {
+        "name": "CPU usage %",
+        "query": "100 * (1 - (avg by (instance) (rate(node_cpu_seconds_total{instance=\"$INSTANCE\",mode=\"idle\"}[5m])) / count by (instance) (node_cpu_seconds_total{instance=\"$INSTANCE\",mode=\"idle\"})))",
+        "expected_type": "vector"
+    },
+    {
+        "name": "Memory usage %",
+        "query": "100 * (1 - (node_memory_MemAvailable_bytes{instance=\"$INSTANCE\"} / node_memory_MemTotal_bytes{instance=\"$INSTANCE\"}))",
+        "expected_type": "vector"
+    },
+    {
+        "name": "Network receive rate aggregate",
+        "query": "sum by (instance) (rate(node_network_receive_bytes_total{instance=\"$INSTANCE\",device!=\"lo\"}[5m]))",
+        "expected_type": "vector"
+    },
+    {
+        "name": "High CPU and Memory alert",
+        "query": "(100 * (1 - (avg by (instance) (rate(node_cpu_seconds_total{instance=\"$INSTANCE\",mode=\"idle\"}[5m])) / count by (instance) (node_cpu_seconds_total{instance=\"$INSTANCE\",mode=\"idle\"}))) > 80) and (100 * (1 - (node_memory_MemAvailable_bytes{instance=\"$INSTANCE\"} / node_memory_MemTotal_bytes{instance=\"$INSTANCE\"})) > 80)",
+        "expected_type": "vector"
+    }
+]
+
+# Lab 7 - Recording Rules and Alerting
+lab7_queries = [
+    {
+        "name": "CPU usage for recording rule",
+        "query": "100 * (1 - (avg by (instance) (rate(node_cpu_seconds_total{instance=\"$INSTANCE\",mode=\"idle\"}[5m]))))",
+        "expected_type": "vector"
+    },
+    {
+        "name": "Alert expression simulation",
+        "query": "100 * (1 - (avg by (instance) (rate(node_cpu_seconds_total{instance=\"$INSTANCE\",mode=\"idle\"}[5m])) / count by (instance) (node_cpu_seconds_total{instance=\"$INSTANCE\",mode=\"idle\"}))) > 80",
+        "expected_type": "vector"
+    }
+]
+
+# All queries combined
+all_queries = (
+    lab0_queries + 
+    lab1_queries + 
+    lab2_queries + 
+    lab3_queries +
+    lab4_queries +
+    lab5_queries +
+    lab6_queries +
+    lab7_queries
+)

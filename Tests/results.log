@@ -1,0 +1,112 @@
+Query Test Results - 2025-07-01 22:22:09.448032
+
+Basic metric query - PASS
+Query: node_memory_MemTotal_bytes
+
+Filter by instance - PASS
+Query: node_memory_MemTotal_bytes{instance="localhost:9100"}
+
+Regex filter - PASS
+Query: node_memory_MemTotal_bytes{instance=~"local.*"}
+
+Basic arithmetic - PASS
+Query: (node_memory_MemTotal_bytes{instance="localhost:9100"} - node_memory_MemAvailable_bytes{instance="localhost:9100"}) / node_memory_MemTotal_bytes{instance="localhost:9100"}
+
+Percentage calculation - PASS
+Query: 100 * ((node_memory_MemTotal_bytes{instance="localhost:9100"} - node_memory_MemAvailable_bytes{instance="localhost:9100"}) / node_memory_MemTotal_bytes{instance="localhost:9100"})
+
+Time range query - PASS
+Query: node_cpu_seconds_total{instance="localhost:9100"}[5m]
+
+Sum function - PASS
+Query: sum(node_cpu_seconds_total{instance="localhost:9100",mode="system"})
+
+Average function - PASS
+Query: avg(node_cpu_seconds_total{instance="localhost:9100",mode="system"})
+
+Count cores - PASS
+Query: count without(cpu, mode) (node_cpu_seconds_total{instance="localhost:9100"})
+
+Raw CPU metric - PASS
+Query: node_cpu_seconds_total
+
+Filtered by instance - PASS
+Query: node_cpu_seconds_total{instance="localhost:9100"}
+
+Filtered by instance and mode - PASS
+Query: node_cpu_seconds_total{instance="localhost:9100", mode="user"}
+
+CPU rate - PASS
+Query: rate(node_cpu_seconds_total{instance="localhost:9100"}[5m])
+
+Sum by mode - PASS
+Query: sum by (mode) (rate(node_cpu_seconds_total{instance="localhost:9100"}[5m]))
+
+Memory total - PASS
+Query: node_memory_MemTotal_bytes{instance="localhost:9100"}
+
+Memory available - PASS
+Query: node_memory_MemAvailable_bytes{instance="localhost:9100"}
+
+Memory usage % - PASS
+Query: 100 * (1 - (node_memory_MemAvailable_bytes{instance="localhost:9100"} / node_memory_MemTotal_bytes{instance="localhost:9100"}))
+
+Filesystem size - PASS
+Query: node_filesystem_size_bytes{instance="localhost:9100",fstype!="tmpfs",mountpoint!="/run"}
+
+Filesystem free - PASS
+Query: node_filesystem_free_bytes{instance="localhost:9100",fstype!="tmpfs",mountpoint!="/run"}
+
+Disk usage % for root - PASS
+Query: 100 * (1 - (node_filesystem_free_bytes{instance="localhost:9100",mountpoint="/"} / node_filesystem_size_bytes{instance="localhost:9100",mountpoint="/"}))
+
+Network receive rate - PASS
+Query: rate(node_network_receive_bytes_total{instance="localhost:9100",device!="lo"}[5m])
+
+Network transmit rate - PASS
+Query: rate(node_network_transmit_bytes_total{instance="localhost:9100",device!="lo"}[5m])
+
+Load 1m - PASS
+Query: node_load1{instance="localhost:9100"}
+
+Load 5m - PASS
+Query: node_load5{instance="localhost:9100"}
+
+Load 15m - PASS
+Query: node_load15{instance="localhost:9100"}
+
+Aggregated network receive - PASS
+Query: sum by (instance) (rate(node_network_receive_bytes_total{instance="localhost:9100",device!="lo"}[5m]))
+
+Aggregated network transmit - PASS
+Query: sum by (instance) (rate(node_network_transmit_bytes_total{instance="localhost:9100",device!="lo"}[5m]))
+
+CPU saturation detection - PASS
+Query: max_over_time((100 * (1 - (sum by (instance) (rate(node_cpu_seconds_total{instance="localhost:9100",mode="idle"}[5m])) / count by (instance) (node_cpu_seconds_total{instance="localhost:9100",mode="idle"}))))[30m:1m])
+
+CPU spikes using increase - PASS
+Query: increase(node_cpu_seconds_total{instance="localhost:9100",mode="user"}[10m])
+
+CPU usage % - PASS
+Query: 100 * (1 - (avg by (instance) (rate(node_cpu_seconds_total{instance="localhost:9100",mode="idle"}[5m])) / count by (instance) (node_cpu_seconds_total{instance="localhost:9100",mode="idle"})))
+
+Memory usage % - PASS
+Query: 100 * (1 - (node_memory_MemAvailable_bytes{instance="localhost:9100"} / node_memory_MemTotal_bytes{instance="localhost:9100"}))
+
+Network receive rate aggregate - PASS
+Query: sum by (instance) (rate(node_network_receive_bytes_total{instance="localhost:9100",device!="lo"}[5m]))
+
+High CPU and Memory alert - PASS (ALERT NO DATA)
+Query: (100 * (1 - (avg by (instance) (rate(node_cpu_seconds_total{instance="localhost:9100",mode="idle"}[5m])) / count by (instance) (node_cpu_seconds_total{instance="localhost:9100",mode="idle"}))) > 80) and (100 * (1 - (node_memory_MemAvailable_bytes{instance="localhost:9100"} / node_memory_MemTotal_bytes{instance="localhost:9100"})) > 80)
+
+CPU usage for recording rule - PASS
+Query: 100 * (1 - (avg by (instance) (rate(node_cpu_seconds_total{instance="localhost:9100",mode="idle"}[5m]))))
+
+Alert expression simulation - PASS (ALERT NO DATA)
+Query: 100 * (1 - (avg by (instance) (rate(node_cpu_seconds_total{instance="localhost:9100",mode="idle"}[5m])) / count by (instance) (node_cpu_seconds_total{instance="localhost:9100",mode="idle"}))) > 80
+
+===== Test Summary =====
+Total queries: 35
+Passed: 35
+Failed: 0
+Success rate: 100.0%
