@@ -215,8 +215,18 @@ lab8_queries = [
         "expected_type": "vector"
     },
     {
+        "name": "Label join function",
+        "query": "label_join(node_filesystem_size_bytes{instance=\"$INSTANCE\",mountpoint=\"/\"}, \"instance_path\", \"-\", \"instance\", \"mountpoint\")",
+        "expected_type": "vector"
+    },
+    {
         "name": "Historical comparison with offset",
         "query": "sum(rate(node_cpu_seconds_total{instance=\"$INSTANCE\",mode!=\"idle\"}[5m])) and sum(rate(node_cpu_seconds_total{instance=\"$INSTANCE\",mode!=\"idle\"}[5m] offset 1h))",
+        "expected_type": "vector"
+    },
+    {
+        "name": "Historical difference calculation",
+        "query": "sum(rate(node_cpu_seconds_total{instance=\"$INSTANCE\",mode!=\"idle\"}[5m])) - sum(rate(node_cpu_seconds_total{instance=\"$INSTANCE\",mode!=\"idle\"}[5m] offset 1h))",
         "expected_type": "vector"
     },
     {
@@ -233,6 +243,11 @@ lab8_queries = [
         "name": "Detecting missing data",
         "query": "absent(node_cpu_seconds_total{instance=\"$INSTANCE\"})",
         "expected_type": "vector"
+    },
+    {
+        "name": "Memory usage change with offset",
+        "query": "(100 * (1 - (node_memory_MemAvailable_bytes{instance=\"$INSTANCE\"} / node_memory_MemTotal_bytes{instance=\"$INSTANCE\"})) - 100 * (1 - (node_memory_MemAvailable_bytes{instance=\"$INSTANCE\"} offset 1h / node_memory_MemTotal_bytes{instance=\"$INSTANCE\"} offset 1h))) / (100 * (1 - (node_memory_MemAvailable_bytes{instance=\"$INSTANCE\"} offset 1h / node_memory_MemTotal_bytes{instance=\"$INSTANCE\"} offset 1h))) * 100",
+        "expected_type": "vector"
     }
 ]
 
@@ -244,8 +259,18 @@ lab9_queries = [
         "expected_type": "vector"
     },
     {
+        "name": "Histogram specific handler",
+        "query": "prometheus_http_request_duration_seconds_bucket{handler=\"/api/v1/query\"}",
+        "expected_type": "vector"
+    },
+    {
         "name": "95th percentile latency",
         "query": "histogram_quantile(0.95, sum(rate(prometheus_http_request_duration_seconds_bucket[5m])) by (le))",
+        "expected_type": "vector"
+    },
+    {
+        "name": "90th percentile latency",
+        "query": "histogram_quantile(0.9, sum(rate(prometheus_http_request_duration_seconds_bucket[5m])) by (le))",
         "expected_type": "vector"
     },
     {
@@ -254,13 +279,28 @@ lab9_queries = [
         "expected_type": "vector"
     },
     {
-        "name": "SLO calculation",
+        "name": "SLO calculation - success rate",
         "query": "(sum(rate(prometheus_http_request_duration_seconds_bucket{le=\"0.5\"}[5m])) / sum(rate(prometheus_http_request_duration_seconds_count[5m]))) * 100",
+        "expected_type": "vector"
+    },
+    {
+        "name": "SLO calculation - error rate",
+        "query": "(1 - sum(rate(prometheus_http_request_duration_seconds_bucket{le=\"0.5\"}[5m])) / sum(rate(prometheus_http_request_duration_seconds_count[5m]))) * 100",
         "expected_type": "vector"
     },
     {
         "name": "Gauge derivative",
         "query": "deriv(node_memory_Active_bytes{instance=\"$INSTANCE\"}[1h])",
+        "expected_type": "vector"
+    },
+    {
+        "name": "Linear prediction",
+        "query": "predict_linear(node_memory_Active_bytes{instance=\"$INSTANCE\"}[1h], 3600)",
+        "expected_type": "vector"
+    },
+    {
+        "name": "CPU usage synthetic histogram",
+        "query": "sum(count_values(\"le\", floor(clamp_max(100 * (1 - (avg by (instance) (rate(node_cpu_seconds_total{instance=\"$INSTANCE\",mode=\"idle\"}[5m])) / count by (instance) (node_cpu_seconds_total{instance=\"$INSTANCE\",mode=\"idle\"}))), 100) / 5) * 5)) by (le)",
         "expected_type": "vector"
     }
 ]
