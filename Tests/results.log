@@ -1,4 +1,4 @@
-Query Test Results - 2025-07-01 22:22:09.448032
+Query Test Results - 2025-07-02 10:30:14.594000
 
 Basic metric query - PASS
 Query: node_memory_MemTotal_bytes
@@ -105,8 +105,38 @@ Query: 100 * (1 - (avg by (instance) (rate(node_cpu_seconds_total{instance="loca
 Alert expression simulation - PASS (ALERT NO DATA)
 Query: 100 * (1 - (avg by (instance) (rate(node_cpu_seconds_total{instance="localhost:9100",mode="idle"}[5m])) / count by (instance) (node_cpu_seconds_total{instance="localhost:9100",mode="idle"}))) > 80
 
+Label replace function - PASS
+Query: label_replace(node_filesystem_size_bytes{instance="localhost:9100",mountpoint="/"}, "disk_type", "root_disk", "mountpoint", "/")
+
+Historical comparison with offset - NO DATA
+Query: sum(rate(node_cpu_seconds_total{instance="localhost:9100",mode!="idle"}[5m])) and sum(rate(node_cpu_seconds_total{instance="localhost:9100",mode!="idle"}[5m] offset 1h))
+
+Top K resources - PASS
+Query: topk(3, sum by (mode) (rate(node_cpu_seconds_total{instance="localhost:9100"}[5m])))
+
+Subquery for trend analysis - PASS
+Query: max_over_time(rate(node_cpu_seconds_total{instance="localhost:9100",mode="user"}[5m])[30m:5m])
+
+Detecting missing data - NO DATA
+Query: absent(node_cpu_seconds_total{instance="localhost:9100"})
+
+Histogram bucket exploration - PASS
+Query: prometheus_http_request_duration_seconds_bucket
+
+95th percentile latency - PASS
+Query: histogram_quantile(0.95, sum(rate(prometheus_http_request_duration_seconds_bucket[5m])) by (le))
+
+Median latency by handler - PASS
+Query: histogram_quantile(0.5, sum by (handler, le) (rate(prometheus_http_request_duration_seconds_bucket[5m])))
+
+SLO calculation - NO DATA
+Query: (sum(rate(prometheus_http_request_duration_seconds_bucket{le="0.5"}[5m])) / sum(rate(prometheus_http_request_duration_seconds_count[5m]))) * 100
+
+Gauge derivative - PASS
+Query: deriv(node_memory_Active_bytes{instance="localhost:9100"}[1h])
+
 ===== Test Summary =====
-Total queries: 35
-Passed: 35
+Total queries: 45
+Passed: 45
 Failed: 0
 Success rate: 100.0%

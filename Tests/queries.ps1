@@ -208,10 +208,68 @@ $lab7_queries = @(
     }
 )
 
+# Lab 8 - Advanced PromQL Operations
+$lab8_queries = @(
+    @{
+        Name = "Label replace function"
+        Query = "label_replace(node_filesystem_size_bytes{instance=`"$instanceName`",mountpoint=`"/`"}, `"disk_type`", `"root_disk`", `"mountpoint`", `"/`")"
+        ExpectedType = "vector"
+    },
+    @{
+        Name = "Historical comparison with offset"
+        Query = "sum(rate(node_cpu_seconds_total{instance=`"$instanceName`",mode!=`"idle`"}[5m])) and sum(rate(node_cpu_seconds_total{instance=`"$instanceName`",mode!=`"idle`"}[5m] offset 1h))"
+        ExpectedType = "vector"
+    },
+    @{
+        Name = "Top K resources"
+        Query = "topk(3, sum by (mode) (rate(node_cpu_seconds_total{instance=`"$instanceName`"}[5m])))"
+        ExpectedType = "vector"
+    },
+    @{
+        Name = "Subquery for trend analysis"
+        Query = "max_over_time(rate(node_cpu_seconds_total{instance=`"$instanceName`",mode=`"user`"}[5m])[30m:5m])"
+        ExpectedType = "vector"
+    },
+    @{
+        Name = "Detecting missing data"
+        Query = "absent(node_cpu_seconds_total{instance=`"$instanceName`"})"
+        ExpectedType = "vector"
+    }
+)
+
+# Lab 9 - Histograms and Quantiles
+$lab9_queries = @(
+    @{
+        Name = "Histogram bucket exploration"
+        Query = "prometheus_http_request_duration_seconds_bucket"
+        ExpectedType = "vector"
+    },
+    @{
+        Name = "95th percentile latency"
+        Query = "histogram_quantile(0.95, sum(rate(prometheus_http_request_duration_seconds_bucket[5m])) by (le))"
+        ExpectedType = "vector"
+    },
+    @{
+        Name = "Median latency by handler"
+        Query = "histogram_quantile(0.5, sum by (handler, le) (rate(prometheus_http_request_duration_seconds_bucket[5m])))"
+        ExpectedType = "vector"
+    },
+    @{
+        Name = "SLO calculation"
+        Query = "(sum(rate(prometheus_http_request_duration_seconds_bucket{le=`"0.5`"}[5m])) / sum(rate(prometheus_http_request_duration_seconds_count[5m]))) * 100"
+        ExpectedType = "vector"
+    },
+    @{
+        Name = "Gauge derivative"
+        Query = "deriv(node_memory_Active_bytes{instance=`"$instanceName`"}[1h])"
+        ExpectedType = "vector"
+    }
+)
+
 # All queries combined
 # This variable is used in test_queries.ps1 through dot sourcing
 # Do not remove this variable - it is essential for the testing infrastructure
-$allQueries = $lab0_queries + $lab1_queries + $lab2_queries + $lab3_queries + $lab4_queries + $lab5_queries + $lab6_queries + $lab7_queries
+$allQueries = $lab0_queries + $lab1_queries + $lab2_queries + $lab3_queries + $lab4_queries + $lab5_queries + $lab6_queries + $lab7_queries + $lab8_queries + $lab9_queries
 
 # No need for Export-ModuleMember when using dot sourcing
 # Export-ModuleMember is only for formal PowerShell modules

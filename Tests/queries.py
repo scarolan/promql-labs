@@ -207,6 +207,64 @@ lab7_queries = [
     }
 ]
 
+# Lab 8 - Advanced PromQL Operations
+lab8_queries = [
+    {
+        "name": "Label replace function",
+        "query": "label_replace(node_filesystem_size_bytes{instance=\"$INSTANCE\",mountpoint=\"/\"}, \"disk_type\", \"root_disk\", \"mountpoint\", \"/\")",
+        "expected_type": "vector"
+    },
+    {
+        "name": "Historical comparison with offset",
+        "query": "sum(rate(node_cpu_seconds_total{instance=\"$INSTANCE\",mode!=\"idle\"}[5m])) and sum(rate(node_cpu_seconds_total{instance=\"$INSTANCE\",mode!=\"idle\"}[5m] offset 1h))",
+        "expected_type": "vector"
+    },
+    {
+        "name": "Top K resources",
+        "query": "topk(3, sum by (mode) (rate(node_cpu_seconds_total{instance=\"$INSTANCE\"}[5m])))",
+        "expected_type": "vector"
+    },
+    {
+        "name": "Subquery for trend analysis",
+        "query": "max_over_time(rate(node_cpu_seconds_total{instance=\"$INSTANCE\",mode=\"user\"}[5m])[30m:5m])",
+        "expected_type": "vector"
+    },
+    {
+        "name": "Detecting missing data",
+        "query": "absent(node_cpu_seconds_total{instance=\"$INSTANCE\"})",
+        "expected_type": "vector"
+    }
+]
+
+# Lab 9 - Histograms and Quantiles
+lab9_queries = [
+    {
+        "name": "Histogram bucket exploration",
+        "query": "prometheus_http_request_duration_seconds_bucket",
+        "expected_type": "vector"
+    },
+    {
+        "name": "95th percentile latency",
+        "query": "histogram_quantile(0.95, sum(rate(prometheus_http_request_duration_seconds_bucket[5m])) by (le))",
+        "expected_type": "vector"
+    },
+    {
+        "name": "Median latency by handler",
+        "query": "histogram_quantile(0.5, sum by (handler, le) (rate(prometheus_http_request_duration_seconds_bucket[5m])))",
+        "expected_type": "vector"
+    },
+    {
+        "name": "SLO calculation",
+        "query": "(sum(rate(prometheus_http_request_duration_seconds_bucket{le=\"0.5\"}[5m])) / sum(rate(prometheus_http_request_duration_seconds_count[5m]))) * 100",
+        "expected_type": "vector"
+    },
+    {
+        "name": "Gauge derivative",
+        "query": "deriv(node_memory_Active_bytes{instance=\"$INSTANCE\"}[1h])",
+        "expected_type": "vector"
+    }
+]
+
 # All queries combined
 all_queries = (
     lab0_queries + 
@@ -216,5 +274,7 @@ all_queries = (
     lab4_queries +
     lab5_queries +
     lab6_queries +
-    lab7_queries
+    lab7_queries +
+    lab8_queries +
+    lab9_queries
 )
