@@ -19,6 +19,36 @@
    ```
    
    > **Explanation:** Recording rules are a powerful Prometheus feature that saves complex calculations as new metrics. The example above creates a new metric called `instance:node_cpu_usage:percent` that stores pre-calculated CPU usage percentages. This follows Prometheus naming conventions with colons separating the context (`instance`), metric name (`node_cpu_usage`), and unit (`percent`).
+
+   **Creating Your First Recording Rule:**
+   
+   In your Killercoda environment, follow these steps:
+   
+   1. Create a rules directory if it doesn't exist:
+      ```
+      mkdir -p /etc/prometheus/rules
+      ```
+   
+   2. Create a file at `/etc/prometheus/rules/cpu_rules.yml` using your text editor of choice (VS Code, etc.).
+      
+   3. Copy and paste the YAML above into the file and save it.
+   
+   4. Open the main Prometheus configuration file at `/etc/prometheus/prometheus.yml` with your text editor.
+      
+   5. Ensure there's a rule_files section that includes your new rule file:
+      ```yaml
+      rule_files:
+        - "/etc/prometheus/rules/*.yml"
+      ```
+      
+      If the section doesn't exist or doesn't include your path, add it and save.
+      
+   6. Reload Prometheus configuration:
+      ```
+      curl -X POST http://localhost:9090/-/reload
+      ```
+      
+   7. Verify your rule is loaded by visiting Prometheus UI and clicking on "Rules" in the top menu.
    
 2. **Test the performance difference:**
    ```
@@ -31,7 +61,7 @@
    
    > **Explanation:** The first query calculates CPU usage in real-time, which can be resource-intensive. The second query uses a pre-computed recording rule which makes it much faster and more efficient. The recording rule precomputes this complex expression and stores the result under a new metric name `instance:node_cpu_usage:percent`, reducing load on Prometheus and improving dashboard performance.
 
-3. **Learn alert rule structure:**
+3. **Learn alert rule structure and create an alert:**
    ```yaml
    groups:
      - name: example_alerts
@@ -47,6 +77,32 @@
    ```
    
    > **Explanation:** This alert rule configuration demonstrates Prometheus's alerting capabilities. The `expr` field contains the PromQL condition that triggers the alert. The `for` duration prevents flapping alerts by requiring the condition to be true for a specified period. The `labels` help categorize alerts (useful for routing), while `annotations` provide human-readable information with template variables like `{{ $labels.instance }}` that are replaced with actual values when the alert fires.
+   
+   **Setting Up Your First Alert Rule:**
+   
+   1. Create a file at `/etc/prometheus/rules/cpu_alerts.yml` using your text editor of choice.
+      
+   2. Copy and paste the YAML above into the file and save it.
+   
+   3. Ensure the alert will use the recording rule we created earlier. If you skipped that step, modify the `expr` to use the direct calculation:
+      ```yaml
+      expr: 100 * (1 - (avg by (instance) (rate(node_cpu_seconds_total{instance="localhost:9100",mode="idle"}[5m])))) > 80
+      ```
+      
+   4. Reload Prometheus configuration:
+      ```
+      curl -X POST http://localhost:9090/-/reload
+      ```
+      
+   5. View your alert rules in the Prometheus UI:
+      - Navigate to `http://localhost:9090/alerts` in your browser
+      - You should see your HighCPUUsage alert listed
+   
+   6. To test the alert, you can generate CPU load:
+      ```
+      stress-ng --cpu 4 --timeout 300s
+      ```
+      This will stress 4 CPU cores for 5 minutes, which should trigger the alert.
 
 4. **Test alert expressions:**
    ```
@@ -95,9 +151,27 @@ groups:
           description: "Memory usage has exceeded 90% for 5 minutes on {{ $labels.instance }}"
 ```
 
-3. **Reload Prometheus** to apply your new rules:
-   - API: `curl -X POST http://localhost:9090/-/reload`
-   - Or restart the Prometheus service
+3. **Create the rules files and apply the changes:**
+   
+   - Create a file at `/etc/prometheus/rules/memory_rules.yml` using your text editor.
+   - Copy the recording rule YAML into this file and save it.
+   
+   - Create another file at `/etc/prometheus/rules/memory_alerts.yml`.
+   - Copy the alert rule YAML into this file and save it.
+   
+   ```
+   # Reload Prometheus configuration
+   curl -X POST http://localhost:9090/-/reload
+   ```
+   
+   4. **Verify your rules are working:**
+   
+   ```
+   # Check in Prometheus UI that your new metric exists
+   instance:node_memory_usage:percent
+   ```
+   
+   If everything is set up correctly, you should see data for this metric.
 
 > **Benefits of using recording rules:**
 > - **Performance**: Queries using recording rules execute faster since the computation is done ahead of time
