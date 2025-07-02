@@ -1,12 +1,7 @@
 # 🌐 Lab 4: Network, Load, and Advanced Aggregations
 
-## ObjectiveThis alert will trigger when the 1-minute load average exceeds your system's CPU core count for 5 minutes, which is a common indicator of CPU resource contention.
-
-</details>
-
----
-
-# 🌟 [Continue to Lab 5: Advanced CPU Analysis & Anomaly Detection](../Advanced/Lab5_Advanced_CPU_Anomaly.md)ery network traffic and system load metrics
+## Objectives
+- Query network traffic and system load metrics
 - Use advanced PromQL aggregations
 - Build multi-metric dashboards
 
