@@ -67,9 +67,9 @@
    
    > **Explanation:** The `topk` function selects the 3 highest values from the vector. This query ranks CPU modes by their consumption and shows only the top 3 resource consumers. Replace `topk` with `bottomk` to find the least resource-intensive modes instead.
    >
-   > **Note:** For process-specific metrics, you would need the process exporter running. If it's available, you could use:
+   > **Note:** For process-specific metrics, you would need the process exporter running. If it's available, you could use this query. Note that the process exporter "instance" is running on port 9256.
    > ```
-   > topk(3, sum by (process_name) (rate(process_cpu_seconds_total{instance="localhost:9100"}[5m])))
+   > topk(3, sum by (groupname) (rate(namedprocess_namegroup_cpu_seconds_total{instance="localhost:9256"}[5m])))
    > ```
 
 4. **Using Subqueries for Trend Analysis:**
