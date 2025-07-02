@@ -9,6 +9,8 @@
 1. **Query network receive and transmit rates:**
    ```
    rate(node_network_receive_bytes_total{instance="localhost:9100",device!="lo"}[5m])
+   ```
+   ```
    rate(node_network_transmit_bytes_total{instance="localhost:9100",device!="lo"}[5m])
    ```
    What do you notice about the traffic patterns?
@@ -17,7 +19,11 @@
 2. **Query system load averages:**
    ```
    node_load1{instance="localhost:9100"}
+   ```
+   ```
    node_load5{instance="localhost:9100"}
+   ```
+   ```
    node_load15{instance="localhost:9100"}
    ```
    How do these values compare to your CPU core count?
@@ -26,6 +32,8 @@
 3. **Aggregate network traffic across all interfaces:**
    ```
    sum by (instance) (rate(node_network_receive_bytes_total{instance="localhost:9100",device!="lo"}[5m]))
+   ```
+   ```
    sum by (instance) (rate(node_network_transmit_bytes_total{instance="localhost:9100",device!="lo"}[5m]))
    ```
    
