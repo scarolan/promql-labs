@@ -35,11 +35,7 @@
 4. **Calculate Error Budget with Histograms:**
    ```
    # Percentage of requests under 500ms (0.5s) SLO threshold
-   (
-     sum(rate(prometheus_http_request_duration_seconds_bucket{le="0.5"}[5m]))
-     /
-     sum(rate(prometheus_http_request_duration_seconds_count[5m]))
-   ) * 100
+   (sum(rate(prometheus_http_request_duration_seconds_bucket{le="0.5"}[5m])) / sum(rate(prometheus_http_request_duration_seconds_count[5m]))) * 100
    ```
    
    > **Explanation:** This query calculates what percentage of requests complete within the 500ms SLO threshold. It divides the count of requests in buckets under 0.5s by the total count, then multiplies by 100 to get a percentage. This is essential for SLO monitoring.
@@ -83,18 +79,7 @@ Creating a heatmap of CPU usage quantiles involves synthetic bucketing since CPU
 
    ```
    # Create a histogram from CPU usage data for heatmap visualization
-   sum(
-     count_values(
-       "le", 
-       floor(
-         clamp_max(
-           100 * (1 - (avg by (instance) (rate(node_cpu_seconds_total{instance="localhost:9100",mode="idle"}[5m])) / 
-           count by (instance) (node_cpu_seconds_total{instance="localhost:9100",mode="idle"}))),
-           100
-         ) / 5
-       ) * 5
-     )
-   ) by (le)
+   sum(count_values("le", floor(clamp_max(100 * (1 - (avg by (instance) (rate(node_cpu_seconds_total{instance="localhost:9100",mode="idle"}[5m])) / count by (instance) (node_cpu_seconds_total{instance="localhost:9100",mode="idle"}))), 100) / 5) * 5)) by (le)
    ```
 
    This query:

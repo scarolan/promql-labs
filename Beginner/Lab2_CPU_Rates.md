@@ -1,8 +1,4 @@
-# 📈 Lab 2: Calculating CPU U4. **(Optional) Visualize in Grafana:**
-   - Click "Add to dashboard" and create a time series panel.
-   - Set the legend to `{{mode}}` and Y-axis to `percent (0.0 - 1.0)`.
-   
-   > **Tip:** Visualizing in Grafana helps you see how different CPU modes change over time. The legend setting will label each line by its mode, making it easy to identify which parts of the system are consuming CPU resources.e Rates
+# 📈 Lab 2: Calculating CPU Use Rates
 
 ## Objectives
 - Use the `rate()` function to calculate CPU usage

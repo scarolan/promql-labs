@@ -25,9 +25,7 @@
 2. **Historical Comparisons with Offset:**
    ```
    # Compare current CPU usage with 1 hour ago
-   sum(rate(node_cpu_seconds_total{instance="localhost:9100",mode!="idle"}[5m]))
-   and
-   sum(rate(node_cpu_seconds_total{instance="localhost:9100",mode!="idle"}[5m] offset 1h))
+   sum(rate(node_cpu_seconds_total{instance="localhost:9100",mode!="idle"}[5m])) and sum(rate(node_cpu_seconds_total{instance="localhost:9100",mode!="idle"}[5m] offset 1h))
    ```
    
    > **Explanation:** The `offset` modifier allows you to look back in time. This query displays both the current CPU usage rate and the rate from exactly 1 hour ago, enabling direct historical comparison. This pattern is extremely useful for day-over-day or week-over-week comparisons.

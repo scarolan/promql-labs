@@ -9,6 +9,9 @@
 1. **Query total and available memory:**
    ```
    node_memory_MemTotal_bytes{instance="localhost:9100"}
+   ```
+   
+   ```
    node_memory_MemAvailable_bytes{instance="localhost:9100"}
    ```
    
@@ -23,6 +26,9 @@
 3. **Query filesystem usage:**
    ```
    node_filesystem_size_bytes{instance="localhost:9100",fstype!="tmpfs",mountpoint!="/run"}
+   ```
+   
+   ```
    node_filesystem_free_bytes{instance="localhost:9100",fstype!="tmpfs",mountpoint!="/run"}
    ```
    

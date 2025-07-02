@@ -11,10 +11,14 @@
    ```
    # Return all metrics for node_memory_MemTotal_bytes
    node_memory_MemTotal_bytes
+   ```
    
+   ```
    # Filter by instance
    node_memory_MemTotal_bytes{instance="localhost:9100"}
+   ```
    
+   ```
    # Use regular expressions for label matching
    node_memory_MemTotal_bytes{instance=~"local.*"}
    ```
@@ -24,7 +28,9 @@
    ```
    # Division - Calculate memory used as fraction of total
    (node_memory_MemTotal_bytes{instance="localhost:9100"} - node_memory_MemAvailable_bytes{instance="localhost:9100"}) / node_memory_MemTotal_bytes{instance="localhost:9100"}
+   ```
    
+   ```
    # Multiplication - Convert to percentage
    100 * ((node_memory_MemTotal_bytes{instance="localhost:9100"} - node_memory_MemAvailable_bytes{instance="localhost:9100"}) / node_memory_MemTotal_bytes{instance="localhost:9100"})
    ```
@@ -41,7 +47,9 @@
    ```
    # Get the sum of all CPU cores for system mode
    sum(node_cpu_seconds_total{instance="localhost:9100",mode="system"})
+   ```
    
+   ```
    # Get the average
    avg(node_cpu_seconds_total{instance="localhost:9100",mode="system"})
    ```
