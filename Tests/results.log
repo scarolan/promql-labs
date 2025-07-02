@@ -1,4 +1,4 @@
-Query Test Results - 2025-07-02 10:30:14.594000
+Query Test Results - 2025-07-02 13:56:11.371823
 
 Basic metric query - PASS
 Query: node_memory_MemTotal_bytes
@@ -108,8 +108,14 @@ Query: 100 * (1 - (avg by (instance) (rate(node_cpu_seconds_total{instance="loca
 Label replace function - PASS
 Query: label_replace(node_filesystem_size_bytes{instance="localhost:9100",mountpoint="/"}, "disk_type", "root_disk", "mountpoint", "/")
 
+Label join function - PASS
+Query: label_join(node_filesystem_size_bytes{instance="localhost:9100",mountpoint="/"}, "instance_path", "-", "instance", "mountpoint")
+
 Historical comparison with offset - NO DATA
 Query: sum(rate(node_cpu_seconds_total{instance="localhost:9100",mode!="idle"}[5m])) and sum(rate(node_cpu_seconds_total{instance="localhost:9100",mode!="idle"}[5m] offset 1h))
+
+Historical difference calculation - NO DATA
+Query: sum(rate(node_cpu_seconds_total{instance="localhost:9100",mode!="idle"}[5m])) - sum(rate(node_cpu_seconds_total{instance="localhost:9100",mode!="idle"}[5m] offset 1h))
 
 Top K resources - PASS
 Query: topk(3, sum by (mode) (rate(node_cpu_seconds_total{instance="localhost:9100"}[5m])))
@@ -120,23 +126,41 @@ Query: max_over_time(rate(node_cpu_seconds_total{instance="localhost:9100",mode=
 Detecting missing data - NO DATA
 Query: absent(node_cpu_seconds_total{instance="localhost:9100"})
 
+Memory usage change with offset - NO DATA
+Query: (100 * (1 - (node_memory_MemAvailable_bytes{instance="localhost:9100"} / node_memory_MemTotal_bytes{instance="localhost:9100"})) - 100 * (1 - (node_memory_MemAvailable_bytes{instance="localhost:9100"} offset 1h / node_memory_MemTotal_bytes{instance="localhost:9100"} offset 1h))) / (100 * (1 - (node_memory_MemAvailable_bytes{instance="localhost:9100"} offset 1h / node_memory_MemTotal_bytes{instance="localhost:9100"} offset 1h))) * 100
+
 Histogram bucket exploration - PASS
 Query: prometheus_http_request_duration_seconds_bucket
+
+Histogram specific handler - PASS
+Query: prometheus_http_request_duration_seconds_bucket{handler="/api/v1/query"}
 
 95th percentile latency - PASS
 Query: histogram_quantile(0.95, sum(rate(prometheus_http_request_duration_seconds_bucket[5m])) by (le))
 
+90th percentile latency - PASS
+Query: histogram_quantile(0.9, sum(rate(prometheus_http_request_duration_seconds_bucket[5m])) by (le))
+
 Median latency by handler - PASS
 Query: histogram_quantile(0.5, sum by (handler, le) (rate(prometheus_http_request_duration_seconds_bucket[5m])))
 
-SLO calculation - NO DATA
+SLO calculation - success rate - NO DATA
 Query: (sum(rate(prometheus_http_request_duration_seconds_bucket{le="0.5"}[5m])) / sum(rate(prometheus_http_request_duration_seconds_count[5m]))) * 100
+
+SLO calculation - error rate - NO DATA
+Query: (1 - sum(rate(prometheus_http_request_duration_seconds_bucket{le="0.5"}[5m])) / sum(rate(prometheus_http_request_duration_seconds_count[5m]))) * 100
 
 Gauge derivative - PASS
 Query: deriv(node_memory_Active_bytes{instance="localhost:9100"}[1h])
 
+Linear prediction - PASS
+Query: predict_linear(node_memory_Active_bytes{instance="localhost:9100"}[1h], 3600)
+
+CPU usage synthetic histogram - PASS
+Query: sum(count_values("le", floor(clamp_max(100 * (1 - (avg by (instance) (rate(node_cpu_seconds_total{instance="localhost:9100",mode="idle"}[5m])) / count by (instance) (node_cpu_seconds_total{instance="localhost:9100",mode="idle"}))), 100) / 5) * 5)) by (le)
+
 ===== Test Summary =====
-Total queries: 45
-Passed: 45
+Total queries: 53
+Passed: 53
 Failed: 0
 Success rate: 100.0%
