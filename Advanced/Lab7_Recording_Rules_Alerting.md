@@ -36,6 +36,7 @@
     4. Open the main Prometheus configuration file at `/etc/prometheus/prometheus.yml` with your text editor.
       
     5. Find the `rule_files` section in the main Prometheus configuration file. It should look like this:
+
       ```yaml
       # Load rules once and periodically evaluate them according to the global 'evaluation_interval'.
       rule_files:
@@ -44,6 +45,7 @@
       ```
 
       Remove or comment out the example entries and add your new rule file path:
+
       ```yaml
       # Load rules once and periodically evaluate them according to the global 'evaluation_interval'.
       rule_files:
@@ -51,6 +53,7 @@
       ```
       
     6. Reload Prometheus configuration:
+
       ```
       curl -X POST http://localhost:9090/-/reload
       ```
