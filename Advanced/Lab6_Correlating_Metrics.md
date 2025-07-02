@@ -35,8 +35,12 @@
    > **Tip:** When creating composite dashboards, consider using a shared legend and consistent color scheme across panels. For example, use red for CPU, blue for memory, and green for network. This makes it easier to visually correlate metrics at a glance.
 3. **Troubleshoot a simulated incident:**
    - Imagine a sudden CPU spike. What do the other metrics show at the same time?
+   - (Optional) If you have CLI access to a Linux machine, you can generate a real CPU load with:
+     ```
+     stress-ng --cpu 1 --cpu-load 80 --timeout 60s
+     ```
    
-   > **Explanation:** This exercise simulates a real-world troubleshooting scenario. By examining multiple metrics during an incident, you can identify potential causes. For example, a CPU spike accompanied by increased network traffic but stable memory usage might indicate a network-intensive process rather than a memory leak.
+   > **Explanation:** This exercise simulates a real-world troubleshooting scenario. By examining multiple metrics during an incident, you can identify potential causes. For example, a CPU spike accompanied by increased network traffic but stable memory usage might indicate a network-intensive process rather than a memory leak. The optional stress-ng command generates an 80% load on a single CPU core for 60 seconds, allowing you to observe how your metrics respond to a controlled stress situation.
 
 ## Challenge
 - Can you write a PromQL query that returns a warning if both CPU and memory usage are above 80%?
