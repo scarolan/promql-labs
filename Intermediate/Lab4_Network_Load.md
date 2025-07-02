@@ -80,4 +80,4 @@ This alert will trigger when the 1-minute load average exceeds your system's CPU
 
 ---
 
-# 🌟 You’re now a PromQL wrangler! Try the Advanced labs for more challenges.
+🌟 Great job! You’re ready for the [Advanced Labs](../Advanced/README.md).
