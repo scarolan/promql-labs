@@ -269,7 +269,6 @@ $lab9_queries = @(
 # All queries combined
 # This variable is used in test_queries.ps1 through dot sourcing
 # Do not remove this variable - it is essential for the testing infrastructure
-[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', '', Justification='Used in test_queries.ps1 via dot sourcing')]
 $allQueries = $lab0_queries + $lab1_queries + $lab2_queries + $lab3_queries + $lab4_queries + $lab5_queries + $lab6_queries + $lab7_queries + $lab8_queries + $lab9_queries
 
 # No need for Export-ModuleMember when using dot sourcing
