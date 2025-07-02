@@ -7,55 +7,55 @@
 
 ## Instructions
 1. **Understand recording rules:**
-   Recording rules let you precompute frequently used or complex queries and save their results.
+  Recording rules let you precompute frequently used or complex queries and save their results.
 
-   Example recording rule file format:
-   ```yaml
-   groups:
-     - name: cpu_rules
+    Example recording rule file format:
+    ```yaml
+    groups:
+      - name: cpu_rules
        rules:
-         - record: instance:node_cpu_usage:percent
-           expr: 100 * (1 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m]))))
-   ```
-   
-   > **Explanation:** Recording rules are a powerful Prometheus feature that saves complex calculations as new metrics. The example above creates a new metric called `instance:node_cpu_usage:percent` that stores pre-calculated CPU usage percentages. This follows Prometheus naming conventions with colons separating the context (`instance`), metric name (`node_cpu_usage`), and unit (`percent`).
+        - record: instance:node_cpu_usage:percent
+          expr: 100 * (1 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m]))))
+    ```
+    
+    > **Explanation:** Recording rules are a powerful Prometheus feature that saves complex calculations as new metrics. The example above creates a new metric called `instance:node_cpu_usage:percent` that stores pre-calculated CPU usage percentages. This follows Prometheus naming conventions with colons separating the context (`instance`), metric name (`node_cpu_usage`), and unit (`percent`).
 
-   **Creating Your First Recording Rule:**
-   
-   Follow these steps on your Ubuntu 22.04 server or Killercoda environment:
-   
-   1. Create a rules directory if it doesn't exist:
+    **Creating Your First Recording Rule:**
+    
+    Follow these steps on your Ubuntu 22.04 server or Killercoda environment:
+    
+    1. Create a rules directory if it doesn't exist:
       ```
       mkdir -p /etc/prometheus/rules
       ```
-   
-   2. Create a file at `/etc/prometheus/rules/cpu_rules.yml` using your text editor of choice (VS Code, etc.).
+    
+    2. Create a file at `/etc/prometheus/rules/cpu_rules.yml` using your text editor of choice (VS Code, etc.).
       
-   3. Copy and paste the YAML above into the file and save it.
-   
-   4. Open the main Prometheus configuration file at `/etc/prometheus/prometheus.yml` with your text editor.
+    3. Copy and paste the YAML above into the file and save it.
+    
+    4. Open the main Prometheus configuration file at `/etc/prometheus/prometheus.yml` with your text editor.
       
-  5. Find the `rule_files` section in the main Prometheus configuration file. It should look like this:
-    ```yaml
-    # Load rules once and periodically evaluate them according to the global 'evaluation_interval'.
-    rule_files:
-      # - "first_rules.yml"
-      # - "second_rules.yml"
-    ```
+    5. Find the `rule_files` section in the main Prometheus configuration file. It should look like this:
+      ```yaml
+      # Load rules once and periodically evaluate them according to the global 'evaluation_interval'.
+      rule_files:
+        # - "first_rules.yml"
+        # - "second_rules.yml"
+      ```
 
-    Remove or comment out the example entries and add your new rule file path:
-    ```yaml
-    # Load rules once and periodically evaluate them according to the global 'evaluation_interval'.
-    rule_files:
-      - "/etc/prometheus/rules/*.yml"
-    ```
+      Remove or comment out the example entries and add your new rule file path:
+      ```yaml
+      # Load rules once and periodically evaluate them according to the global 'evaluation_interval'.
+      rule_files:
+        - "/etc/prometheus/rules/*.yml"
+      ```
       
-   6. Reload Prometheus configuration:
+    6. Reload Prometheus configuration:
       ```
       curl -X POST http://localhost:9090/-/reload
       ```
       
-   7. Verify your rule is loaded by visiting Prometheus UI and clicking on "Rules" in the top menu.
+    7. Verify your rule is loaded by visiting Prometheus UI and clicking on "Rules" in the top menu.
    
 2. **Test the performance difference:**
    ```
