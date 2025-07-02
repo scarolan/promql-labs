@@ -98,4 +98,4 @@ This approach creates a heatmap showing the distribution of CPU usage over time,
 
 ---
 
-# 🌟 Excellent work! You've mastered histograms and quantile analysis!
+# 🌟 Congratulations! You've completed all the PromQL labs! You've now mastered histograms, quantiles, and all the essential PromQL techniques.

@@ -101,4 +101,4 @@ To compare current memory usage with memory usage from one day ago and calculate
 
 ---
 
-# 🌟 Great work! You've mastered some advanced PromQL techniques!
+# 🌟 [Click here to continue to Lab 9: Histograms and Quantiles](../Advanced/Lab9_Histograms_Quantiles.md)

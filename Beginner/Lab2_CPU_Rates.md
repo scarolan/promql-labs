@@ -1,7 +1,7 @@
 # 📈 Lab 2: Calculating CPU Use Rates
 
 ## Objectives
-- Use the `rate()` function to calculate CPU usage
+- Use # 🌟 [Click here to continue to Lab 3: Memory and Filesystem Usage](../Intermediate/Lab3_Memory_Filesystem.md)he `rate()` function to calculate CPU usage
 - Aggregate CPU usage by mode
 - Visualize CPU usage in Grafana
 

@@ -80,4 +80,4 @@ Gauges are particularly effective for metrics with well-defined thresholds, allo
 
 ---
 
-# 🌟 Awesome! Try the next lab for more PromQL fun.
+# 🌟 [Click here to continue to Lab 4: Network, Load, and Advanced Aggregations](../Intermediate/Lab4_Network_Load.md)

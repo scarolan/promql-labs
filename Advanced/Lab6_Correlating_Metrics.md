@@ -1,6 +1,6 @@
 # 🧠 Lab 6: Correlating Metrics & Building Composite Dashboards
 
-## Objectives
+## Objectives# 🌟 [Click here to continue to Lab 7: Recording Rules and Alerting](../Advanced/Lab7_Recording_Rules_Alerting.md)
 - Correlate CPU, memory, and network metrics in a single dashboard
 - Use PromQL to build composite queries
 - Practice troubleshooting with multi-metric panels

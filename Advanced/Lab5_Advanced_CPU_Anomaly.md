@@ -63,4 +63,4 @@ These queries are particularly useful for identifying short-lived but intensive 
 
 ---
 
-# 🌟 Nice work! Continue to the next advanced lab.
+# 🌟 [Click here to continue to Lab 6: Correlating Metrics & Building Composite Dashboards](../Advanced/Lab6_Correlating_Metrics.md)

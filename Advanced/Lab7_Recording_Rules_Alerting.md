@@ -112,4 +112,4 @@ groups:
 
 ---
 
-# 🌟 Congratulations! You've completed all the PromQL labs!
+# 🌟 [Click here to continue to Lab 8: Advanced PromQL Operations](../Advanced/Lab8_Advanced_PromQL_Operations.md)
