@@ -13,32 +13,14 @@
    ```
    What do you see? How many time series are returned?
    
-   **Query Breakdown:**
-   ```
-   # This query returns all CPU time counter metrics
-   # It shows how many CPU seconds each core has spent in each mode
-   # since the system started or the counter was last reset
-   node_cpu_seconds_total
-   ```
-   You're looking at a counter metric that constantly increases over time.
-   Each line represents a different CPU core and mode combination.
+   > **Explanation:** You're looking at a counter metric that constantly increases over time. Each line represents a different CPU core and mode combination, showing how many CPU seconds each core has spent in each mode since the system started or the counter was last reset.
 3. **Filter by instance:**
    ```
    node_cpu_seconds_total{instance="localhost:9100"}
    ```
    How does the result change?
    
-   **Query Breakdown:**
-   ```
-   # Step 1: Start with the raw CPU metric
-   node_cpu_seconds_total
-   
-   # Step 2: Add a label filter to view only a specific machine
-   # The curly braces {} allow you to filter by label values
-   node_cpu_seconds_total{instance="localhost:9100"}
-   ```
-   This filters your view to show only the CPU metrics from a specific machine,
-   useful in multi-server environments.
+   > **Explanation:** This filters your view to show only the CPU metrics from a specific machine (localhost), which is useful in multi-server environments. The curly braces `{}` allow you to filter by label values.
 4. **Filter by CPU mode:**
    Try filtering for just the `user` mode:
    ```
@@ -46,17 +28,7 @@
    ```
    What does this show?
    
-   **Query Breakdown:**
-   ```
-   # Step 1: Start with the instance-filtered CPU metric
-   node_cpu_seconds_total{instance="localhost:9100"}
-   
-   # Step 2: Add another filter condition to show only user mode CPU usage
-   # Multiple label conditions are combined with AND logic
-   node_cpu_seconds_total{instance="localhost:9100", mode="user"}
-   ```
-   Now you're seeing only the time each CPU core has spent running user processes
-   (application code) rather than kernel/system processes or idle time.
+   > **Explanation:** Now you're seeing only the time each CPU core has spent running user processes (application code) rather than kernel/system processes or idle time. Multiple label conditions are combined with AND logic.
 
 ## Challenge
 - Try filtering for a different mode, like `system` or `idle`. What do you notice?
@@ -64,9 +36,26 @@
 <details>
 <summary>🔮 <b>Show Solution</b></summary>
 
-- The raw metric returns one time series per CPU core, per mode, per instance.
-- Filtering by instance narrows it to just your machine.
-- Filtering by mode shows only the selected CPU mode (e.g., `user` time).
+To filter for different CPU modes, follow these steps:
+
+1. **Filter for system mode:**
+   ```
+   node_cpu_seconds_total{instance="localhost:9100", mode="system"}
+   ```
+   This shows how much time each CPU core has spent executing system calls and kernel code.
+
+2. **Filter for idle mode:**
+   ```
+   node_cpu_seconds_total{instance="localhost:9100", mode="idle"}
+   ```
+   This shows how much time each CPU core has spent doing nothing (being idle).
+
+3. **Compare the results:**
+   - You'll notice that `idle` mode typically has much higher values than `user` or `system`, as most systems spend the majority of time idle.
+   - The `system` mode values are usually lower than `user`, as most workloads spend more time in user applications than in the kernel.
+   - Each mode represents a different aspect of CPU time allocation, giving you insight into what your CPU is doing.
+
+By examining different modes, you can understand how your CPU resources are being utilized across different types of operations.
 
 </details>
 

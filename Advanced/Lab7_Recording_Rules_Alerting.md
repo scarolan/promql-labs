@@ -18,6 +18,8 @@
            expr: 100 * (1 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m]))))
    ```
    
+   > **Explanation:** Recording rules are a powerful Prometheus feature that saves complex calculations as new metrics. The example above creates a new metric called `instance:node_cpu_usage:percent` that stores pre-calculated CPU usage percentages. This follows Prometheus naming conventions with colons separating the context (`instance`), metric name (`node_cpu_usage`), and unit (`percent`).
+   
 2. **Test the performance difference:**
    ```
    # Complex query - calculate in real time
@@ -27,19 +29,7 @@
    instance:node_cpu_usage:percent{instance="localhost:9100"}
    ```
    
-   **Complex Query Breakdown:**
-   ```
-   # Step 1: Get rate of idle CPU time over 5m
-   rate(node_cpu_seconds_total{instance="localhost:9100",mode="idle"}[5m])
-   
-   # Step 2: Average across CPU cores for each instance
-   avg by (instance) (rate(node_cpu_seconds_total{instance="localhost:9100",mode="idle"}[5m]))
-   
-   # Step 3: Convert from idle percentage to used percentage
-   100 * (1 - (idle percentage))
-   ```
-   
-   The recording rule precomputes this complex expression and stores the result under a new metric name `instance:node_cpu_usage:percent`, making queries much faster and reducing load on Prometheus.
+   > **Explanation:** The first query calculates CPU usage in real-time, which can be resource-intensive. The second query uses a pre-computed recording rule which makes it much faster and more efficient. The recording rule precomputes this complex expression and stores the result under a new metric name `instance:node_cpu_usage:percent`, reducing load on Prometheus and improving dashboard performance.
 
 3. **Learn alert rule structure:**
    ```yaml
@@ -55,6 +45,8 @@
              summary: "High CPU usage on {{ $labels.instance }}"
              description: "CPU usage has exceeded 80% for 5 minutes on {{ $labels.instance }}"
    ```
+   
+   > **Explanation:** This alert rule configuration demonstrates Prometheus's alerting capabilities. The `expr` field contains the PromQL condition that triggers the alert. The `for` duration prevents flapping alerts by requiring the condition to be true for a specified period. The `labels` help categorize alerts (useful for routing), while `annotations` provide human-readable information with template variables like `{{ $labels.instance }}` that are replaced with actual values when the alert fires.
 
 4. **Test alert expressions:**
    ```
@@ -62,16 +54,7 @@
    instance:node_cpu_usage:percent{instance="localhost:9100"} > 80
    ```
    
-   **Alert Expression Breakdown:**
-   ```
-   # Step 1: Use the precomputed CPU usage percentage from recording rule
-   instance:node_cpu_usage:percent{instance="localhost:9100"}
-   
-   # Step 2: Apply a threshold comparison (> 80%)
-   instance:node_cpu_usage:percent{instance="localhost:9100"} > 80
-   ```
-   
-   The alert expression will return no data when CPU usage is below 80% and will return data points when CPU usage exceeds 80%. The Prometheus alert manager then uses the `for: 5m` clause to only trigger an alert if this condition persists for at least 5 minutes.
+   > **Explanation:** This query uses the recording rule metric to check if CPU usage exceeds 80%. The alert expression will return no data when CPU usage is below 80% and will return data points when CPU usage exceeds 80%. The Prometheus alert manager uses the `for: 5m` clause in the alert rule to only trigger an alert if this condition persists for at least 5 minutes, reducing alert noise from brief spikes.
 
 ## Challenge
 - Create a recording rule expression for memory usage percentage, following Prometheus naming conventions.
@@ -79,7 +62,9 @@
 <details>
 <summary>🛡️ <b>Show Solution</b></summary>
 
-Recording rule for memory usage:
+To create a recording rule for memory usage percentage following Prometheus naming conventions:
+
+1. **Create the recording rule configuration** in your `prometheus.yml` file or a separate rules file:
 
 ```yaml
 groups:
@@ -89,7 +74,12 @@ groups:
         expr: 100 * (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes))
 ```
 
-Alert rule using this recording rule:
+The name `instance:node_memory_usage:percent` follows Prometheus naming conventions:
+- `instance:` prefix indicates it's an instance-level metric
+- `node_memory_usage` describes the metric's purpose
+- `:percent` suffix indicates the unit
+
+2. **Create an alert rule that uses this recording rule**:
 
 ```yaml
 groups:
@@ -105,11 +95,18 @@ groups:
           description: "Memory usage has exceeded 90% for 5 minutes on {{ $labels.instance }}"
 ```
 
-Benefits of recording rules:
-- Improved query performance
-- Consistent metrics across dashboards
-- Better readability for complex expressions
-- Reduced load on Prometheus
+3. **Reload Prometheus** to apply your new rules:
+   - API: `curl -X POST http://localhost:9090/-/reload`
+   - Or restart the Prometheus service
+
+> **Benefits of using recording rules:**
+> - **Performance**: Queries using recording rules execute faster since the computation is done ahead of time
+> - **Consistency**: Using the same named metrics ensures consistent results across dashboards
+> - **Readability**: Complex expressions are replaced with descriptive metric names
+> - **Efficiency**: Reduces the load on Prometheus for frequently used or complex queries
+> - **Maintainability**: Easier to update queries in one place when stored as recording rules
+
+</details>
 
 </details>
 
