@@ -60,4 +60,4 @@ This approach is particularly useful for monitoring production systems where you
 
 ---
 
-🌟 Great job! You’re ready for the [Intermediate Labs](../Intermediate/README.md).
+## 🌟 Great job! You’re ready for the [Intermediate Labs](../Intermediate/README.md).

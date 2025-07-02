@@ -80,4 +80,4 @@ This alert will trigger when the 1-minute load average exceeds your system's CPU
 
 ---
 
-🌟 Great job! You’re ready for the [Advanced Labs](../Advanced/README.md).
+## 🌟 Great job! You’re ready for the [Advanced Labs](../Advanced/README.md).
