@@ -4,7 +4,7 @@ A comprehensive set of hands-on lab exercises for learning Prometheus Query Lang
 
 ## 📚 Course Structure
 
-This training consists of eight hands-on labs organized into three difficulty levels:
+This training consists of ten hands-on labs organized into three difficulty levels:
 
 ### 🐣 Beginner Labs
 - **Lab 0:** [PromQL Fundamentals](Beginner/Lab0_PromQL_Fundamentals.md) - Learn basic PromQL syntax and operators
@@ -19,6 +19,8 @@ This training consists of eight hands-on labs organized into three difficulty le
 - **Lab 5:** [Advanced CPU Anomaly Detection](Advanced/Lab5_Advanced_CPU_Anomaly.md) - Find unusual patterns
 - **Lab 6:** [Correlating Metrics & Dashboards](Advanced/Lab6_Correlating_Metrics.md) - Connect multiple metrics
 - **Lab 7:** [Recording Rules and Alerting](Advanced/Lab7_Recording_Rules_Alerting.md) - Operationalize monitoring
+- **Lab 8:** [Advanced PromQL Operations](Advanced/Lab8_Advanced_PromQL_Operations.md) - Master label manipulation, offset, subqueries, and ranking
+- **Lab 9:** [Histograms and Quantiles](Advanced/Lab9_Histograms_Quantiles.md) - Work with histogram metrics, percentiles, and SLOs
 
 ## 🚀 Prerequisites
 
