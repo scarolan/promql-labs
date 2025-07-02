@@ -13,9 +13,9 @@
     ```yaml
     groups:
       - name: cpu_rules
-       rules:
-        - record: instance:node_cpu_usage:percent
-          expr: 100 * (1 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m]))))
+        rules:
+          - record: instance:node_cpu_usage:percent
+            expr: 100 * (1 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m]))))
     ```
     
     > **Explanation:** Recording rules are a powerful Prometheus feature that saves complex calculations as new metrics. The example above creates a new metric called `instance:node_cpu_usage:percent` that stores pre-calculated CPU usage percentages. This follows Prometheus naming conventions with colons separating the context (`instance`), metric name (`node_cpu_usage`), and unit (`percent`).
@@ -24,7 +24,7 @@
     
     Follow these steps on your Ubuntu 22.04 server or Killercoda environment:
     
-    1. Create a rules directory if it doesn't exist:
+    1. Create a rules directory if it doesn't exist (you may need sudo permissions):
       ```
       mkdir -p /etc/prometheus/rules
       ```
@@ -94,10 +94,12 @@
       
    2. Copy and paste the YAML above into the file and save it.
    
-   3. Ensure the alert will use the recording rule we created earlier. If you skipped that step, modify the `expr` to use the direct calculation:
+   3. The alert is configured to use the recording rule we created earlier (`instance:node_cpu_usage:percent > 80`). If you skipped creating the recording rule or if it's not working, modify the `expr` in your alert file to use the direct calculation instead:
       ```yaml
       expr: 100 * (1 - (avg by (instance) (rate(node_cpu_seconds_total{instance="localhost:9100",mode="idle"}[5m])))) > 80
       ```
+      
+      Note: You may need to adjust the instance name in the query (e.g., "localhost:9100") to match your environment.
       
    4. Reload Prometheus configuration:
       ```
@@ -108,13 +110,15 @@
       - Navigate to `http://localhost:9090/alerts` in your browser
       - You should see your HighCPUUsage alert listed
    
-   6. To test the alert, you can generate CPU load:
+   6. To test the alert, you can generate CPU load (if stress-ng is not installed, you may need to install it first with `sudo apt-get install stress-ng`):
       ```
       stress-ng --cpu 4 --timeout 300s
       ```
       This will stress 4 CPU cores for 5 minutes, which should trigger the alert.
+      
+      Note: If the alert doesn't appear after reloading, check that your recording rule is working correctly by querying `instance:node_cpu_usage:percent` in the Prometheus UI first.
 
-4. **Test alert expressions:**
+4. **Test alert expressions in the Prometheus UI:**
    ```
    # This would trigger your alert when CPU > 80%
    instance:node_cpu_usage:percent{instance="localhost:9100"} > 80
@@ -164,24 +168,25 @@ groups:
 3. **Create the rules files and apply the changes:**
    
    - Create a file at `/etc/prometheus/rules/memory_rules.yml` using your text editor.
-   - Copy the recording rule YAML into this file and save it.
+   - Copy the recording rule YAML into this file.
    
    - Create another file at `/etc/prometheus/rules/memory_alerts.yml`.
-   - Copy the alert rule YAML into this file and save it.
+   - Copy the alert rule YAML into this file.
    
-   ```
-   # Reload Prometheus configuration
-   curl -X POST http://localhost:9090/-/reload
-   ```
+   - Reload Prometheus configuration:
+     ```
+     curl -X POST http://localhost:9090/-/reload
+     ```
    
    4. **Verify your rules are working:**
    
-   ```
-   # Check in Prometheus UI that your new metric exists
-   instance:node_memory_usage:percent
-   ```
+   - Enter this query in the Prometheus UI query box:
+     ```
+     instance:node_memory_usage:percent
+     ```
    
-   If everything is set up correctly, you should see data for this metric.
+   - If everything is set up correctly, you should see data for this metric.
+   - You can also check the Rules section in the Prometheus UI to confirm both rules are loaded.
 
 > **Benefits of using recording rules:**
 > - **Performance**: Queries using recording rules execute faster since the computation is done ahead of time
@@ -189,8 +194,6 @@ groups:
 > - **Readability**: Complex expressions are replaced with descriptive metric names
 > - **Efficiency**: Reduces the load on Prometheus for frequently used or complex queries
 > - **Maintainability**: Easier to update queries in one place when stored as recording rules
-
-</details>
 
 </details>
 
