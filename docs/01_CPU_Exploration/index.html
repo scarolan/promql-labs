@@ -1,24 +1,22 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lab 1: Exploring CPU Metrics with PromQL</title>
+	<title>Lab 1: Exploring CPU Metrics with PromQL</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/dist/reset.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/dist/reveal.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/dist/theme/night.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.7.0/styles/monokai-sublime.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/highlight/monokai.css">
     <link rel="stylesheet" href="../common.css">
 </head>
-<body>
-    <div class="reveal">
-        <div class="slides">
-            <section data-markdown>
-                <textarea data-template>
-                    ## Lab 1: Exploring CPU Metrics with PromQL
-                    
-                    PromQL Labs
-                    
+	<body>
+		<div class="reveal">
+			<div class="slides">
+                <section>
+                    <h1>Lab 1: Exploring CPU Metrics with PromQL</h1>
+                    <p>🔧 Basic PromQL</p>
+                    <p><small>Navigate: <a href="../index.html">All Slides</a></small></p>
                     <aside class="notes">
                         Welcome to Lab 1 of our PromQL series! In this session, we'll be focusing on exploring CPU metrics using Prometheus Query Language.
                         
@@ -28,17 +26,15 @@
                         
                         Even if you're new to system monitoring, don't worry - we'll break down the concepts in a way that's easy to understand and apply.
                     </aside>
-                </textarea>
-            </section>
+                </section>
 
-            <section data-markdown>
-                <textarea data-template>
-                    ## Objectives
-                    
-                    * Learn how to find and filter basic metrics in Prometheus
-                    * Understand the structure of `node_cpu_seconds_total`
-                    * Practice using label filters
-                    
+                <section>
+                    <h2>Objectives</h2>
+                    <ul>
+                        <li>Learn how to find and filter basic metrics in Prometheus</li>
+                        <li>Understand the structure of <code>node_cpu_seconds_total</code></li>
+                        <li>Practice using label filters</li>
+                    </ul>
                     <aside class="notes">
                         Our objectives for this lab are focused and practical:
                         
@@ -50,22 +46,17 @@
                         
                         By the end of this lab, you'll have practical skills that you can immediately apply to monitoring CPU usage in your own environments.
                     </aside>
-                </textarea>
-            </section>
+                </section>
 
-            <section data-markdown>
-                <textarea data-template>
-                    ## Raw CPU Metrics
-                    
-                    ```promql
-                    # Query the raw metric
-                    node_cpu_seconds_total
-                    ```
-                    
-                    * Returns many time series
-                    * One for each CPU core and mode combination
-                    * Counter type: always increasing
-                    
+                <section>
+                    <h2>Raw CPU Metrics</h2>
+                    <pre><code data-trim data-noescape class="promql"># Query the raw metric
+node_cpu_seconds_total</code></pre>
+                    <ul>
+                        <li>Returns many time series</li>
+                        <li>One for each CPU core and mode combination</li>
+                        <li>Counter type: always increasing</li>
+                    </ul>
                     <aside class="notes">
                         Let's start by looking at the raw CPU metrics in Prometheus.
                         
@@ -77,19 +68,20 @@
                         
                         This raw form isn't very useful for direct analysis, but it's the foundation we'll build on to create meaningful CPU usage queries. We need to understand what we're working with before we can transform it into actionable insights.
                     </aside>
-                </textarea>
-            </section>
+                </section>
 
-            <section data-markdown>
-                <textarea data-template>
-                    ## Understanding CPU Metrics
-                    
-                    * `node_cpu_seconds_total` = CPU time since boot
-                    * Labels provide context:
-                      * `cpu` = Which core (0, 1, 2, ...)
-                      * `mode` = Type of work (user, system, idle, ...)
-                    * Values increase over time (counter)
-                    
+                <section>
+                    <h2>Understanding CPU Metrics</h2>
+                    <ul>
+                        <li><code>node_cpu_seconds_total</code> = CPU time since boot</li>
+                        <li>Labels provide context:
+                            <ul>
+                                <li><code>cpu</code> = Which core (0, 1, 2, ...)</li>
+                                <li><code>mode</code> = Type of work (user, system, idle, ...)</li>
+                            </ul>
+                        </li>
+                        <li>Values increase over time (counter)</li>
+                    </ul>
                     <aside class="notes">
                         Before we dive deeper into querying CPU metrics, let's make sure we understand what they represent.
                         
@@ -103,20 +95,18 @@
                         
                         Understanding this structure is key to writing effective CPU queries in Prometheus.
                     </aside>
-                </textarea>
-            </section>
+                </section>
             
-            <section data-markdown>
-                <textarea data-template>
-                    ## CPU Mode Types
-                    
-                    * **user** - Time spent in user space applications
-                    * **system** - Time spent in kernel space (system calls)
-                    * **idle** - Time CPU was not executing any code
-                    * **iowait** - Time CPU waiting for I/O operations
-                    * **irq/softirq** - Time handling hardware/software interrupts
-                    * **steal** - Time other VMs "stole" from this VM (virtualization)
-                    
+                <section>
+                    <h2>CPU Mode Types</h2>
+                    <ul>
+                        <li><b>user</b> - Time spent in user space applications</li>
+                        <li><b>system</b> - Time spent in kernel space (system calls)</li>
+                        <li><b>idle</b> - Time CPU was not executing any code</li>
+                        <li><b>iowait</b> - Time CPU waiting for I/O operations</li>
+                        <li><b>irq/softirq</b> - Time handling hardware/software interrupts</li>
+                        <li><b>steal</b> - Time other VMs "stole" from this VM (virtualization)</li>
+                    </ul>
                     <aside class="notes">
                         Let's look more closely at the different CPU modes that are tracked. Each mode tells us something different about what the CPU is doing:
                         
@@ -134,22 +124,17 @@
                         
                         Understanding these modes helps you identify not just *if* you have a CPU issue, but *what kind* of CPU issue you're experiencing.
                     </aside>
-                </textarea>
-            </section>
+                </section>
 
-            <section data-markdown>
-                <textarea data-template>
-                    ## Filtering by Instance
-                    
-                    ```promql
-                    # Filter by Instance
-                    node_cpu_seconds_total{instance="localhost:9100"}
-                    ```
-                    
-                    * Curly braces `{}` for filtering by label
-                    * Great for multi-server environments
-                    * Exact equality match using `=`
-                    
+                <section>
+                    <h2>Filtering by Instance</h2>
+                    <pre><code data-trim data-noescape class="promql"># Filter by Instance
+node_cpu_seconds_total{instance="localhost:9100"}</code></pre>
+                    <ul>
+                        <li>Curly braces <code>{}</code> for filtering by label</li>
+                        <li>Great for multi-server environments</li>
+                        <li>Exact equality match using <code>=</code></li>
+                    </ul>
                     <aside class="notes">
                         Now let's start filtering our CPU metrics to make them more manageable.
                         
@@ -161,22 +146,17 @@
                         
                         In a production environment with dozens or hundreds of servers, this type of filtering is essential - you might filter for specific clusters, data centers, or application tiers to focus your analysis.
                     </aside>
-                </textarea>
-            </section>
+                </section>
 
-            <section data-markdown>
-                <textarea data-template>
-                    ## Filtering by CPU Mode
-                    
-                    ```promql
-                    # Filter by CPU mode
-                    node_cpu_seconds_total{instance="localhost:9100", mode="user"}
-                    ```
-                    
-                    * Multiple label filters combined with AND logic
-                    * Shows only user-space CPU consumption
-                    * One time series per CPU core
-                    
+                <section>
+                    <h2>Filtering by CPU Mode</h2>
+                    <pre><code data-trim data-noescape class="promql"># Filter by CPU mode
+node_cpu_seconds_total{instance="localhost:9100", mode="user"}</code></pre>
+                    <ul>
+                        <li>Multiple label filters combined with AND logic</li>
+                        <li>Shows only user-space CPU consumption</li>
+                        <li>One time series per CPU core</li>
+                    </ul>
                     <aside class="notes">
                         Let's add another filter to focus on a specific CPU mode.
                         
@@ -190,47 +170,42 @@
                         
                         You can try changing "user" to other modes like "system", "idle", or "iowait" to see different aspects of CPU usage.
                     </aside>
-                </textarea>
-            </section>
+                </section>
 
-            <section data-markdown>
-                <textarea data-template>
-                    ## Understanding the Results
-                    
-                    * Values continuously increase (they're counters)
-                    * Absolute values don't tell us much about current usage
-                    
+                <section>
+                    <h2>Understanding the Results</h2>
+                    <ul>
+                        <li>Values continuously increase (they're counters)</li>
+                        <li>Different cores may show different patterns</li>
+                        <li>Raw values aren't directly useful for analysis</li>
+                        <li>Need to calculate rate of change for meaningful insights</li>
+                    </ul>
                     <aside class="notes">
-                        Let's talk about how to interpret the results we're seeing from these CPU queries.
+                        Now that we've explored some basic CPU metrics, let's understand what the results tell us.
                         
-                        The first important thing to understand is that these values continuously increase over time. They're counters that track cumulative CPU time since the system booted.
+                        First, remember that these values are continuously increasing because they're counter metrics. They show cumulative CPU time since the system started, not current usage rates.
                         
-                        Because of this, the absolute values don't tell us much about current usage. A large number just means the system has been running for a long time.
+                        You might notice that different CPU cores show different patterns. This is normal - the operating system's scheduler distributes work across cores, but not always evenly. Some cores might be busier than others depending on how processes are scheduled.
                         
-                        To get meaningful insights about current CPU usage, we'll need to look at the rate of change over time - how fast these counters are increasing. We'll explore this in detail in Lab 2 when we learn about the rate() function.
+                        Most importantly, these raw counter values aren't directly useful for analysis. Knowing that CPU 0 has spent 12,345 seconds in user mode since boot doesn't tell you much about current performance.
                         
-                        For now, just understand that we're looking at the raw ingredients that we'll use to calculate real CPU usage metrics. It's like having flour, sugar, and eggs - these ingredients aren't directly useful until we combine them into a cake.
+                        What we really need are rates of change - how fast these counters are increasing. That would tell us the current CPU utilization, which is what we actually care about for monitoring.
+                        
+                        This is exactly what we'll learn in Lab 2, where we'll transform these raw counters into meaningful utilization percentages using PromQL rate functions.
                     </aside>
-                    * Useful for seeing which cores exist, which modes are tracked
-                    * To get actual usage percentage, we need to calculate rates (next lab!)
-                </textarea>
-            </section>
+                </section>
 
-            <section data-markdown>
-                <textarea data-template>
-                    ## Challenge: Compare Different Modes
-                    
-                    ```promql
-                    # System mode - kernel operations
-                    node_cpu_seconds_total{instance="localhost:9100", mode="system"}
-                    
-                    # Idle mode - CPU doing nothing
-                    node_cpu_seconds_total{instance="localhost:9100", mode="idle"}
-                    ```
-                    
-                    * `idle` values are typically much larger than others
-                    * `system` values are usually lower than `user`
-                    
+                <section>
+                    <h2>Challenge: Compare Different Modes</h2>
+                    <pre><code data-trim data-noescape class="promql"># System mode - kernel operations
+node_cpu_seconds_total{instance="localhost:9100", mode="system"}
+
+# Idle mode - CPU doing nothing
+node_cpu_seconds_total{instance="localhost:9100", mode="idle"}</code></pre>
+                    <ul>
+                        <li><code>idle</code> values are typically much larger than others</li>
+                        <li><code>system</code> values are usually lower than <code>user</code></li>
+                    </ul>
                     <aside class="notes">
                         Let's put our knowledge into practice with a challenge: comparing different CPU modes.
                         
@@ -242,19 +217,17 @@
                         
                         These comparisons help you understand the baseline behavior of your systems, making it easier to spot anomalies when they occur. For example, if system time suddenly becomes higher than user time, it might indicate a problem.
                     </aside>
-                </textarea>
-            </section>
+                </section>
 
-            <section data-markdown>
-                <textarea data-template>
-                    ## Insights from Mode Comparison
-                    
-                    * High `user` time = Application-heavy workload
-                    * High `system` time = Heavy kernel operations (can indicate issues)
-                    * Low `idle` time = High overall CPU utilization
-                    * High `iowait` = Potential disk bottlenecks
-                    * High `steal` = Overcommitted virtualization host
-                    
+                <section>
+                    <h2>Insights from Mode Comparison</h2>
+                    <ul>
+                        <li>High <code>user</code> time = Application-heavy workload</li>
+                        <li>High <code>system</code> time = Heavy kernel operations (can indicate issues)</li>
+                        <li>Low <code>idle</code> time = High overall CPU utilization</li>
+                        <li>High <code>iowait</code> = Potential disk bottlenecks</li>
+                        <li>High <code>steal</code> = Overcommitted virtualization host</li>
+                    </ul>
                     <aside class="notes">
                         Let's summarize what different CPU mode patterns can tell us about our system's behavior.
                         
@@ -270,16 +243,12 @@
                         
                         Learning to read these patterns is like learning to read vital signs in medicine - they give you important diagnostic information about the health of your system.
                     </aside>
-                </textarea>
-            </section>
+                </section>
 
-            <section data-markdown>
-                <textarea data-template>
-                    ## Continue Learning
-                    
-                    * [Continue to Lab 2: CPU Usage Rates](../02_CPU_Rates/index.html)
-                    * [Return to Slides Index](../index.html)
-                    
+                <section>
+                    <h1>🌟 Great job!</h1>
+                    <p>Continue to Lab 2: CPU Usage Rates</p>
+                    <p><small>Navigate: <a href="../index.html">All Slides</a> | <a href="../02_CPU_Rates/index.html">Next Lab</a></small></p>
                     <aside class="notes">
                         Congratulations! You've completed Lab 1 on Exploring CPU Metrics with PromQL.
                         
@@ -293,25 +262,25 @@
                         
                         Any questions before we wrap up this lab?
                     </aside>
-                </textarea>
-            </section>
-        </div>
-    </div>
-    
-    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/dist/reveal.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/markdown/markdown.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/highlight/highlight.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/notes/notes.js"></script>
-    <script>
-        Reveal.initialize({
-            hash: true,
-            transition: 'none', // Disable slide animations
-            plugins: [RevealMarkdown, RevealHighlight, RevealNotes],
-            highlight: {
-                highlightOnLoad: true,
-                languages: ['promql']
-            }
-        });
-    </script>
-</body>
+                </section>
+            </div>
+		</div>
+
+		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/dist/reveal.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/notes/notes.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/markdown/markdown.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/highlight/highlight.js"></script>
+		<script>
+			// More info about initialization & config:
+			// - https://revealjs.com/initialization/
+			// - https://revealjs.com/config/
+			Reveal.initialize({
+				hash: true,
+                slideNumber: true,
+				transition: 'none', // Disable slide animations
+				// Learn about plugins: https://revealjs.com/plugins/
+				plugins: [ RevealMarkdown, RevealHighlight, RevealNotes ]
+			});
+		</script>
+	</body>
 </html>

@@ -50,12 +50,12 @@
 }
 .reveal ul, .reveal ol {
     display: block;
-    line-height: 1.7; /* Further increased for better spacing between list items */
+    line-height: 1.3; /* Significantly reduced from 1.7 for more compact spacing */
     font-size: 1.3em; /* Further enlarged list items for better readability */
 }
 
 .reveal ul li, .reveal ol li {
-    margin-bottom: 0.3em; /* Reduced from default spacing (~50% reduction) */
+    margin-bottom: 0.2em; /* Significantly reduced spacing between list items */
 }
 
 .reveal ul ul, .reveal ol ol, .reveal ul ol, .reveal ol ul {
