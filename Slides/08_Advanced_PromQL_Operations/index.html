@@ -1,0 +1,749 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<title>Lab 8: Advanced PromQL Operations</title>
+
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/dist/reset.css">
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/dist/reveal.css">
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/dist/theme/night.css">
+
+		<!-- Theme used for syntax highlighted code -->
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/plugin/highlight/monokai.css">
+        <style>
+            .reveal pre {
+                margin: 0;
+                box-shadow: none;
+            }
+            .reveal pre code {
+                padding: 20px;
+                max-height: 400px;
+                line-height: 1.2;
+            }
+            .two-column {
+                display: flex;
+                justify-content: space-between;
+            }
+            .two-column .left {
+                width: 48%;
+            }
+            .two-column .right {
+                width: 48%;
+            }
+            .reveal .smaller-text {
+                font-size: 0.8em;
+            }
+            .reveal .smallest-text {
+                font-size: 0.6em;
+            }
+            .reveal img.border {
+                border: 1px solid #fff;
+                box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            }
+        </style>
+	</head>
+	<body>
+		<div class="reveal">
+			<div class="slides">
+                <section>
+                    <h1>Lab 8: Advanced PromQL Operations</h1>
+                    <p>🔍 Advanced PromQL</p>
+                    <p><small>Navigate: <a href="../index.html">All Slides</a></small></p>
+                    <aside class="notes">
+                        Welcome to Lab 8, where we'll explore some of the most powerful and advanced features of PromQL!
+                        
+                        Throughout our previous labs, we've built a strong foundation in PromQL, learning how to query metrics, calculate rates, aggregate data, and create alerts. Today, we're taking our skills to the next level with techniques that will allow you to perform sophisticated analyses and transformations on your metrics.
+                        
+                        The operations we'll cover in this lab are what separates casual PromQL users from true experts. These techniques enable you to reshape data, perform complex time-based analyses, and extract insights that would be difficult or impossible with basic queries.
+                        
+                        By the end of this lab, you'll have a comprehensive toolkit of advanced PromQL techniques that you can apply to real-world monitoring challenges. Whether you're troubleshooting performance issues, analyzing trends, or building sophisticated dashboards, the skills you learn today will significantly enhance your monitoring capabilities.
+                        
+                        Let's dive into these advanced PromQL operations and unlock the full potential of Prometheus for your monitoring needs.
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Objectives</h2>
+                    <ul>
+                        <li>Learn how to use label manipulation functions</li>
+                        <li>Understand the offset modifier for historical comparisons</li>
+                        <li>Master subqueries for complex time-based analysis</li>
+                        <li>Use topk and bottomk functions for value ranking</li>
+                        <li>Apply the absent function to detect missing metrics</li>
+                    </ul>
+                    <aside class="notes">
+                        In this lab, we'll focus on five key advanced PromQL techniques:
+                        
+                        First, we'll explore label manipulation functions, which allow you to modify, add, or combine metric labels at query time. This is incredibly powerful for categorizing and organizing your metrics in ways that weren't defined when the metrics were collected.
+                        
+                        Next, we'll look at the offset modifier, which enables historical comparisons by letting you query data from specific points in the past. This is essential for comparing current metrics to previous baselines or identifying trends over time.
+                        
+                        We'll then dive into subqueries, one of PromQL's most powerful features. Subqueries let you apply functions to the results of range queries over time windows, enabling complex analyses like moving averages, trend detection, and anomaly spotting.
+                        
+                        The topk and bottomk functions will be our next focus. These ranking functions help you identify outliers by selecting the highest or lowest values in a set of time series. They're invaluable for finding resource hogs or underutilized resources in your systems.
+                        
+                        Finally, we'll learn about the absent function, which detects missing metrics. This is crucial for monitoring the health of your monitoring system itself and ensuring that expected metrics are actually being collected.
+                        
+                        Each of these techniques addresses specific monitoring challenges that you're likely to encounter in real-world scenarios. By mastering them, you'll be able to extract more valuable insights from your metrics and build more comprehensive monitoring solutions.
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Label Manipulation Functions</h2>
+                    <p>Add, modify, or join labels at query time without changing the underlying data</p>
+                    <aside class="notes">
+                        Label manipulation functions are powerful tools that allow you to transform metric labels at query time, without modifying the underlying data stored in Prometheus.
+                        
+                        In Prometheus's data model, labels are key-value pairs attached to metrics that provide additional dimensions for filtering and grouping. While labels are typically defined when metrics are collected, there are many scenarios where you might want to modify these labels during analysis.
+                        
+                        For example, you might want to:
+                        - Add new labels to categorize metrics (e.g., adding "tier" labels to distinguish between production and staging instances)
+                        - Create composite labels by combining existing ones (e.g., creating a "service-instance" label from separate "service" and "instance" labels)
+                        - Transform label values to standardize formats or correct inconsistencies
+                        - Extract portions of label values using regular expressions
+                        
+                        Prometheus provides two main functions for label manipulation: label_replace and label_join. These functions are incredibly versatile and can significantly enhance your ability to organize and analyze metrics in meaningful ways.
+                        
+                        The key advantage of label manipulation is that it happens at query time, giving you flexibility to reshape your metric data on-the-fly for specific analysis needs without having to reconfigure your exporters or instrumentation.
+                        
+                        Let's look at each of these functions in detail.
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>label_replace Function</h2>
+                    <pre><code class="language-promql">label_replace(
+  node_filesystem_size_bytes{instance="localhost:9100",mountpoint="/"},
+  "disk_type",
+  "root_disk",
+  "mountpoint",
+  "/"
+)</code></pre>
+                    <ul>
+                        <li>Adds a new label <code>disk_type</code> with value <code>root_disk</code></li>
+                        <li>For metrics where <code>mountpoint</code> matches pattern <code>/</code></li>
+                        <li>Format: <code>label_replace(v, dst_label, replacement, src_label, regex)</code></li>
+                        <li>Useful for categorizing or grouping metrics</li>
+                    </ul>
+                    <aside class="notes">
+                        The label_replace function is one of the most versatile label manipulation tools in PromQL. It allows you to add or replace labels based on pattern matching against existing label values.
+                        
+                        Let's break down the example shown:
+                        
+                        1. We start with the metric `node_filesystem_size_bytes`, filtering for a specific instance and mountpoint.
+                        2. We add a new label called `disk_type` with the value `root_disk`.
+                        3. This happens only where the `mountpoint` label matches the pattern `/`.
+                        
+                        The function takes five arguments:
+                        - The vector to transform (our filesystem metric)
+                        - The destination label name to create or replace (`disk_type`)
+                        - The replacement text for the new label value (`root_disk`)
+                        - The source label to match against (`mountpoint`)
+                        - A regular expression pattern to match (`/`)
+                        
+                        This particular example is simple, but label_replace becomes even more powerful when used with regular expressions that extract portions of existing labels. For example, you could extract the domain from a URL, or parse components from a complex identifier.
+                        
+                        A more advanced example might be:
+                        
+                        ```
+                        label_replace(
+          some_metric{instance=~".*"},
+          "datacenter",
+          "$1",
+          "instance",
+          "(us|eu|ap)-.*"
+        )
+                        ```
+                        
+                        This would extract the datacenter region (us, eu, or ap) from the instance name and create a new `datacenter` label with that value.
+                        
+                        Label_replace is particularly useful for:
+                        - Adding classification labels for better organization
+                        - Standardizing inconsistent labels across different sources
+                        - Extracting meaningful components from complex identifiers
+                        - Creating new dimensions for aggregation or filtering
+                        
+                        When teaching this concept, it's helpful to have students experiment with different regex patterns to see how they can transform their data in various ways.
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>label_join Function</h2>
+                    <pre><code class="language-promql">label_join(
+  node_filesystem_size_bytes{instance="localhost:9100",mountpoint="/"},
+  "instance_path",
+  "-",
+  "instance",
+  "mountpoint"
+)</code></pre>
+                    <ul>
+                        <li>Creates new label <code>instance_path</code> by joining values</li>
+                        <li>Joins <code>instance</code> and <code>mountpoint</code> with <code>-</code> separator</li>
+                        <aside class="notes">
+                            The label_join function complements label_replace by providing a way to combine values from multiple existing labels into a new label. This is particularly useful for creating composite identifiers or human-readable descriptors.
+                            
+                            In the example shown:
+                            
+                            1. We start with the same filesystem metric as before.
+                            2. We create a new label called `instance_path`.
+                            3. We populate this label by joining the values of the `instance` and `mountpoint` labels.
+                            4. We specify `-` as the separator between these values.
+                            
+                            The result would be a new label like `instance_path="localhost:9100-/"`.
+                            
+                            The function takes at least four arguments:
+                            - The vector to transform
+                            - The destination label name to create
+                            - The separator string to use between joined values
+                            - Two or more source label names to join
+                            
+                            Label_join is particularly useful for:
+                            - Creating composite identifiers that combine multiple dimensions
+                            - Generating human-readable descriptions that include multiple pieces of metadata
+                            - Flattening multi-dimensional data for specific visualization or alerting needs
+                            - Preparing data for export to systems that might not support Prometheus's multi-dimensional model
+                            
+                            A common use case is creating unique identifiers for monitoring objects that are defined by multiple characteristics. For example, in Kubernetes monitoring, you might join namespace, deployment, and pod labels to create a fully-qualified pod identifier.
+                            
+                            Another practical application is combining related information to make alerts or dashboard panels more informative at a glance. For instance, joining service name and environment labels to create context-rich descriptions.
+                            
+                            When teaching this concept, encourage students to think about what combinations of labels would create meaningful new dimensions for their specific monitoring needs.
+                        </aside>
+                        <li>Result would be <code>instance_path="localhost:9100-/"</code></li>
+                        <li>Format: <code>label_join(v, dst_label, separator, src_label1, src_label2, ...)</code></li>
+                    </ul>
+                </section>
+
+                <section>
+                    <h2>Historical Comparisons with Offset</h2>
+                    <p>Look back in time and compare metrics across different time periods</p>
+                    <aside class="notes">
+                        The offset modifier is a powerful feature in PromQL that allows you to look back in time, enabling historical comparisons that are essential for understanding system behavior patterns.
+                        
+                        In monitoring and observability, it's often not enough to know the current state of a system. You need historical context to determine if current behavior is normal or anomalous. For example, is the current CPU spike unusual, or does it happen every day at this time due to a scheduled job?
+                        
+                        The offset modifier addresses this need by allowing you to query metrics from specific points in the past. You can then compare current values to historical baselines, identify patterns over time, or calculate changes and trends.
+                        
+                        Common use cases for offset include:
+                        - Day-over-day comparisons (current vs. same time yesterday)
+                        - Week-over-week comparisons (current vs. same day last week)
+                        - Month-over-month growth analysis
+                        - Comparing peak periods to historical averages
+                        - Detecting seasonal patterns in resource usage
+                        
+                        Offset can be applied to both instant vectors and range vectors, allowing for flexible historical analyses. It's particularly powerful when combined with mathematical operations to calculate differences or percentage changes over time.
+                        
+                        Let's look at some specific examples of how to use the offset modifier for historical comparisons.
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Compare Current vs. Historical</h2>
+                    <pre class="smaller-text"><code class="language-promql"># Compare current CPU usage with 1 hour ago
+sum(rate(node_cpu_seconds_total{instance="localhost:9100",mode!="idle"}[5m])) and
+sum(rate(node_cpu_seconds_total{instance="localhost:9100",mode!="idle"}[5m] offset 1h))</code></pre>
+                    <ul>
+                        <li><code>offset 1h</code> shifts the time window back by 1 hour</li>
+                        <li>Enables direct historical comparison on the same graph</li>
+                        <li>Perfect for day-over-day or week-over-week comparisons</li>
+                        <li>Common offsets: <code>1h</code>, <code>1d</code>, <code>7d</code>, <code>30d</code></li>
+                    </ul>
+                    <aside class="notes">
+                        This example demonstrates a direct comparison between current CPU usage and CPU usage from exactly one hour ago.
+                        
+                        Let's break down the query:
+                        
+                        First, we calculate the current CPU usage by taking the sum of the rate of all non-idle CPU modes. This gives us the total CPU utilization across all cores.
+                        
+                        Next, we calculate the same metric but with `offset 1h` added to the range vector. This shifts the 5-minute window used for the rate calculation back by one hour. The result is the CPU usage from exactly one hour ago.
+                        
+                        The `and` operator between these two expressions ensures that both are displayed on the same graph, making visual comparison easy. In Prometheus's expression browser, this will show two lines - one for current usage and one for usage from an hour ago.
+                        
+                        The offset modifier takes time duration values like:
+                        - `1h` for one hour
+                        - `1d` for one day
+                        - `7d` for one week
+                        - `30d` for approximately one month
+                        
+                        This approach is incredibly valuable for detecting patterns and anomalies. For example, if you see that CPU usage is typically around 50% at this time of day, but today it's at 80%, that might indicate an unusual load that warrants investigation.
+                        
+                        Day-over-day comparisons are particularly useful for workloads with daily patterns, while week-over-week comparisons help identify weekly cycles. For retail or e-commerce applications, you might even want to compare with the same day from last year to account for seasonal patterns.
+                        
+                        When teaching this concept, encourage students to experiment with different offset values to discover patterns in their own metrics that might not be immediately obvious from current values alone.
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Calculate Changes Over Time</h2>
+                    <pre class="smaller-text"><code class="language-promql"># Calculate CPU usage increase from 1 hour ago
+sum(rate(node_cpu_seconds_total{instance="localhost:9100",mode!="idle"}[5m])) - 
+sum(rate(node_cpu_seconds_total{instance="localhost:9100",mode!="idle"}[5m] offset 1h))</code></pre>
+                    <ul>
+                        <li>Calculate absolute difference between current and past values</li>
+                        <li>Positive values indicate increased usage</li>
+                        <li>Negative values indicate decreased usage</li>
+                        <li>Great for trend analysis and anomaly detection</li>
+                    </ul>
+                    <aside class="notes">
+                        Building on our previous example, this query takes historical comparison a step further by calculating the actual difference between current and historical values.
+                        
+                        Instead of just visualizing current and historical CPU usage side by side, we're now subtracting the historical value (from one hour ago) from the current value. This gives us a direct measure of how much CPU usage has changed over the past hour.
+                        
+                        The result is particularly useful because:
+                        
+                        - Positive values indicate that usage has increased over the past hour
+                        - Negative values indicate that usage has decreased
+                        - The magnitude tells you exactly how much the usage has changed
+                        
+                        This approach can be extended to calculate percentage changes as well. For example, to find the percentage change in CPU usage:
+                        
+                        ```
+                        (sum(rate(node_cpu_seconds_total{mode!="idle"}[5m])) - 
+                         sum(rate(node_cpu_seconds_total{mode!="idle"}[5m] offset 1h))) /
+                        sum(rate(node_cpu_seconds_total{mode!="idle"}[5m] offset 1h)) * 100
+                        ```
+                        
+                        These difference calculations are excellent for:
+                        
+                        - Trend analysis: Is resource usage increasing or decreasing over time?
+                        - Anomaly detection: Is the change in resource usage outside normal bounds?
+                        - Capacity planning: How fast is resource usage growing week-over-week?
+                        - Performance impact analysis: Did a recent change cause resource usage to increase?
+                        
+                        For alerting, you might want to trigger notifications when the change exceeds certain thresholds. For example, alert if CPU usage increases by more than 30% compared to the same time yesterday.
+                        
+                        The offset modifier combined with arithmetic operations gives you powerful tools for temporal analysis that go far beyond simple threshold-based monitoring.
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Finding Resource Hogs with TopK</h2>
+                    <p>Rank metrics and focus on the highest or lowest values</p>
+                    <aside class="notes">
+                        In complex environments with hundreds or thousands of services, hosts, or containers, information overload is a real challenge. When investigating performance issues, you often need to quickly identify the biggest resource consumers or the worst-performing components.
+                        
+                        This is where ranking functions like topk and bottomk become invaluable. They help you cut through the noise and focus on the most significant contributors to a particular metric.
+                        
+                        The topk function allows you to select the k highest values from a set of time series, while bottomk selects the k lowest values. These functions can be applied to any instant vector, making them versatile tools for various analysis scenarios.
+                        
+                        Common use cases include:
+                        
+                        - Finding the top CPU-consuming processes or services
+                        - Identifying the hosts with the highest memory utilization
+                        - Discovering the endpoints with the slowest response times
+                        - Determining which services have the highest error rates
+                        - Spotting the databases with the most connections or highest query latency
+                        
+                        By focusing on these outliers, you can prioritize your attention on the components that are most likely causing or experiencing problems.
+                        
+                        Let's look at how to use these functions effectively to find resource hogs and performance bottlenecks in your systems.
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>topk and bottomk Functions</h2>
+                    <pre><code class="language-promql"># Find the top 3 CPU-consuming modes
+topk(3, sum by (mode) (rate(node_cpu_seconds_total{instance="localhost:9100"}[5m])))</code></pre>
+                    <ul>
+                        <li><code>topk(k, instant-vector)</code>: Returns k largest values</li>
+                        <li><code>bottomk(k, instant-vector)</code>: Returns k smallest values</li>
+                        <li>Great for finding "top consumers" or "worst offenders"</li>
+                        <li>Keep focus on what matters most in large environments</li>
+                    </ul>
+                    <aside class="notes">
+                        The topk and bottomk functions are elegant tools for focusing on the extremes in your metric data. Let's examine how they work using the example on this slide.
+                        
+                        In this query, we're finding the top 3 CPU-consuming modes by:
+                        
+                        1. Calculating the rate of CPU seconds for each mode over a 5-minute window
+                        2. Summing these rates by mode to get the total time spent in each mode
+                        3. Using topk(3, ...) to select only the 3 modes with the highest values
+                        
+                        The result would typically show modes like "user", "system", and perhaps "iowait" or "irq", depending on what's consuming CPU on your system. This immediately tells you which types of work are dominant on your system.
+                        
+                        The syntax for these functions is straightforward:
+                        - topk(k, instant-vector): Returns the k time series with the highest values
+                        - bottomk(k, instant-vector): Returns the k time series with the lowest values
+                        
+                        When combined with aggregation operators like sum, avg, or max, these functions become even more powerful. For example:
+                        
+                        - topk(5, sum by (service) (rate(http_requests_total{status="500"}[5m]))) finds the 5 services with the highest error rates
+                        - bottomk(3, avg by (instance) (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) finds the 3 instances with the least available memory
+                        
+                        A key benefit of these functions is that they help maintain readability in dashboards and alerts by limiting the number of time series displayed or considered. Instead of showing hundreds of lines on a graph, you can focus on just the most significant ones.
+                        
+                        When teaching this concept, encourage students to think about the most important dimensions for ranking in their specific monitoring use cases.
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Process-Specific topk</h2>
+                    <pre><code class="language-promql"># Find top 3 CPU-consuming processes (with process exporter)
+topk(3, sum by (groupname) (
+  rate(namedprocess_namegroup_cpu_seconds_total{instance="localhost:9256"}[5m])
+))</code></pre>
+                    <ul>
+                        <li>Requires process exporter (port 9256)</li>
+                        <li>Groups processes by name and shows top resource users</li>
+                        <li>Essential for troubleshooting resource contention</li>
+                    </ul>
+                    <aside class="notes">
+                        This example takes the topk concept to a more practical level by identifying specific processes that are consuming the most CPU resources. It's a perfect demonstration of how topk can be used for troubleshooting and performance analysis.
+                        
+                        The query uses the process exporter, which is a Prometheus exporter specifically designed to expose process-level metrics. Unlike the node exporter, which provides system-wide metrics, the process exporter lets you see resource usage broken down by individual processes or groups of processes.
+                        
+                        In this example:
+                        
+                        1. We're calculating the rate of CPU seconds consumed by each process group over a 5-minute window
+                        2. We're aggregating (summing) these rates by the groupname label, which typically represents the process name
+                        3. We're using topk(3, ...) to select only the 3 process groups consuming the most CPU
+                        
+                        This query is invaluable when troubleshooting high CPU usage. Instead of just knowing that the CPU is busy, you can immediately identify which specific processes are responsible.
+                        
+                        The process exporter typically runs on port 9256, and it needs to be installed separately from the standard node exporter. If students are running these examples in the lab environment, you should ensure the process exporter is available or provide alternative examples.
+                        
+                        Beyond CPU usage, the process exporter also provides metrics for memory usage, file descriptors, thread counts, and more. These can all be used with topk to identify processes that are consuming various resources:
+                        
+                        - Memory: `topk(3, namedprocess_namegroup_memory_bytes{memtype="resident"})`
+                        - File descriptors: `topk(3, process_open_fds)`
+                        - Threads: `topk(3, process_threads)`
+                        
+                        This kind of process-level visibility is essential for effective troubleshooting in production environments. When a system is experiencing resource contention, quickly identifying the top consumers can significantly reduce mean time to resolution (MTTR).
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Subqueries for Trend Analysis</h2>
+                    <p>Analyze how metrics change over time windows</p>
+                    <aside class="notes">
+                        Subqueries are among the most powerful features in PromQL, enabling complex time-based analyses that would be difficult or impossible with standard queries. They represent a significant step up in PromQL complexity and capability.
+                        
+                        A subquery allows you to take a PromQL expression, evaluate it at regular intervals over a time range, and then apply an outer function to the results. This creates a "query within a query" structure that's perfect for trend analysis.
+                        
+                        Subqueries are particularly valuable for:
+                        
+                        - Analyzing how rates or other calculated values change over time
+                        - Computing moving averages, maximums, or other rolling statistics
+                        - Detecting anomalies by comparing current values to recent history
+                        - Identifying trends and patterns in metric behavior
+                        - Smoothing out noisy data for clearer visualization
+                        
+                        While powerful, subqueries can be computationally expensive and may put significant load on your Prometheus server. They should be used judiciously and with appropriate time ranges and resolution steps.
+                        
+                        Understanding subqueries requires grasping how nested time windows work and how the inner and outer expressions interact. Let's explore the syntax and structure of subqueries in the next slide.
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Subquery Syntax</h2>
+                    <pre><code class="language-promql"># Calculate max CPU usage in 5m intervals over last 30m
+max_over_time(
+  rate(node_cpu_seconds_total{instance="localhost:9100",mode="user"}[5m])[30m:5m]
+)</code></pre>
+                    <ul>
+                        <li>Format: <code>&lt;inner_query&gt;[&lt;range&gt;:&lt;resolution&gt;]</code></li>
+                        <li><b>inner_query</b>: Query executed at each resolution step</li>
+                        <li><b>range</b>: Total time window to analyze (30m)</li>
+                        <li><b>resolution</b>: How frequently to evaluate inner query (5m)</li>
+                    </ul>
+                    <aside class="notes">
+                        Let's dissect the syntax of subqueries using our example, which calculates the maximum CPU usage rate over 30 minutes with 5-minute intervals.
+                        
+                        A subquery has three main components:
+                        
+                        1. The inner query: This is the PromQL expression that will be evaluated at each step. In our example, it's `rate(node_cpu_seconds_total{instance="localhost:9100",mode="user"}[5m])`, which calculates the per-second rate of CPU usage in user mode over a 5-minute window.
+                        
+                        2. The range: This specifies the total time period to analyze, shown as `[30m` in our example. This means we're looking at the last 30 minutes of data.
+                        
+                        3. The resolution: This determines how frequently the inner query is evaluated within the range, shown as `:5m` in our example. This means the inner query will be evaluated every 5 minutes over the 30-minute range.
+                        
+                        The entire subquery is wrapped in an outer function, in this case `max_over_time()`. This function is applied to the results of the inner query evaluated at each resolution step. Other common outer functions include `avg_over_time()`, `min_over_time()`, and `quantile_over_time()`.
+                        
+                        To understand how this works in practice:
+                        
+                        1. Prometheus evaluates the rate of CPU usage in user mode over a 5-minute window.
+                        2. It repeats this calculation every 5 minutes across the 30-minute range, resulting in 6 data points (30m ÷ 5m = 6).
+                        3. The `max_over_time()` function then finds the maximum value among these 6 data points.
+                        
+                        The result tells us the highest rate of CPU usage in user mode observed in any 5-minute period during the last 30 minutes. This is useful for identifying peak usage periods and understanding usage patterns.
+                        
+                        When choosing range and resolution values, consider:
+                        - Longer ranges give more historical context but consume more resources
+                        - Finer resolutions (smaller step values) give more detail but generate more data points
+                        - The resolution should be at least as large as the inner query's range (`[5m]` in our example)
+                        
+                        Subqueries are computationally expensive, especially with large ranges and small resolutions, so use them judiciously.
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Subquery Applications</h2>
+                    <ul>
+                        <li>Find maximum/minimum values over extended periods</li>
+                        <li>Calculate rate of change for rates (second derivatives)</li>
+                        <li>Detect anomalies by comparing values to historical ranges</li>
+                        <li>Perform time-based aggregations on complex expressions</li>
+                        <li>Compute moving averages and other statistical measures</li>
+                    </ul>
+                    <aside class="notes">
+                        Now that we understand the syntax of subqueries, let's explore some practical applications that demonstrate their power and versatility.
+                        
+                        Finding maximum or minimum values over extended periods is one of the most common uses. For example, you might want to know the highest error rate observed in each service over the past day, which you could find with:
+                        ```
+                        max_over_time(rate(http_requests_total{status=~"5.."}[5m])[1d:10m])
+                        ```
+                        
+                        Calculating second derivatives (the rate of change of a rate) is another powerful application. This can help identify accelerating trends, such as rapidly increasing memory consumption that might lead to an out-of-memory condition:
+                        ```
+                        rate(rate(process_resident_memory_bytes[5m])[30m:5m])
+                        ```
+                        
+                        Anomaly detection is a sophisticated use case where subqueries really shine. By comparing current values to the historical range, you can identify outliers:
+                        ```
+                        rate(http_request_duration_seconds_count[5m]) > 
+                          2 * avg_over_time(rate(http_request_duration_seconds_count[5m])[1d:5m])
+                        ```
+                        This query triggers when the current request rate is more than twice the average rate over the past day.
+                        
+                        Time-based aggregations on complex expressions allow you to see how derived metrics evolve. For instance, tracking how the ratio of errors to total requests changes over time:
+                        ```
+                        avg_over_time(
+                          (rate(http_requests_total{status=~"5.."}[5m]) / 
+                           rate(http_requests_total[5m]))[1h:5m]
+                        )
+                        ```
+                        
+                        Moving averages are a classic use case that helps smooth noisy data and identify underlying trends:
+                        ```
+                        avg_over_time(rate(node_cpu_seconds_total{mode="user"}[5m])[1h:5m])
+                        ```
+                        This gives you a 1-hour moving average of CPU usage, updated every 5 minutes.
+                        
+                        These examples just scratch the surface of what's possible with subqueries. As students become more comfortable with them, they'll discover creative ways to analyze metric behavior and extract meaningful insights from their monitoring data.
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Detecting Missing Data</h2>
+                    <p>Monitor for metrics that should exist but don't</p>
+                    <aside class="notes">
+                        In monitoring, the absence of expected data can be just as significant as the presence of abnormal data. When a metric that should be reported suddenly disappears, it often indicates a serious problem like a service outage or a monitoring failure.
+                        
+                        Monitoring for missing data is an essential part of a comprehensive observability strategy. It helps you detect:
+                        
+                        - Service outages where the entire application stops reporting metrics
+                        - Monitoring failures where the collection pipeline breaks
+                        - Intermittent reporting issues that might indicate instability
+                        - Configuration errors that cause metrics to be dropped
+                        - Decommissioned or terminated instances that haven't been removed from monitoring
+                        
+                        Traditional threshold-based alerting doesn't work well for detecting missing data, because the absence of data isn't a value that can be compared to a threshold. This is where Prometheus's `absent` function becomes invaluable.
+                        
+                        The `absent` function is specifically designed to detect when metrics are missing. It's one of the few functions in PromQL that focuses on metadata rather than metric values, making it a unique and important tool in your monitoring arsenal.
+                        
+                        Let's explore how this function works and how you can use it to ensure your monitoring system itself is functioning correctly.
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>The absent Function</h2>
+                    <pre><code class="language-promql"># Check if metrics are missing
+absent(node_cpu_seconds_total{instance="localhost:9100"})</code></pre>
+                    <ul>
+                        <li>Returns 1 if the metric doesn't exist</li>
+                        <li>Returns nothing if the metric exists</li>
+                        <li>Perfect for alerting on missing metrics</li>
+                        <li>Helps detect scrape failures or service outages</li>
+                    </ul>
+                    <aside class="notes">
+                        The `absent` function has a simple but powerful behavior:
+                        
+                        - If the specified metric exists (even with multiple time series), `absent()` returns no data.
+                        - If the specified metric doesn't exist, `absent()` returns a time series with a value of 1 and no labels.
+                        
+                        This behavior makes it particularly well-suited for alerting. When combined with Prometheus's alerting rules, it allows you to trigger alerts when expected metrics disappear.
+                        
+                        In the example shown, we're checking if the `node_cpu_seconds_total` metric for a specific instance exists. This metric is fundamental to CPU monitoring with the node exporter, so its absence would likely indicate either:
+                        
+                        1. The node exporter process has stopped running
+                        2. The node itself is down
+                        3. There's a network issue preventing Prometheus from scraping the metrics
+                        
+                        The `absent` function should be used with specific selectors to narrow down which metrics you're checking for. If you use `absent(node_cpu_seconds_total)` without an instance selector, it will only return 1 if no instances at all are reporting this metric, which might not catch individual instance failures.
+                        
+                        This function is particularly valuable for monitoring critical services and the monitoring system itself. Common use cases include:
+                        
+                        - Detecting when specific exporters stop reporting metrics
+                        - Monitoring for the disappearance of business-critical metrics
+                        - Verifying that custom metrics from your applications are being properly reported
+                        - Ensuring that all expected instances of a service are reporting metrics
+                        
+                        For effective monitoring, you should identify the key metrics that must be present for each critical system and set up absent-based alerts for them. This provides an additional safety net beyond standard threshold-based alerts.
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Testing absent</h2>
+                    <pre><code class="language-promql"># This should return 1 (metric doesn't exist)
+absent(non_existent_metric{instance="localhost:9100"})</code></pre>
+                    <p>A common alert pattern using absent:</p>
+                    <pre class="smaller-text"><code class="language-yaml">- alert: NodeExporterDown
+  expr: absent(up{job="node_exporter"} == 1)
+  for: 5m
+  labels:
+    severity: critical
+  annotations:
+    summary: "Node Exporter down on {{$labels.instance}}"</code></pre>
+                    <aside class="notes">
+                        When teaching the absent function, it's helpful to provide a concrete way to test and understand its behavior. The example query shown demonstrates this perfectly:
+                        
+                        ```
+                        absent(non_existent_metric{instance="localhost:9100"})
+                        ```
+                        
+                        When students run this query in the Prometheus UI, they should see a result of 1, confirming that the function correctly detects missing metrics. This hands-on experience makes the concept more tangible.
+                        
+                        The second part of the slide shows a practical, real-world application: an alert rule that detects when the node exporter is down. Let's break this down:
+                        
+                        The expression `absent(up{job="node_exporter"} == 1)` is checking for the absence of the "up" metric with a value of 1 for the node_exporter job. The "up" metric is automatically generated by Prometheus for every scrape target and has a value of 1 when the target is up and 0 when it's down.
+                        
+                        By checking for the absence of "up" with a value of 1, we're effectively detecting when the node exporter is unreachable or reporting as down. This is a more reliable approach than just checking if up == 0, because it also catches cases where the metric is missing entirely.
+                        
+                        The "for: 5m" clause ensures the alert doesn't fire for brief connectivity issues, only for sustained outages.
+                        
+                        The severity label is set to "critical" because monitoring agent failures are typically high-priority issues that need immediate attention.
+                        
+                        The annotation template uses {{$labels.instance}} to include the specific instance name in the alert message, making it immediately clear which node has the issue.
+                        
+                        This alert pattern forms an essential part of monitoring your monitoring system. Similar patterns can be applied to detect:
+                        
+                        - When specific services stop reporting metrics
+                        - When expected metrics from custom applications are missing
+                        - When entire categories of metrics disappear, potentially indicating exporter configuration issues
+                        
+                        In production systems, these kinds of meta-monitoring alerts provide an important safety net that helps ensure your observability platform itself remains observable.
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Challenge: Memory Usage Comparison</h2>
+                    <p>Create a query that compares current memory usage with memory usage exactly one day ago and calculates the percentage change.</p>
+                    <div class="fragment">
+                        <h3>Solution:</h3>
+                        <pre class="smallest-text"><code class="language-promql">(
+  (100 * (1 - (node_memory_MemAvailable_bytes{instance="localhost:9100"} / 
+     node_memory_MemTotal_bytes{instance="localhost:9100"})))
+  -
+  (100 * (1 - (node_memory_MemAvailable_bytes{instance="localhost:9100"} offset 1d / 
+     node_memory_MemTotal_bytes{instance="localhost:9100"} offset 1d)))
+)
+/
+(100 * (1 - (node_memory_MemAvailable_bytes{instance="localhost:9100"} offset 1d / 
+   node_memory_MemTotal_bytes{instance="localhost:9100"} offset 1d)))
+* 100</code></pre>
+                    </div>
+                    <aside class="notes">
+                        This challenge combines many of the concepts we've covered in this lab. First, guide students through breaking down this complex problem:
+                        
+                        1. Explain that we need to first calculate memory usage percentage at two points in time (current and one day ago)
+                        2. Each memory usage calculation requires: 100 * (1 - (available / total))
+                        3. For the historical comparison, we use the offset modifier
+                        4. To calculate percentage change: (new - old) / old * 100
+                        
+                        Allow students time to attempt the solution before revealing it. When reviewing, walk through each part of the calculation:
+                        - Top part calculates the difference between current and historical usage percentages
+                        - Bottom part divides by the historical usage (to get relative change)
+                        - Multiplying by 100 converts to percentage
+                        
+                        Point out that positive values mean increased memory usage, negative values mean decreased usage.
+                        
+                        Remind students that for testing in environments with limited historical data, they can use shorter offsets like 10m or 1h instead of 1d.
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Simplifying with Recording Rules</h2>
+                    <pre class="smaller-text"><code class="language-yaml"># In prometheus.yml rules section:
+groups:
+  - name: memory_usage
+    rules:
+      - record: memory_usage_percent
+        expr: 100 * (1 - (node_memory_MemAvailable_bytes{instance="localhost:9100"} / 
+               node_memory_MemTotal_bytes{instance="localhost:9100"}))</code></pre>
+                    <p>Then the comparison becomes much simpler:</p>
+                    <pre><code class="language-promql">(memory_usage_percent - memory_usage_percent offset 1d) / 
+memory_usage_percent offset 1d * 100</code></pre>
+                    <aside class="notes">
+                        This slide highlights the practical value of recording rules, which is a great opportunity to reinforce their benefits:
+                        
+                        1. Explain that recording rules provide a way to precompute complex expressions and save them as new time series
+                        2. This not only makes queries more readable but also improves performance
+                        3. Note that the rule creates a new metric called memory_usage_percent that's calculated at scrape time
+                        
+                        When discussing the simplified query, emphasize:
+                        - How much cleaner and more maintainable the percentage change calculation becomes
+                        - That this approach separates the logic for "what is memory usage" from "how has it changed"
+                        - That recording rules are ideal for expressions that get reused in multiple dashboards or alerts
+                        
+                        Remind students that complex PromQL expressions like this are perfect candidates for recording rules, especially when:
+                        - They're used in multiple places
+                        - They're computationally expensive
+                        - They improve readability and maintainability of other queries
+                        
+                        This ties back to Lab 7 on Recording Rules and Alerting, showing how these concepts work together in practice.
+                    </aside>
+                </section>
+
+                <section>
+                    <h1>🌟 Great job!</h1>
+                    <p>Continue to Lab 9: Histograms and Quantiles</p>
+                    <p><small>Navigate: <a href="../index.html">All Slides</a> | <a href="../09_Histograms_Quantiles/index.html">Next Lab</a></small></p>
+                    <aside class="notes">
+                        Congratulate students on completing this advanced lab! This is a good moment to:
+                        
+                        1. Summarize the key concepts covered:
+                           - Label manipulation with label_replace and label_join
+                           - Historical comparisons using offset
+                           - Finding top/bottom resources with topk/bottomk
+                           - Complex time-based analysis with subqueries
+                           - Detecting missing data with the absent function
+                           - Simplifying complex queries with recording rules
+                        
+                        2. Emphasize how these advanced techniques enable:
+                           - More sophisticated monitoring patterns
+                           - Better troubleshooting capabilities
+                           - More targeted and efficient alerting
+                           - Cleaner, more maintainable queries
+                        
+                        3. Prepare students for Lab 9:
+                           - Lab 9 will cover histograms and quantiles
+                           - These are essential for observing and analyzing latency distributions
+                           - Builds on the advanced techniques they've just learned
+                        
+                        4. Encourage questions about any concepts they're still unsure about
+                           
+                        Remind students they can always refer back to the lab materials as reference when implementing these techniques in their own environments.
+                    </aside>
+                </section>
+            </div>
+		</div>
+
+		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/dist/reveal.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/plugin/notes/notes.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/plugin/markdown/markdown.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/plugin/highlight/highlight.js"></script>
+		<script>
+			// More info about initialization & config:
+			// - https://revealjs.com/initialization/
+			// - https://revealjs.com/config/
+			Reveal.initialize({
+				hash: true,
+                slideNumber: true,
+				// Learn about plugins: https://revealjs.com/plugins/
+				plugins: [ RevealMarkdown, RevealHighlight, RevealNotes ]
+			});
+		</script>
+	</body>
+</html>

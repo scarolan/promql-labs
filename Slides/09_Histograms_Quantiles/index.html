@@ -1,0 +1,592 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<title>Lab 9: Histograms and Quantiles</title>
+
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/dist/reset.css">
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/dist/reveal.css">
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/dist/theme/night.css">
+
+		<!-- Theme used for syntax highlighted code -->
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/plugin/highlight/monokai.css">
+        <style>
+            .reveal pre {
+                margin: 0;
+                box-shadow: none;
+            }
+            .reveal pre code {
+                padding: 20px;
+                max-height: 400px;
+                line-height: 1.2;
+            }
+            .two-column {
+                display: flex;
+                justify-content: space-between;
+            }
+            .two-column .left {
+                width: 48%;
+            }
+            .two-column .right {
+                width: 48%;
+            }
+            .reveal .smaller-text {
+                font-size: 0.8em;
+            }
+            .reveal .smallest-text {
+                font-size: 0.6em;
+            }
+            .reveal img.border {
+                border: 1px solid #fff;
+                box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            }
+        </style>
+	</head>
+	<body>
+		<div class="reveal">
+			<div class="slides">
+                <section>
+                    <h1>Lab 9: Histograms and Quantiles</h1>
+                    <p>📊 Advanced PromQL</p>
+                    <p><small>Navigate: <a href="../index.html">All Slides</a></small></p>
+                    <aside class="notes">
+                        Welcome to our final lab in the PromQL series, focused on histograms and quantiles. This is one of the most powerful yet challenging aspects of Prometheus.
+                        
+                        Histograms are essential for understanding distributions, especially for latency and response time metrics. While previous labs helped us answer questions about "how much" or "how many," histograms help us answer questions about "how fast" and "how consistent."
+                        
+                        This lab builds upon all the concepts we've learned so far and will complete our journey by showing how to analyze performance distributions, set meaningful SLOs, and create synthetic histograms for metrics that aren't already in histogram form.
+                        
+                        As this is the final lab, encourage students to apply these techniques to their own infrastructure after completing the course. The skills from this lab are particularly valuable for SRE work and service reliability.
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Objectives</h2>
+                    <ul>
+                        <li>Understand histogram metrics and their bucket structure</li>
+                        <li>Learn how to use the histogram_quantile function</li>
+                        <li>Analyze latency distributions with bucketing</li>
+                        <li>Calculate SLO-related metrics</li>
+                        <li>Create synthetic histograms for metrics</li>
+                    </ul>
+                    <aside class="notes">
+                        Let's review our objectives for this lab:
+                        
+                        First, we'll understand what histogram metrics are and how they're structured with buckets. Unlike simple counters or gauges, histograms have a special structure designed for distribution analysis.
+                        
+                        Second, we'll master the histogram_quantile function, which is the key to extracting percentile data from histogram metrics. This function lets us answer questions like "What's our 95th percentile latency?"
+                        
+                        Third, we'll analyze latency distributions with bucketing, seeing how we can track performance across different thresholds.
+                        
+                        Fourth, we'll calculate SLO-related metrics like error budgets, which are critical for modern service reliability engineering.
+                        
+                        Finally, we'll learn how to create synthetic histograms for metrics that aren't inherently in histogram format, extending the power of distribution analysis to other metrics.
+                        
+                        Each of these skills builds on concepts from previous labs but takes our PromQL knowledge to a more sophisticated level.
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>What are Histogram Metrics?</h2>
+                    <ul>
+                        <li>Special metric type that tracks value distributions</li>
+                        <li>Records observations in predefined buckets</li>
+                        <li>Designed to measure durations and sizes</li>
+                        <li>Perfect for latency, request sizes, response sizes</li>
+                        <li>Enable percentile calculations</li>
+                    </ul>
+                    <aside class="notes">
+                        Histograms are a fundamental concept in monitoring and statistics. Let me explain why they're so important:
+                        
+                        Regular metrics like counters and gauges tell us about totals or current values, but they don't capture how values are distributed. For example, an average request time of 200ms tells us nothing about whether most requests are fast with a few outliers, or if they're all consistently around 200ms.
+                        
+                        Prometheus histograms solve this by tracking the distribution of values across predefined buckets. Each bucket counts observations that fall below a certain threshold.
+                        
+                        Histograms are particularly valuable for measuring distributions of durations (like request latency), sizes (like response payload size), and other values where the distribution matters.
+                        
+                        The key benefit is they enable percentile calculations, letting us understand the experience of different segments of our users. For example, we can see what latency the 95% fastest requests experience versus the slowest 5%.
+                        
+                        When teaching this concept, emphasize that while average values can be useful, they often hide important details about performance outliers that histograms reveal.
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Histogram Structure</h2>
+                    <pre><code class="language-promql"># Examine the structure of a histogram metric
+prometheus_http_request_duration_seconds_bucket</code></pre>
+                    <ul>
+                        <li>Multiple time series with <code>le</code> (less than or equal) labels</li>
+                        <li>Each bucket counts observations below its threshold</li>
+                        <li>Common buckets: 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10</li>
+                        <li>Final bucket <code>+Inf</code> counts all observations</li>
+                    </ul>
+                    <aside class="notes">
+                        Let's dive into the actual structure of histogram metrics in Prometheus:
+                        
+                        When you query a histogram metric like prometheus_http_request_duration_seconds_bucket, you'll see multiple time series that all represent the same metric but with different "le" (less than or equal) labels. These labels define the bucket boundaries.
+                        
+                        A crucial point to understand is that histogram buckets in Prometheus are cumulative. Each bucket counts all observations that are less than or equal to its threshold. For example, the bucket with le="0.1" includes all observations ≤ 100ms.
+                        
+                        The bucket thresholds typically follow exponential growth to capture both small and large values effectively. The common pattern shown here covers measurements from 5ms up to 10 seconds, which works well for most web services.
+                        
+                        The final bucket with le="+Inf" (infinity) is special - it counts all observations regardless of value. This should match the total count metric that's exported alongside the buckets.
+                        
+                        When demonstrating this in class, it's helpful to query a real histogram metric and show students the raw data structure before moving on to using functions that operate on this structure.
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Exploring Histogram Buckets</h2>
+                    <pre><code class="language-promql"># Filter to see specific bucket counts
+prometheus_http_request_duration_seconds_bucket{handler="/api/v1/query"}</code></pre>
+                    <p>Returns a list of buckets with cumulative counts:</p>
+                    <ul class="smaller-text">
+                        <li><code>le="0.1"</code>: 1200 requests ≤ 100ms</li>
+                        <li><code>le="0.5"</code>: 1450 requests ≤ 500ms</li>
+                        <li><code>le="1"</code>: 1490 requests ≤ 1s</li>
+                        <li><code>le="+Inf"</code>: 1500 total requests (all)</li>
+                    </ul>
+                    <aside class="notes">
+                        This slide shows how to explore the bucket structure of a specific histogram metric. Here we're focusing on a specific API endpoint by filtering for the handler="/api/v1/query" label.
+                        
+                        When teaching this section, it's valuable to run this query in the Prometheus UI and show the actual results. Let's analyze what the example results tell us:
+                        
+                        - 1200 requests took 100ms or less (80% of all requests)
+                        - 1450 requests took 500ms or less (96.7% of all requests)
+                        - 1490 requests took 1 second or less (99.3% of all requests)
+                        - The total number of requests measured was 1500 (represented by the +Inf bucket)
+                        
+                        From this data, we can determine that:
+                        - Most requests (80%) are relatively fast (≤100ms)
+                        - A small number (40 requests or ~2.7%) took between 500ms and 1s
+                        - Very few (10 requests or ~0.7%) took more than 1s
+                        
+                        This is exactly the kind of distribution insight that's impossible to get from simple averages or even rate calculations. Emphasize to students that this granular understanding of request distribution is crucial for setting realistic SLOs and identifying performance issues.
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>The histogram_quantile Function</h2>
+                    <pre><code class="language-promql"># Calculate 95th percentile latency
+histogram_quantile(0.95, sum(rate(prometheus_http_request_duration_seconds_bucket[5m])) by (le))</code></pre>
+                    <ul>
+                        <li>Calculates percentiles from histogram buckets</li>
+                        <li>Result: Value below which 95% of observations fall</li>
+                        <li>Format: <code>histogram_quantile(φ float, b instant-vector)</code></li>
+                        <li>φ: Quantile between 0 and 1 (e.g., 0.95 for 95th percentile)</li>
+                        <li>b: Vector of bucket counts with the <code>le</code> label</li>
+                    </ul>
+                    <aside class="notes">
+                        The histogram_quantile function is the cornerstone of histogram analysis in Prometheus. This function lets us extract percentile information from histogram bucket data.
+                        
+                        Let's break down the example query:
+                        1. We start with the raw bucket data (prometheus_http_request_duration_seconds_bucket)
+                        2. Apply rate() to get the rate of increase for each bucket over 5 minutes
+                        3. Sum the rates across all instances/labels while preserving the le label with sum() by (le)
+                        4. Finally, calculate the 95th percentile from this aggregated bucket data
+                        
+                        The result gives us the value at which 95% of requests are faster and 5% are slower. This is much more useful than averages for understanding service performance, especially for user-facing services.
+                        
+                        Important implementation details to note:
+                        - Prometheus uses linear interpolation within buckets to estimate the specific percentile
+                        - The accuracy depends on the bucket definitions - narrower buckets around crucial thresholds improve accuracy
+                        - Always make sure to aggregate the bucket data correctly, preserving the le label
+                        
+                        When teaching this, demonstrate how different quantile values (0.5, 0.9, 0.99) reveal different aspects of performance and how the results change during periods of normal operation versus during incidents.
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Common Quantiles</h2>
+                    <ul>
+                        <li><b>0.5</b>: Median (50th percentile)</li>
+                        <li><b>0.9</b>: 90th percentile</li>
+                        <li><b>0.95</b>: 95th percentile</li>
+                        <li><b>0.99</b>: 99th percentile</li>
+                        <li><b>0.999</b>: 99.9th percentile</li>
+                    </ul>
+                    <p>Higher percentiles measure worst-case performance that affects a small percentage of requests</p>
+                    <aside class="notes">
+                        This slide covers the most commonly used quantiles in performance monitoring. Each one serves a specific purpose:
+                        
+                        The 0.5 quantile (median) represents the "typical" user experience - half of requests are faster, half are slower. It's more robust to outliers than the mean.
+                        
+                        The 0.9 (90th percentile) tells us about the experience of the majority of users while excluding the worst outliers. Many SLOs are defined at this level.
+                        
+                        The 0.95 and 0.99 percentiles are increasingly focused on the slower tail of requests. They help us understand how bad the experience is for users encountering slowness.
+                        
+                        The 0.999 percentile (99.9th) represents the worst-case scenarios that affect only 1 in 1000 requests, but could still impact a significant number of users in high-volume services.
+                        
+                        When teaching this section, emphasize that:
+                        1. Different services may have different critical percentiles depending on their use case
+                        2. Higher percentiles are more sensitive to performance degradations, making them good early warning indicators
+                        3. Optimizing for higher percentiles often requires different strategies than optimizing for the average case
+                        
+                        A good discussion point is asking students which percentiles would be most important for different types of services (e.g., web frontends vs. background processing jobs).
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Analyzing Latency by Handler</h2>
+                    <pre><code class="language-promql"># Calculate median latency by handler
+histogram_quantile(0.5, sum by (handler, le) (
+  rate(prometheus_http_request_duration_seconds_bucket[5m])
+))</code></pre>
+                    <ul>
+                        <li>Preserves <code>handler</code> label during aggregation</li>
+                        <li>Calculates median (50th percentile) for each handler separately</li>
+                        <li>Allows comparison of performance across different endpoints</li>
+                        <li>Can identify slow endpoints that need optimization</li>
+                    </ul>
+                    <aside class="notes">
+                        This slide demonstrates a powerful technique for performance analysis - calculating percentiles separately for different endpoints or handlers.
+                        
+                        The key here is the aggregation: sum by (handler, le). By including both the handler label and the le label in our aggregation, we maintain separate histogram buckets for each handler, allowing us to calculate percentiles for each one independently.
+                        
+                        This approach lets us:
+                        1. Compare the performance profiles of different endpoints
+                        2. Identify specific endpoints that are underperforming
+                        3. Prioritize optimization efforts based on which endpoints are slowest
+                        
+                        When teaching this technique, emphasize that:
+                        - Without the handler label in the by clause, we'd get a single percentile across all handlers, obscuring differences
+                        - You can use this pattern with any label, not just handler (e.g., by method, status code, client type)
+                        - This pattern is essential for microservice architectures where different endpoints have different performance characteristics
+                        
+                        A good exercise is to have students modify the query to look at 95th percentile instead of median, or to group by a different dimension like HTTP status code to see if error responses have different latency profiles.
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>SLO Metrics with Histograms</h2>
+                    <pre class="smaller-text"><code class="language-promql"># Percentage of requests under 500ms (0.5s) SLO threshold
+(sum(rate(prometheus_http_request_duration_seconds_bucket{le="0.5"}[5m])) / 
+sum(rate(prometheus_http_request_duration_seconds_count[5m]))) * 100</code></pre>
+                    <ul>
+                        <li>Calculates what percentage of requests meet SLO threshold</li>
+                        <li>Divides count of requests in buckets under 0.5s by total count</li>
+                        <li>Essential for monitoring Service Level Objectives (SLOs)</li>
+                        <li>Can track compliance with performance guarantees</li>
+                    </ul>
+                    <aside class="notes">
+                        This slide demonstrates one of the most practical applications of histogram metrics - calculating SLO compliance.
+                        
+                        The query shows how to calculate what percentage of requests complete within your SLO threshold (in this case, 500ms):
+                        1. The numerator counts requests in the le="0.5" bucket (requests ≤ 500ms)
+                        2. The denominator uses the special _count suffix to get the total number of requests
+                        3. Dividing and multiplying by 100 gives us the percentage of compliant requests
+                        
+                        When teaching this concept, emphasize that:
+                        - This pattern works with any threshold, but you need a bucket that matches your SLO threshold exactly
+                        - If your threshold doesn't match a bucket boundary, you'll need to use histogram_quantile or consider modifying your exporters' bucket definitions
+                        - This type of metric is ideal for dashboards and alerting on SLO compliance
+                        
+                        A valuable extension is to show how to create a recording rule for this calculation so it can be efficiently reused across dashboards and alerts.
+                        
+                        Also point out that SLOs typically target specific percentiles (like 99% of requests under 500ms), so this metric directly measures compliance with that type of objective.
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Error Budget Calculation</h2>
+                    <pre class="smaller-text"><code class="language-promql"># Percentage of requests exceeding 500ms SLO threshold
+(1 - sum(rate(prometheus_http_request_duration_seconds_bucket{le="0.5"}[5m])) / 
+sum(rate(prometheus_http_request_duration_seconds_count[5m]))) * 100</code></pre>
+                    <ul>
+                        <li><b>SLI</b> (Service Level Indicator): The actual measurement</li>
+                        <li><b>SLO</b> (Service Level Objective): Target (e.g., 99% of requests < 500ms)</li>
+                        <li><b>Error Budget</b>: Allowable non-compliance (e.g., 1% of requests can exceed threshold)</li>
+                    </ul>
+                    <aside class="notes">
+                        This slide builds on the previous one by flipping the perspective to focus on error budget consumption rather than SLO compliance.
+                        
+                        The query is nearly identical to the previous slide, but with "1 -" at the beginning, calculating the percentage of requests that exceed our threshold rather than meet it. This is the error budget consumption rate.
+                        
+                        When teaching this slide, introduce the formal terminology that SRE teams use:
+                        
+                        SLI (Service Level Indicator) is the raw measurement - in this case, request latency.
+                        
+                        SLO (Service Level Objective) is the target we commit to - like 99% of requests completing in under 500ms.
+                        
+                        Error Budget is the allowable "failure" we permit - if our SLO is 99% compliance, our error budget is 1%.
+                        
+                        This framework is powerful because it:
+                        1. Quantifies reliability in measurable terms
+                        2. Creates a shared language between engineering and business stakeholders
+                        3. Allows teams to make data-driven reliability vs. velocity tradeoffs
+                        
+                        A good discussion point is how teams might use error budgets to determine when to focus on new features versus fixing reliability issues. For example, if error budget consumption is too high, the team might pause feature development until reliability improves.
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Working with Gauge Metrics</h2>
+                    <pre><code class="language-promql"># Calculate rate of change for a gauge metric
+deriv(node_memory_Active_bytes{instance="localhost:9100"}[1h])</code></pre>
+                    <ul>
+                        <li>The <code>deriv</code> function calculates per-second derivative</li>
+                        <li>Shows how quickly a gauge value is changing</li>
+                        <li>Useful for trending and forecasting resource usage</li>
+                        <li>Gauge metrics use <code>deriv()</code> instead of <code>rate()</code></li>
+                    </ul>
+                    <aside class="notes">
+                        While we've been focusing on histograms, this slide makes an important detour to discuss gauges, which are another fundamental metric type.
+                        
+                        The deriv() function is crucial for analyzing gauge metrics when you're interested in how quickly they're changing rather than their absolute value. It calculates the per-second rate of change over the specified time window.
+                        
+                        Key teaching points:
+                        
+                        1. Unlike counters which always increase and use rate(), gauges can go up and down and require deriv() for rate analysis
+                        2. The time range parameter [1h] determines how much data is used to calculate the trend - longer ranges smooth out short-term fluctuations
+                        3. The result is in "units per second" - in this case, bytes per second of memory usage change
+                        
+                        This function is valuable for:
+                        - Detecting gradual resource leaks (slow but consistent increase)
+                        - Early warning of capacity issues (accelerating usage patterns)
+                        - Understanding usage patterns over time
+                        
+                        When demonstrating this, it's helpful to show both a steadily increasing gauge (like memory usage during a leak) and a cyclical gauge (like CPU usage with regular patterns) to see how deriv() behaves differently in each case.
+                        
+                        This relates to histograms because both deriv() and histogram_quantile() help us understand the behavior of metrics beyond simple averages.
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Predicting Future Values</h2>
+                    <pre><code class="language-promql"># Predict memory usage 1 hour in the future
+predict_linear(node_memory_Active_bytes{instance="localhost:9100"}[1h], 3600)</code></pre>
+                    <ul>
+                        <li>Uses linear regression on recent data points</li>
+                        <li>Extrapolates future values based on current trends</li>
+                        <li>3600 represents seconds in the future to predict (1 hour)</li>
+                        <li>Great for predictive alerting before problems occur</li>
+                    </ul>
+                    <aside class="notes">
+                        The predict_linear function is a powerful tool for moving from reactive to proactive monitoring. It extends our earlier discussion of deriv() by not just measuring the current rate of change, but extrapolating that trend into the future.
+                        
+                        Key points to emphasize when teaching this:
+                        
+                        1. predict_linear() uses least-squares regression on the data points in the time range, so it's more sophisticated than simple linear extrapolation
+                        
+                        2. The function takes two parameters:
+                           - A range vector (node_memory_Active_bytes{instance="localhost:9100"}[1h])
+                           - The number of seconds into the future to predict (3600 = 1 hour)
+                        
+                        3. This is especially valuable for capacity planning and early warning alerts
+                        
+                        Practical applications include:
+                        - Alerting when disk space is predicted to fill within 24 hours
+                        - Warning when memory growth suggests an impending OOM situation
+                        - Forecasting when CPU usage will hit throttling thresholds
+                        
+                        It's important to note the limitations:
+                        - Assumes linear growth/decline will continue
+                        - Accuracy depends on the input time range and recent behavior
+                        - Works best with metrics that have clear directional trends
+                        
+                        A good exercise is to have students create an alert that fires when predict_linear suggests a resource will be exhausted within a certain timeframe.
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Challenge: CPU Usage Distribution</h2>
+                    <p>Create a heatmap-compatible query that shows the distribution of CPU usage over time using quantiles.</p>
+                    <aside class="notes">
+                        This challenge brings together everything we've learned about histograms, but with an interesting twist - creating histogram-like data from a metric that isn't natively a histogram.
+                        
+                        When presenting this challenge, guide students to think through these steps:
+                        
+                        1. First, remind them that CPU usage is typically a gauge metric (not a histogram), so we need to create synthetic buckets
+                        
+                        2. They'll need to calculate CPU usage as a percentage first (similar to earlier labs)
+                        
+                        3. Then they'll need to group these values into discrete buckets (e.g., 0-5%, 5-10%, etc.)
+                        
+                        4. Finally, they'll need to format the data in a way that's compatible with heatmap visualization
+                        
+                        This is an advanced challenge that tests students' understanding of both PromQL and the conceptual model of histograms.
+                        
+                        For students who are stuck:
+                        - Suggest researching the quantize function or using floor/ceil with division and multiplication
+                        - Remind them about the count_values function for grouping values into buckets
+                        - Point out they need to create a structure with the le label for proper heatmap visualization
+                        
+                        If time permits, ask students why they might want to visualize CPU usage as a distribution over time rather than just as an average or max value.
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Challenge Solution</h2>
+                    <pre class="smallest-text"><code class="language-promql"># Create synthetic buckets from CPU usage
+quantize(
+  clamp_max(
+    100 * (1 - (avg by (instance) (rate(node_cpu_seconds_total{instance="localhost:9100",mode="idle"}[5m])) / 
+    count by (instance) (node_cpu_seconds_total{instance="localhost:9100",mode="idle"}))),
+    100
+  ),
+  5
+) by (instance)</code></pre>
+                    <ul>
+                        <li>Calculates CPU usage as a percentage</li>
+                        <li>Uses <code>clamp_max</code> to ensure no values exceed 100%</li>
+                        <li>Uses <code>quantize</code> to create synthetic buckets with 5% increments</li>
+                    </ul>
+                    <aside class="notes">
+                        This slide shows the first part of the solution to our challenge. Let's walk through it:
+                        
+                        First, we calculate CPU usage as a percentage using the formula from earlier labs:
+                        100 * (1 - (idle CPU rate / total CPU count))
+                        
+                        We use avg and count by instance to get per-instance values, which is more meaningful for a distribution analysis.
+                        
+                        Next, we apply clamp_max() to ensure our values don't exceed 100%, which could happen due to precision issues.
+                        
+                        Finally, we use quantize() with a value of 5, which rounds values to the nearest 5 units. This creates our bucket boundaries at 0%, 5%, 10%, etc.
+                        
+                        When explaining this solution:
+                        - Point out that we're essentially creating a custom bucketing function
+                        - Explain that the "by (instance)" ensures we maintain separate distributions per instance
+                        - Note that quantize() is creating discrete steps that will form our heatmap's Y-axis
+                        
+                        This solution demonstrates how we can adapt non-histogram metrics to histogram-like analysis patterns, which is a powerful technique for applying distribution analysis broadly.
+                        
+                        The next slide will show how to transform this into a proper heatmap-compatible format.
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Heatmap Query</h2>
+                    <pre class="smallest-text"><code class="language-promql"># Create histogram for heatmap visualization
+sum(count_values("le", floor(clamp_max(
+  100 * (1 - (avg by (instance) (rate(node_cpu_seconds_total{instance="localhost:9100",mode="idle"}[5m])) / 
+  count by (instance) (node_cpu_seconds_total{instance="localhost:9100",mode="idle"}))), 
+  100) / 5) * 5)
+) by (le)</code></pre>
+                    <ul class="smaller-text">
+                        <li>Creates CPU usage buckets with 5% granularity</li>
+                        <li>Groups values using <code>count_values</code> with bucket as label</li>
+                        <li>Aggregates counts by bucket, creating histogram structure</li>
+                        <li>Visualized as heatmap in Grafana with time on X-axis, buckets on Y-axis</li>
+                    </ul>
+                    <aside class="notes">
+                        This slide completes our challenge solution, showing how to create a proper histogram-compatible format for heatmap visualization. The approach here is quite sophisticated:
+                        
+                        We start with the same CPU percentage calculation as before, but now we're:
+                        
+                        1. Using floor() and division/multiplication by 5 to create bucketing with 5% granularity
+                        
+                        2. Using count_values("le", ...) to create a metric where:
+                           - The label is "le" (making it look like a histogram bucket)
+                           - The label value is the bucket boundary (0, 5, 10, etc.)
+                           - The value is the count of instances in that bucket
+                        
+                        3. Finally, we sum by (le) to aggregate these counts across all instances while preserving the bucket structure
+                        
+                        When teaching this slide:
+                        - Emphasize that "le" is the magic label name that makes heatmaps work
+                        - Explain that Grafana will recognize this format as histogram buckets
+                        - Point out that we're essentially building a frequency distribution of CPU usage values
+                        
+                        If you have access to Grafana, this is an excellent opportunity for a live demo where you:
+                        1. Create the query in Prometheus
+                        2. Configure a heatmap visualization in Grafana
+                        3. Show how the color intensity reveals the distribution of CPU usage over time
+                        
+                        This technique is extremely valuable for understanding variability and patterns in metrics that aren't natively histograms.
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>What's Next?</h2>
+                    <ul>
+                        <li>Apply these concepts to your infrastructure metrics</li>
+                        <li>Create custom Grafana dashboards with advanced PromQL</li>
+                        <li>Implement SLOs using histogram techniques</li>
+                        <li>Share your knowledge with your team</li>
+                        <li>Continue practicing to improve your PromQL mastery</li>
+                    </ul>
+                    <aside class="notes">
+                        As we near the end of our PromQL journey, this is a good time to discuss how students can apply what they've learned in real-world scenarios:
+                        
+                        Encourage students to identify metrics in their own infrastructure that would benefit from histogram analysis. These might include:
+                        - API request latencies
+                        - Database query times
+                        - Batch job durations
+                        - Queue processing times
+                        
+                        Discuss how the custom dashboard creation process typically works:
+                        1. Start with exploratory PromQL queries to understand the data
+                        2. Refine the queries to focus on the most meaningful metrics
+                        3. Create visualization panels that highlight important patterns
+                        4. Organize panels into cohesive dashboards
+                        
+                        For implementing SLOs, suggest a practical approach:
+                        1. Identify critical user journeys or system functions
+                        2. Define meaningful thresholds based on user experience
+                        3. Set realistic SLO targets based on historical performance
+                        4. Create recording rules and alerts to monitor compliance
+                        
+                        Finally, emphasize that PromQL mastery comes with practice - encourage students to:
+                        - Start with simple queries and gradually add complexity
+                        - Review the Prometheus documentation regularly
+                        - Share queries and learn from others in the community
+                        - Document useful patterns they discover for their team
+                        
+                        This is also a good time to answer any remaining questions about the course material.
+                    </aside>
+                </section>
+
+                <section>
+                    <h1>🌟 Congratulations!</h1>
+                    <p>You've completed all the PromQL labs!</p>
+                    <p>You've mastered a comprehensive set of PromQL skills, from basic queries to advanced histogram analysis.</p>
+                    <p><small>Navigate: <a href="../index.html">All Slides</a></small></p>
+                    <aside class="notes">
+                        Congratulations! You've successfully guided your students through all the PromQL labs, from basic metrics to advanced histogram analysis.
+                        
+                        This is a good moment to recap the full journey:
+                        
+                        1. We started with PromQL fundamentals and basic CPU exploration
+                        2. We advanced to rates, aggregation, and memory/filesystem metrics
+                        3. We tackled network metrics and advanced CPU anomaly detection
+                        4. We learned to correlate metrics and implement recording rules and alerting
+                        5. We mastered advanced operations like label manipulation and offsets
+                        6. And finally, we conquered histograms and percentile analysis
+                        
+                        Emphasize that students have built a valuable, transferable skill set that's in high demand. Prometheus and PromQL knowledge is directly applicable to:
+                        - Cloud-native monitoring
+                        - SRE practices
+                        - Kubernetes observability
+                        - Modern DevOps pipelines
+                        
+                        Thank your students for their participation and encourage them to:
+                        - Join Prometheus community forums or discussion groups
+                        - Continue exploring the Prometheus documentation
+                        - Share their dashboards and queries with others
+                        - Consider contributing to Prometheus or related open-source projects
+                        
+                        Invite any final questions or feedback, and remind students that they can always revisit the lab materials as a reference in their future work.
+                    </aside>
+                </section>
+            </div>
+		</div>
+
+		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/dist/reveal.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/plugin/notes/notes.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/plugin/markdown/markdown.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/plugin/highlight/highlight.js"></script>
+		<script>
+			// More info about initialization & config:
+			// - https://revealjs.com/initialization/
+			// - https://revealjs.com/config/
+			Reveal.initialize({
+				hash: true,
+                slideNumber: true,
+				// Learn about plugins: https://revealjs.com/plugins/
+				plugins: [ RevealMarkdown, RevealHighlight, RevealNotes ]
+			});
+		</script>
+	</body>
+</html>

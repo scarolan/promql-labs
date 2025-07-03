@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prometheus Overview</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/dist/reset.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/dist/reveal.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/dist/theme/night.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.7.0/styles/monokai-sublime.css">
+</head>
+<body>
+    <div class="reveal">
+        <div class="slides">
+            <section data-markdown>
+                <textarea data-template>
+                    ## Prometheus Overview
+                    ### A Modern Monitoring System
+                    
+                    PromQL Labs
+                    
+                    Note:
+                    Welcome to this introduction to Prometheus! This overview session will give you a solid foundation in Prometheus before we dive into the practical labs.
+                    
+                    Prometheus has become the de-facto standard for monitoring in cloud-native environments. It's an open-source system that collects and stores metrics as time-series data, with a powerful query language for analyzing that data.
+                    
+                    Throughout this session, we'll explore what makes Prometheus unique, how it works, and why it has become so popular in modern infrastructure monitoring. We'll cover its architecture, components, data model, and ecosystem.
+                    
+                    This knowledge will prepare you for the hands-on labs where you'll learn to write PromQL queries of increasing complexity to solve real-world monitoring challenges.
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## What is Prometheus?
+
+                    * Open-source monitoring and alerting toolkit
+                    * Originally built at SoundCloud (2012)
+                    * Part of Cloud Native Computing Foundation (CNCF)
+                    * Second project to graduate from CNCF (after Kubernetes)
+                    * Designed for reliability during service outages
+                    
+                    Note:
+                    Prometheus is fundamentally an open-source monitoring and alerting toolkit designed for reliability and scalability.
+                    
+                    Its history is interesting - it was originally developed at SoundCloud in 2012 when they couldn't find a monitoring solution that met their needs for their microservices architecture. The name "Prometheus" comes from Greek mythology - the Titan who gave fire to humanity, reflecting how the tool illuminates what's happening in your systems.
+                    
+                    In 2016, Prometheus joined the Cloud Native Computing Foundation (CNCF), the same organization that hosts Kubernetes. In 2018, it became the second project, after Kubernetes, to graduate from the CNCF, which signifies its maturity and adoption in the industry.
+                    
+                    One of Prometheus's key design principles is reliability during outages. Since monitoring systems need to be especially reliable during service disruptions (exactly when you need visibility the most), Prometheus was built to be as self-contained and reliable as possible, with no external dependencies in its basic functionality.
+                    
+                    This focus on reliability means Prometheus prefers simplicity over complexity and avoids distributed architectures with many moving parts that could fail.
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## Key Features
+                    
+                    * Multi-dimensional data model (time series with key-value pairs)
+                    * Flexible query language (PromQL)
+                    * No reliance on distributed storage
+                    * Pull model over HTTP
+                    * Time series collection via service discovery or static config
+                    * Multiple visualization options
+                    
+                    Note:
+                    Let's explore the key features that make Prometheus stand out from other monitoring systems:
+                    
+                    First, its multi-dimensional data model. Unlike traditional monitoring systems that use hierarchical metrics names, Prometheus uses a flat model where each time series is identified by a metric name and optional key-value pairs called labels. This approach offers tremendous flexibility for filtering, grouping, and analyzing metrics.
+                    
+                    PromQL, the Prometheus Query Language, is arguably one of its strongest features. It's a powerful, functional query language specifically designed for time series data that allows for complex operations and aggregations. Throughout our labs, you'll learn how to harness the power of PromQL.
+                    
+                    Prometheus intentionally avoids relying on distributed storage in its core functionality. Each server is autonomous, which increases reliability and simplifies setup. While there are solutions for distributed storage and high availability, the core design prioritizes reliability through simplicity.
+                    
+                    The pull model is another distinctive feature. Instead of agents pushing metrics to a central server, Prometheus scrapes metrics from HTTP endpoints exposed by monitored services. This approach gives Prometheus control over scrape intervals and makes it easier to detect if a service is down.
+                    
+                    Service discovery integrations allow Prometheus to automatically find and monitor services in dynamic environments like Kubernetes or cloud platforms.
+                    
+                    Finally, while Prometheus has a basic built-in visualization interface, it's commonly used with Grafana for creating rich, interactive dashboards. This flexibility lets you choose the visualization tool that best fits your needs.
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## Architecture Overview
+
+                    ![Prometheus Architecture](https://prometheus.io/assets/architecture.png)
+                    
+                    Note:
+                    This diagram provides a high-level overview of Prometheus's architecture and how its components interact.
+                    
+                    At the center is the Prometheus server, which is the core component. It scrapes metrics from instrumented jobs, either directly or through an intermediary like the Pushgateway. The server stores all scraped samples locally and runs rules over this data to either generate new time series from existing data or generate alerts.
+                    
+                    On the right, you can see the Alertmanager, which handles alerts sent by the Prometheus server. It takes care of deduplicating, grouping, and routing alerts to the correct receiver integration such as email, PagerDuty, or Slack.
+                    
+                    At the bottom, you see various visualization options. The Prometheus web UI is useful for ad-hoc queries and basic graphs, but Grafana is more commonly used for sophisticated dashboards and visualizations.
+                    
+                    This architecture is intentionally simple. Each component is designed to do one thing well, and the core Prometheus server has minimal external dependencies, which aligns with the goal of being reliable during outages.
+                    
+                    We'll examine each of these components in more detail in the following slides.
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## Components
+                    
+                    * **Prometheus Server** - Scrapes and stores time series data
+                    * **Client Libraries** - Instrument your code
+                    * **Pushgateway** - Support for short-lived jobs
+                    * **Exporters** - Convert existing metrics to Prometheus format
+                    * **Alertmanager** - Handles alerts and notifications
+                    
+                    Note:
+                    Let's examine the main components of the Prometheus ecosystem:
+                    
+                    The Prometheus Server is the heart of the system. It scrapes metrics from instrumented targets at configured intervals, stores the data locally, evaluates rule expressions to create derived metrics or generate alerts, and provides an API for queries.
+                    
+                    Client Libraries allow developers to instrument their applications directly. These libraries are available for many languages like Go, Python, Java, and Ruby. They provide an easy way to define and expose metrics from your code.
+                    
+                    The Pushgateway solves a specific problem: how to monitor batch jobs or short-lived processes that may not exist long enough for Prometheus to scrape them. These jobs can push their metrics to the Pushgateway, which then exposes them for Prometheus to scrape.
+                    
+                    Exporters are bridges between existing systems and Prometheus. If you have a system that doesn't natively expose Prometheus metrics, an exporter can collect metrics from that system and convert them to the Prometheus format. Common exporters include the Node Exporter (for system metrics), MySQL Exporter, Blackbox Exporter (for probing endpoints), and many more.
+                    
+                    Finally, the Alertmanager handles alerts generated by the Prometheus server. It's responsible for grouping, deduplicating, and routing alerts to various notification channels like email, Slack, or PagerDuty. It also handles silencing and inhibition of alerts.
+                    
+                    Understanding these components helps you architect a comprehensive monitoring solution for your environment.
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## Data Model
+                    
+                    * Time series data identified by metric name and key-value labels
+                    * Format: `<metric_name>{<label_name>=<label_value>, ...}`
+                    * Example: `node_memory_used_bytes{instance="server-01", job="node"}`
+                    * Every time series uniquely identified by its name and labels
+                    
+                    Note:
+                    Prometheus's data model is one of its defining characteristics. It organizes metrics into time series, which are streams of timestamped values belonging to the same metric and set of labeled dimensions.
+                    
+                    Each time series is uniquely identified by its metric name and a set of key-value pairs called labels. This multi-dimensional approach is very different from the hierarchical naming used in systems like Graphite, and it offers much more flexibility for querying and analysis.
+                    
+                    The metric name describes what is being measured - like http_requests_total or node_memory_used_bytes. It should follow the convention of using underscores to separate words and should describe the unit of measurement when applicable.
+                    
+                    Labels add dimensions to the data, allowing you to differentiate between different instances, jobs, environments, or any other relevant categorization. For example, the instance label typically identifies which specific server or container the metric comes from, while the job label identifies which role or service is being monitored.
+                    
+                    The combination of metric name and label set must be unique within a Prometheus server. If two metrics would have the same name and labels, they would be considered the same time series.
+                    
+                    This multi-dimensional model enables powerful query capabilities. You can easily filter, aggregate, and join metrics based on their labels. For example, you could calculate the total memory usage across all instances of a particular job, or find the 95th percentile response time for a specific endpoint.
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## Metric Types
+
+                    * **Counter** - Monotonically increasing value (e.g., request count)
+                    * **Gauge** - Value that can go up and down (e.g., memory usage)
+                    * **Histogram** - Samples observations in configurable buckets (e.g., request duration)
+                    * **Summary** - Similar to histogram but tracks quantiles directly
+                    
+                    Note:
+                    Prometheus defines four core metric types, each with specific characteristics and use cases:
+                    
+                    Counters are the simplest type - they only go up (or reset to zero when a process restarts). They're perfect for tracking cumulative values like the total number of requests, errors, or completed tasks. Since counters always increase, they're typically used with the rate() function to calculate how fast they're increasing over time.
+                    
+                    Gauges can go up and down, making them ideal for measurements like memory usage, temperature, or queue size - any value that can fluctuate. Unlike counters, gauges represent a "current state" and are often used directly without rate calculations.
+                    
+                    Histograms are more complex - they track the distribution of observations (like request durations) by counting them in configurable buckets. They also track the sum of all observed values and the count of observations. Histograms are powerful because they allow you to calculate quantiles (like median or 95th percentile) across a distributed system, although with some approximation.
+                    
+                    Summaries are similar to histograms but track quantiles directly on the client side. This gives more accurate quantile calculations but doesn't allow for aggregation across multiple instances. Summaries are typically used when you need precise quantiles for a single instance.
+                    
+                    Choosing the right metric type is crucial for effective monitoring. For example, if you want to track request rates, a counter would be appropriate. If you need to measure response time distributions, a histogram would be the right choice.
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## Service Discovery
+                    
+                    Prometheus supports multiple service discovery mechanisms:
+                    
+                    * File-based
+                    * Kubernetes
+                    * Consul
+                    * AWS EC2
+                    * Azure
+                    * GCE
+                    * Many more
+                    
+                    Note:
+                    In modern dynamic environments like cloud platforms and container orchestrators, targets come and go frequently. Prometheus addresses this challenge through robust service discovery capabilities.
+                    
+                    Service discovery allows Prometheus to automatically find and monitor services without manual configuration for each target. This is essential in environments where IP addresses and ports change frequently.
+                    
+                    Prometheus supports numerous service discovery mechanisms. The simplest is file-based service discovery, where target configurations are defined in files that Prometheus reads. This works well for static environments or when integrated with configuration management tools.
+                    
+                    For Kubernetes environments, Prometheus has native integration with the Kubernetes API, allowing it to discover and monitor pods, services, and nodes automatically. This is particularly powerful in container environments where instances are ephemeral.
+                    
+                    Other supported service discovery mechanisms include Consul, AWS EC2, Azure, Google Compute Engine, and many more. These integrations allow Prometheus to work seamlessly in virtually any modern infrastructure environment.
+                    
+                    Service discovery configurations typically include relabeling rules, which transform the discovered target labels before scraping. This feature allows you to customize how targets are identified and categorized in your metrics.
+                    
+                    By leveraging service discovery, you can maintain a dynamic monitoring setup that automatically adapts to changes in your infrastructure without manual intervention.
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## PromQL Basics
+                    
+                    ```promql
+                    # Simple query
+                    node_memory_MemTotal_bytes
+
+                    # With filter
+                    node_memory_MemTotal_bytes{instance="localhost:9100"}
+
+                    # With function
+                    rate(node_cpu_seconds_total{mode="user"}[5m])
+                    ```
+                    
+                    Note:
+                    PromQL (Prometheus Query Language) is one of Prometheus's most powerful features. It's a functional query language designed specifically for working with time series data.
+                    
+                    Let's look at some basic query patterns:
+                    
+                    The simplest query is just a metric name, like node_memory_MemTotal_bytes. This returns all time series with that name, which could be many series if you're monitoring multiple instances.
+                    
+                    To filter these results, you can add label matchers in curly braces. For example, node_memory_MemTotal_bytes{instance="localhost:9100"} only returns data from the specified instance. You can use multiple label matchers and various matching operators (=, !=, =~, !~).
+                    
+                    Functions allow you to transform data. One of the most common functions is rate(), which calculates the per-second increase of a counter over a specified time window. In the example rate(node_cpu_seconds_total{mode="user"}[5m]), we're calculating the rate at which CPU time in user mode is being consumed, based on the last 5 minutes of data.
+                    
+                    PromQL also supports a wide range of operators for arithmetic, comparison, and logical operations, allowing you to create complex expressions. For example, you could calculate the percentage of CPU time in user mode with: rate(node_cpu_seconds_total{mode="user"}[5m]) / rate(node_cpu_seconds_total[5m]) * 100.
+                    
+                    Throughout our labs, we'll explore PromQL in much greater depth, starting with simple queries and progressing to more advanced operations. Mastering PromQL is key to getting the most value from your Prometheus metrics.
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## Storage
+                    
+                    * Local time series database (TSDB)
+                    * Efficient storage with ~1-2 bytes per sample
+                    * Default retention: 15 days (configurable)
+                    * Long-term storage via remote write protocol
+                    * Integrates with: Thanos, Cortex, VictoriaMetrics, etc.
+                    
+                    Note:
+                    Prometheus's storage system is optimized for time series data, balancing performance with storage efficiency.
+                    
+                    At its core, Prometheus uses a local time series database (TSDB) that's specifically designed for its data model. This local storage approach helps maintain the simplicity and reliability goals of Prometheus.
+                    
+                    The storage format is highly efficient, using approximately 1-2 bytes per sample. This compression allows Prometheus to store millions of samples while maintaining reasonable disk usage. The exact storage efficiency depends on the variability and cardinality of your metrics.
+                    
+                    By default, Prometheus retains data for 15 days, though this is configurable. This retention period reflects Prometheus's focus on operational monitoring rather than long-term historical data storage.
+                    
+                    For organizations that need longer data retention or high availability, Prometheus offers the remote write protocol. This allows Prometheus to send data to compatible external storage systems while maintaining its local storage for immediate querying.
+                    
+                    There's a rich ecosystem of long-term storage solutions that integrate with Prometheus. Thanos and Cortex provide global query view, long-term storage, and high availability across multiple Prometheus instances. VictoriaMetrics offers a highly efficient storage backend. All these systems preserve Prometheus's query interface, allowing seamless transitions from single-instance to distributed architectures.
+                    
+                    When designing a Prometheus deployment, it's important to consider storage requirements based on your metrics volume, scrape frequency, and retention needs.
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## Alerting
+                    
+                    * Alerts defined using PromQL expressions
+                    * Two components:
+                      * Alert rules in Prometheus
+                      * Alertmanager for notification
+                    * Supports grouping, inhibition, silences
+                    * Multiple notification channels (email, Slack, PagerDuty, etc.)
+                    
+                    Note:
+                    Alerting is a critical function in any monitoring system, and Prometheus provides a flexible and powerful alerting system.
+                    
+                    Prometheus alerting works in two stages: first, alert conditions are defined in Prometheus itself using PromQL expressions. If these expressions evaluate to true for a specified period, Prometheus generates an alert and sends it to the Alertmanager.
+                    
+                    The Alertmanager then takes care of deduplicating, grouping, and routing these alerts to the appropriate notification channels. This separation of concerns allows Prometheus to focus on detecting alert conditions while the Alertmanager handles the notification logic.
+                    
+                    One of Alertmanager's key features is its ability to group related alerts. For example, if multiple services fail because an underlying database is down, Alertmanager can group these alerts into a single notification, reducing alert fatigue and helping responders identify the root cause more quickly.
+                    
+                    Inhibition allows certain alerts to suppress others. For example, an alert about a server being unreachable might inhibit all other alerts for that server, since they're likely symptoms of the same issue.
+                    
+                    Silences allow you to temporarily mute specific alerts, which is useful during maintenance periods or when dealing with known issues.
+                    
+                    Alertmanager supports a wide range of notification integrations including email, Slack, PagerDuty, OpsGenie, and custom webhooks. This flexibility allows you to integrate Prometheus alerting with your existing incident response workflows.
+                    
+                    In Lab 7, we'll explore recording rules and alerting in more detail, including best practices for defining effective alert conditions.
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## Recording Rules
+                    
+                    * Precompute frequently used expressions
+                    * Save them as new time series
+                    * Reduce query-time computation
+                    * Example:
+                    
+                    ```yaml
+                    - name: node_rules
+                      rules:
+                      - record: instance:node_memory_usage:percent
+                        expr: 100 * (1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)
+                    ```
+                    
+                    Note:
+                    Recording rules are an important performance optimization in Prometheus that allow you to precompute frequently used or complex expressions.
+                    
+                    When you define a recording rule, Prometheus periodically evaluates the specified PromQL expression and stores the results as a new time series. This means that when you query this derived metric, Prometheus doesn't need to compute the expression on-the-fly - it can simply retrieve the precomputed values.
+                    
+                    This optimization is particularly valuable for dashboards that contain complex queries or for expressions used in multiple places. Instead of recalculating the same expression every time it's needed, you can compute it once via a recording rule and then reuse the results.
+                    
+                    In the example shown, we're calculating memory usage as a percentage and saving it as a new metric called instance:node_memory_usage:percent. This follows Prometheus naming conventions, where colons separate the context (instance level), the metric name (node_memory_usage), and the unit (percent).
+                    
+                    Recording rules are defined in YAML files and are organized into rule groups. Each group is evaluated sequentially, allowing you to reference the results of one recording rule in another within the same group.
+                    
+                    Beyond performance benefits, recording rules also improve the maintainability of your monitoring setup. If you need to modify how a particular metric is calculated, you can update it in one place - the recording rule - rather than updating every dashboard or alert that uses that calculation.
+                    
+                    We'll explore recording rules in depth in Lab 7, along with alerting rules which follow a similar format.
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## Visualization Options
+                    
+                    * Built-in Expression Browser
+                    * Grafana (most popular)
+                    * ConsoleTemplates (custom UI)
+                    * Many other visualization tools
+                    
+                    Note:
+                    Prometheus provides several options for visualizing metrics, each with different strengths and use cases.
+                    
+                    The built-in Expression Browser is included with every Prometheus installation. It's a simple web interface that allows you to execute PromQL queries and view the results as graphs or tables. While it's not as feature-rich as dedicated visualization tools, it's excellent for ad-hoc queries, troubleshooting, and exploring your metrics. Throughout our labs, we'll use the Expression Browser extensively to test and refine our PromQL queries.
+                    
+                    Grafana is by far the most popular visualization tool for Prometheus. It's a powerful, open-source platform for creating dashboards that can combine data from Prometheus and many other data sources. Grafana offers rich visualization options, alerting capabilities, and dashboard templating features. It's especially valuable for creating operational dashboards that display key metrics in a user-friendly way.
+                    
+                    Console Templates are a lesser-known feature of Prometheus that allows you to create custom UIs using Go templates. While more complex to set up than Grafana, they offer maximum flexibility and can be versioned alongside your code. They're useful for creating specialized views that are tailored to specific operational needs.
+                    
+                    Beyond these options, many other visualization tools can integrate with Prometheus, either directly or via exporters. These include commercial observability platforms like Datadog, New Relic, and Dynatrace, as well as open-source alternatives like Chronograf and Kibana.
+                    
+                    For most users, a combination of the Expression Browser (for exploration and troubleshooting) and Grafana (for dashboards) provides an excellent visualization solution. The Expression Browser will be our primary tool during these labs as we focus on learning PromQL.
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## Comparison with Other Systems
+                    
+                    * **Prometheus vs. Graphite**
+                      * Multi-dimensional vs. hierarchical model
+                      * Pull vs. push model
+                    
+                    * **Prometheus vs. InfluxDB**
+                      * Pull vs. push (primarily)
+                      * Different query languages (PromQL vs. InfluxQL/Flux)
+                    
+                    * **Prometheus vs. OpenTelemetry**
+                      * Monitoring vs. observability framework
+                      * Complementary (OTel can export to Prometheus)
+                    
+                    Note:
+                    It's helpful to understand how Prometheus compares to other monitoring and observability systems to appreciate its unique strengths and limitations.
+                    
+                    Let's start with Graphite, one of the older monitoring systems. The key difference is in the data model: Prometheus uses a multi-dimensional model with labels, while Graphite uses a hierarchical model where metrics are organized in a tree-like structure with dot-separated names. Prometheus's model offers more flexibility for querying and aggregation across different dimensions. Additionally, Prometheus uses a pull model, while Graphite uses a push model, giving Prometheus more control over the scrape process and better detection of down targets.
+                    
+                    InfluxDB is a time series database that's often compared with Prometheus. While Prometheus primarily uses a pull model, InfluxDB uses a push model (though it can also pull metrics). The query languages are also quite different: PromQL is designed specifically for time series and focuses on real-time analysis, while InfluxQL and the newer Flux language offer more general-purpose time series manipulation capabilities. InfluxDB might be a better choice for long-term storage or high-cardinality data, while Prometheus excels at operational monitoring and alerting.
+                    
+                    OpenTelemetry is not directly comparable to Prometheus as it's not a monitoring system but a collection of tools, APIs, and SDKs for generating and collecting telemetry data (metrics, logs, and traces). Rather than competing, OpenTelemetry and Prometheus are complementary: OpenTelemetry can export metrics to Prometheus, providing a standardized way to instrument applications across different languages and frameworks.
+                    
+                    Understanding these differences helps you choose the right tool for your specific monitoring needs. In many cases, organizations use Prometheus alongside other systems as part of a comprehensive observability strategy.
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## Best Practices
+                    
+                    * Use labels for dimensions that matter
+                    * Keep cardinality under control
+                    * Follow naming conventions
+                    * Use recording rules for complex queries
+                    * Set up federation for large deployments
+                    * Monitor Prometheus itself
+                    
+                    Note:
+                    As you implement Prometheus, following these best practices will help you build a scalable, maintainable monitoring system:
+                    
+                    First, use labels judiciously for dimensions that matter for querying and aggregation. Labels like "instance", "job", and "environment" are generally useful, but adding too many labels or high-cardinality labels can cause performance issues.
+                    
+                    Cardinality refers to the number of unique time series in your system. High cardinality can overwhelm Prometheus, so it's important to avoid creating a new time series for every user, request, or other high-cardinality entity. For example, don't add a "user_id" label to request metrics if you have millions of users.
+                    
+                    Following consistent naming conventions for metrics makes your system more intuitive and maintainable. Metric names should use underscores to separate words, include units where applicable, and use suffixes like _total for counters. Label names should also follow consistent patterns.
+                    
+                    As we've discussed, recording rules can dramatically improve the performance of complex or frequently used queries. Use them for dashboard panels, alert conditions, and any queries that are computationally expensive.
+                    
+                    For large deployments, federation allows you to create a hierarchical Prometheus setup where higher-level Prometheus servers scrape metrics from lower-level ones. This helps with scaling and separating concerns between different teams or services.
+                    
+                    Finally, don't forget to monitor Prometheus itself! Prometheus can scrape its own metrics, allowing you to track its performance, resource usage, and health. This self-monitoring is crucial for ensuring the reliability of your monitoring system.
+                    
+                    Adhering to these best practices will help you avoid common pitfalls and build a robust monitoring system that scales with your infrastructure.
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## Prometheus Ecosystem
+                    
+                    * **Thanos** - Global scale, long-term storage
+                    * **Cortex** - Horizontally scalable multi-tenant
+                    * **Prometheus Operator** - K8s native deployment
+                    * **Promtail/Loki** - Log collection and aggregation
+                    * **Grafana Mimir** - Enterprise-grade Prometheus
+                    
+                    Note:
+                    Prometheus has spawned a rich ecosystem of tools and extensions that address various needs beyond Prometheus's core functionality.
+                    
+                    Thanos extends Prometheus to provide global query view and unlimited retention. It allows you to federate multiple Prometheus instances and store metrics in object storage like S3 or GCS for long-term retention. Thanos maintains compatibility with the Prometheus API while adding global query capabilities and downsampling for efficient long-term storage.
+                    
+                    Cortex is a horizontally scalable, multi-tenant version of Prometheus. It was designed to run in the cloud and provide a centralized metrics platform for large organizations. Cortex can ingest data from many Prometheus servers and provides a unified view across all of them, with support for multi-tenancy to isolate different teams or customers.
+                    
+                    The Prometheus Operator provides Kubernetes-native deployment and management of Prometheus and related monitoring components. It makes it easy to deploy and configure Prometheus instances in Kubernetes by defining custom resources that represent Prometheus servers, service monitors, and alert rules.
+                    
+                    Promtail and Loki extend the Prometheus ecosystem to logs. Promtail collects logs and sends them to Loki, a log aggregation system inspired by Prometheus. Together, they provide a powerful solution for log collection, storage, and querying that complements Prometheus's metrics capabilities.
+                    
+                    Grafana Mimir is a recent addition to the ecosystem, offering an enterprise-grade, high-scale version of Prometheus with advanced features like replication, high availability, and multi-tenancy. It's designed to handle massive scale while maintaining compatibility with the Prometheus API and query language.
+                    
+                    These ecosystem projects demonstrate the flexibility and extensibility of Prometheus's approach to monitoring. Depending on your specific needs, you might incorporate one or more of these tools to build a comprehensive observability solution.
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## Ready to dive into PromQL?
+                    
+                    [Start with Lab 0: PromQL Fundamentals](../00_PromQL_Fundamentals/index.html)
+                    
+                    [Return to Slides Index](../index.html)
+                    
+                    Note:
+                    We've covered a lot of ground in this overview of Prometheus, from its architecture and data model to its ecosystem and best practices. This foundation will serve you well as we dive into the practical aspects of using Prometheus, particularly writing PromQL queries.
+                    
+                    PromQL is where the real power of Prometheus lies. It's a flexible, powerful query language that allows you to extract meaningful insights from your metrics. Throughout the upcoming labs, you'll learn PromQL incrementally, starting with basic queries and progressing to more complex operations.
+                    
+                    We'll begin with Lab 0: PromQL Fundamentals, which covers the basics of the query language and how to write simple expressions. From there, we'll explore more advanced topics like rate calculations, aggregations, joins, and time-based analysis.
+                    
+                    By the end of these labs, you'll have a solid understanding of how to use PromQL effectively for monitoring and troubleshooting, which will make you more effective at operating and maintaining the systems you're responsible for.
+                    
+                    Remember that mastering PromQL, like any skill, takes practice. Don't be afraid to experiment with different queries and explore your metrics. The Expression Browser in Prometheus makes it easy to iterate and learn from your results.
+                    
+                    Let's start our journey into PromQL with Lab 0!
+                </textarea>
+            </section>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/dist/reveal.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/markdown/markdown.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/highlight/highlight.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/notes/notes.js"></script>
+    <script>
+        Reveal.initialize({
+            hash: true,
+            plugins: [RevealMarkdown, RevealHighlight, RevealNotes]
+        });
+    </script>
+</body>
+</html>

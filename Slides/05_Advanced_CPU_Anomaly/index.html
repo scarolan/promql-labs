@@ -1,0 +1,418 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<title>Lab 5: Advanced CPU Analysis & Anomaly Detection</title>
+
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/dist/reset.css">
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/dist/reveal.css">
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/dist/theme/night.css">
+
+		<!-- Theme used for syntax highlighted code -->
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/plugin/highlight/monokai.css">
+        <style>
+            .reveal pre {
+                margin: 0;
+                box-shadow: none;
+            }
+            .reveal pre code {
+                padding: 20px;
+                max-height: 400px;
+                line-height: 1.2;
+            }
+            .two-column {
+                display: flex;
+                justify-content: space-between;
+            }
+            .two-column .left {
+                width: 48%;
+            }
+            .two-column .right {
+                width: 48%;
+            }
+            .reveal .smaller-text {
+                font-size: 0.8em;
+            }
+            .reveal .smallest-text {
+                font-size: 0.6em;
+            }
+        </style>
+	</head>
+	<body>
+		<div class="reveal">
+			<div class="slides">
+                <section>
+                    <h1>Lab 5: Advanced CPU Analysis & Anomaly Detection</h1>
+                    <p>🔍 Advanced PromQL</p>
+                    <p><small>Navigate: <a href="../index.html">All Slides</a></small></p>
+                    <aside class="notes">
+                        Welcome to Lab 5, where we're taking our PromQL skills to the next level with advanced CPU analysis and anomaly detection!
+                        
+                        In our previous labs, we've covered the basics of monitoring CPU, memory, network, and other resources. Now we're going to focus on more sophisticated techniques to detect problems that might be missed by standard monitoring approaches.
+                        
+                        Today's lab is all about finding the needle in the haystack - those brief but significant CPU spikes and saturation events that might indicate problems with your applications or infrastructure.
+                        
+                        These techniques are particularly valuable for production troubleshooting and performance optimization, where understanding outliers and anomalies is often the key to resolving complex issues.
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Objectives</h2>
+                    <ul>
+                        <li>Detect CPU saturation and spikes using PromQL</li>
+                        <li>Use <code>max_over_time</code> and <code>increase</code> for anomaly detection</li>
+                        <li>Build a panel to visualize CPU anomalies</li>
+                    </ul>
+                    <aside class="notes">
+                        Our objectives for this lab focus on three key areas:
+                        
+                        First, we'll learn how to detect CPU saturation and spikes using advanced PromQL techniques. These are events where your CPU briefly hits capacity, which might be missed by standard 5-minute averages but could still impact application performance.
+                        
+                        Second, we'll explore specialized functions like max_over_time and increase that are particularly useful for anomaly detection. These functions help us identify patterns and outliers in our metrics that standard aggregations might miss.
+                        
+                        Finally, we'll discuss how to build effective Grafana panels specifically designed to visualize these CPU anomalies, making them immediately obvious to operators and on-call engineers.
+                        
+                        By the end of this lab, you'll have powerful new tools in your PromQL toolkit for identifying and troubleshooting performance issues that might otherwise go undetected.
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Anomaly Detection</h2>
+                    <p>Why is it important?</p>
+                    <ul>
+                        <li>Standard metrics may miss short-lived issues</li>
+                        <li>Averages obscure important outliers</li>
+                        <li>Some problems only visible through advanced patterns</li>
+                        <li>Early detection enables proactive response</li>
+                    </ul>
+                    <aside class="notes">
+                        Before we dive into specific techniques, let's talk about why anomaly detection is so important in modern monitoring.
+                        
+                        Standard metrics, especially when viewed as averages over time, can completely miss short-lived issues. For example, a 100ms spike in latency might be invisible in a 5-minute average, but could indicate a serious problem for your users.
+                        
+                        Averages are particularly problematic because they obscure outliers. A system might look healthy on average, but be experiencing regular brief spikes that affect a subset of users or transactions.
+                        
+                        Some problems are only visible through more advanced pattern detection. For instance, a gradual increase in error rates might not trigger threshold-based alerts until it's too late, but could be detected earlier with trend analysis.
+                        
+                        The value of early detection cannot be overstated - it enables proactive response, often allowing you to address issues before they impact users or become more severe. In many cases, the difference between a minor incident and a major outage is simply how quickly the problem was detected and addressed.
+                        
+                        In this lab, we'll focus on CPU anomalies, but these principles apply to virtually any metric in your monitoring system.
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>CPU Saturation Detection</h2>
+                    <p>Calculating peak CPU usage percentage</p>
+                    <pre class="smallest-text"><code class="language-promql">max_over_time(
+  (100 * (1 - (
+    sum by (instance) (rate(node_cpu_seconds_total{instance="localhost:9100",mode="idle"}[5m])) / 
+    count by (instance) (node_cpu_seconds_total{instance="localhost:9100",mode="idle"})
+  )))[30m:1m]
+)</code></pre>
+                    <aside class="notes">
+                        Let's start with detecting CPU saturation - periods when your CPU is running at or near maximum capacity.
+                        
+                        This query looks complex at first glance, but we'll break it down step by step. The core concept is to find the peak CPU usage percentage within a longer time window - specifically, the highest 1-minute utilization within a 30-minute period.
+                        
+                        The innermost part of the query calculates the CPU usage percentage using the same pattern we learned in earlier labs: we find the rate of idle CPU time, convert that to a usage percentage with the formula 100 * (1 - idle%), and aggregate across all cores.
+                        
+                        The novel part is wrapping this in a subquery with [30m:1m] and then applying max_over_time(). This effectively evaluates the CPU usage every minute for 30 minutes, then returns the highest value observed.
+                        
+                        This approach is much more effective at catching brief saturation events than looking at averages. A CPU might only be saturated for 2 minutes out of 30, but those 2 minutes could cause significant application issues that would be invisible in a 30-minute average.
+                        
+                        In production monitoring, this technique helps you identify capacity issues that might otherwise go unnoticed until they become more severe or frequent.
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Breaking Down the CPU Saturation Query</h2>
+                    <ol>
+                        <li>Calculate the rate of idle CPU time across all cores</li>
+                        <li>Divide by the number of cores to get average idle percentage</li>
+                        <li>Convert to usage percentage with <code>100 * (1 - idle%)</code></li>
+                        <li>Use a subquery <code>[30m:1m]</code> to evaluate this every minute for 30 minutes</li>
+                        <li>Apply <code>max_over_time</code> to find the highest value</li>
+                    </ol>
+                    <p>Result: Maximum CPU usage % in any 1-minute window within 30 minutes</p>
+                    <aside class="notes">
+                        Let's break down this CPU saturation query step by step to fully understand how it works.
+                        
+                        First, we calculate the rate of idle CPU time across all cores using rate(node_cpu_seconds_total{mode="idle"}[5m]). This gives us the per-second rate at which each CPU core is accumulating idle time.
+                        
+                        Next, we divide by the number of cores to get an average idle percentage. We use sum by(instance) to add up all the idle time, and divide by count by(instance) to get the average.
+                        
+                        Then we convert this to a usage percentage with the formula 100 * (1 - idle%). This gives us the percentage of CPU time that's being used rather than idle.
+                        
+                        The next step is where it gets more advanced: we use a subquery [30m:1m] to evaluate this calculation every minute for the past 30 minutes. This creates a matrix of values representing the CPU usage percentage at each minute.
+                        
+                        Finally, we apply max_over_time to find the highest value in that matrix. This gives us the maximum CPU usage percentage observed in any 1-minute window within the 30-minute period.
+                        
+                        The result is a powerful indicator of CPU saturation - it tells you the worst CPU usage has been over the recent past, even if it was just for a minute. This is much more useful for detecting brief saturation events than looking at longer-term averages.
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Finding CPU Spikes with <code>increase</code></h2>
+                    <pre><code class="language-promql">increase(node_cpu_seconds_total{instance="localhost:9100",mode="user"}[10m])</code></pre>
+                    <p>Measures absolute growth of CPU counter over 10 minutes</p>
+                    <ul>
+                        <li>Unlike <code>rate()</code>, shows total consumption, not average rate</li>
+                        <li>Useful for detecting bursts of activity</li>
+                    </ul>
+                    <aside class="notes">
+                        Now let's look at another approach to detecting CPU anomalies using the increase function.
+                        
+                        This query looks simpler but is equally powerful. The increase() function calculates the absolute growth of a counter over a specified time period - in this case, how many seconds of user CPU time were consumed in the last 10 minutes.
+                        
+                        Unlike rate(), which gives you a per-second average, increase() shows the total consumption over the time period. This distinction is important for anomaly detection because increase() preserves the magnitude of changes, making spikes more visible.
+                        
+                        For example, if a CPU core spent 300 seconds in user mode over a 10-minute (600-second) period, that's 50% utilization. But if those 300 seconds were all concentrated in a 5-minute burst of 100% activity followed by 5 minutes of idle, rate() would still show 50% average utilization, hiding the spike. Increase() would show the full 300 seconds, making the high activity more apparent.
+                        
+                        This approach is particularly useful for detecting bursts of activity that might indicate batch jobs, cron tasks, or other periodic workloads that temporarily consume significant resources. It's also valuable for identifying unexpected spikes that might indicate problems.
+                        
+                        When monitoring, comparing increase() values across similar time periods (e.g., same time yesterday) can help identify anomalous behavior patterns.
+                    </aside>
+                </section>
+
+                <section>
+                    <h2><code>rate()</code> vs <code>increase()</code></h2>
+                    <div class="two-column">
+                        <div class="left">
+                            <h3>rate()</h3>
+                            <ul>
+                                <li>Calculates per-second average</li>
+                                <li>Smooths out spikes</li>
+                                <li>Good for trends</li>
+                                <li>Unit: X per second</li>
+                            </ul>
+                        </div>
+                        <div class="right">
+                            <h3>increase()</h3>
+                            <ul>
+                                <li>Shows total increase</li>
+                                <li>Preserves magnitude of spikes</li>
+                                <li>Good for anomaly detection</li>
+                                <li>Unit: Total X in time range</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <aside class="notes">
+                        Let's compare rate() and increase() functions side by side to understand when you might use each.
+                        
+                        Rate() calculates a per-second average over the time range. It takes the total increase in the counter and divides it by the number of seconds in the time range. This smooths out spikes, which is good for trend analysis and general monitoring, but can hide brief anomalies. The output is in units per second, such as CPU seconds per second (which becomes a dimensionless fraction).
+                        
+                        Increase(), on the other hand, simply returns the total increase in the counter over the time range. It doesn't do any averaging or per-second conversion. This preserves the magnitude of spikes, making it much better for anomaly detection. The output is in the same units as the original counter - for CPU metrics, that's seconds of CPU time.
+                        
+                        A practical way to think about it: rate() is like looking at your average speed during a car journey, while increase() is like looking at the total distance traveled. Both are useful, but they tell you different things. If you make a brief stop during your journey, it will be clearly visible in your distance-vs-time graph, but might be hard to spot in an average speed calculation.
+                        
+                        In monitoring, use rate() for overall utilization and trends, and increase() when you need to detect short-term spikes or anomalies that might be masked by averaging.
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Understanding Subqueries</h2>
+                    <pre><code class="language-promql">[30m:1m]</code></pre>
+                    <ul>
+                        <li><strong>Outer range</strong>: 30m (how far back to look)</li>
+                        <li><strong>Resolution</strong>: 1m (how often to evaluate inner query)</li>
+                        <li>Creates a matrix of results over time</li>
+                        <li>Enables functions like <code>max_over_time</code> to work across the matrix</li>
+                    </ul>
+                    <aside class="notes">
+                        Subqueries are a powerful but often misunderstood feature of PromQL. Let's break down how they work.
+                        
+                        A subquery looks like this: [30m:1m]. It has two parts:
+                        - The outer range (30m) defines how far back in time to look
+                        - The resolution (1m) defines how often to evaluate the inner query
+                        
+                        When you apply a subquery, Prometheus evaluates the inner query at each resolution step throughout the outer range. In our example, it would run the inner query every minute for the past 30 minutes, creating 30 separate results.
+                        
+                        These results form a matrix - essentially a table where each row is a time series and each column is a timestamp. This matrix can then be processed by functions like max_over_time, min_over_time, or avg_over_time.
+                        
+                        Subqueries are particularly powerful for anomaly detection because they let you analyze patterns over time rather than just looking at the current state. They enable queries like "what was the maximum value in the last 30 minutes?" or "what was the average rate over the last hour?"
+                        
+                        When using subqueries, be aware of their performance impact - they effectively run the inner query multiple times, which can be resource-intensive for complex queries or large datasets. Choose your resolution carefully based on your needs.
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Visualizing Anomalies in Grafana</h2>
+                    <p>Best practices:</p>
+                    <ul>
+                        <li>Use threshold bands to highlight severity levels</li>
+                        <li>Add annotations for context</li>
+                        <li>Consider different visualization types:
+                            <ul>
+                                <li>Heatmaps for distribution patterns</li>
+                                <li>Time series for trends</li>
+                                <li>Stat panels for current status</li>
+                            </ul>
+                        </li>
+                    </ul>
+                    <aside class="notes">
+                        Once you've written queries to detect anomalies, the next step is visualizing them effectively in Grafana. Here are some best practices based on real-world experience:
+                        
+                        Use threshold bands to highlight different severity levels. For example, you might color the background green up to 70% CPU usage, yellow from 70-90%, and red above 90%. This creates an immediate visual cue about the severity of any spikes.
+                        
+                        Add annotations to provide context for anomalies. For instance, you might add deployment markers, incident timestamps, or maintenance windows. This helps correlate spikes with known events and can speed up root cause analysis.
+                        
+                        Consider different visualization types based on what you're trying to communicate:
+                        - Heatmaps are excellent for showing the distribution of values over time, making it easy to spot patterns and outliers
+                        - Time series graphs show trends and are the most familiar format for most users
+                        - Stat panels prominently display current values or recent maximums, which can be useful for dashboards that need to communicate status at a glance
+                        
+                        Remember that the goal is not just to display data, but to communicate insights. A well-designed visualization should make anomalies immediately obvious, even to someone who isn't intimately familiar with the system being monitored.
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Alert Design for Anomalies</h2>
+                    <ul>
+                        <li>Avoid alerting on every spike (alert fatigue)</li>
+                        <li>Consider duration thresholds (sustained issues)</li>
+                        <li>Use percentiles or moving averages to reduce noise</li>
+                        <li>Alert on patterns, not just threshold breaches</li>
+                    </ul>
+                    <aside class="notes">
+                        When it comes to alerting on anomalies, careful design is crucial to avoid alert fatigue while still catching important issues.
+                        
+                        First, avoid alerting on every spike. Brief spikes are common in healthy systems and don't necessarily indicate problems. Too many alerts for normal behavior will lead to alert fatigue - where engineers start ignoring alerts because most of them aren't actionable.
+                        
+                        Instead, consider duration thresholds. For example, you might alert only when CPU usage exceeds 90% for at least 5 minutes. This filters out brief spikes while still catching sustained issues that are more likely to impact performance.
+                        
+                        Another approach is to use percentiles or moving averages to reduce noise. For instance, alerting on the 95th percentile CPU usage over the last hour can catch persistent high utilization while being less sensitive to brief spikes.
+                        
+                        Most importantly, try to alert on patterns, not just threshold breaches. For example, a sudden change in the pattern of CPU usage might be more indicative of a problem than a specific threshold being crossed. This type of anomaly detection often requires more sophisticated approaches, but can be much more effective at identifying real issues.
+                        
+                        Remember that the best alert is one that's actionable - it should indicate a real problem that requires intervention, and it should provide enough context for the responder to understand what's happening and how to address it.
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Challenge: Extreme Spike Detection</h2>
+                    <p>Can you combine <code>increase</code> and <code>max_over_time</code> to highlight only the most extreme spikes?</p>
+                    <aside class="notes">
+                        Now for a challenge to test your understanding of these advanced concepts: can you combine the increase function and max_over_time to highlight only the most extreme CPU spikes?
+                        
+                        Think about how you would approach this. We want to:
+                        1. Use increase() to capture the total CPU time used in short intervals
+                        2. Use max_over_time with a subquery to find the highest values across a longer period
+                        3. The result should show us when CPU usage was most intense
+                        
+                        This is a common pattern in real-world monitoring, where you often want to identify the worst periods of activity within a longer time range. For example, you might want to know "What was the busiest 1-minute period in the last hour?" to help diagnose performance issues.
+                        
+                        Take a moment to think about how you'd write this query, and then we'll look at some solutions in the next slides.
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Solution: Maximum Increase Detection</h2>
+                    <pre class="smaller-text"><code class="language-promql">max_over_time(
+  increase(node_cpu_seconds_total{instance="localhost:9100",mode="user"}[1m])
+[30m:1m])</code></pre>
+                    <p>Finds the highest 1-minute increase within a 30-minute period</p>
+                    <p>Identifies the most intense CPU burst in the last half hour</p>
+                    <aside class="notes">
+                        Here's our first solution to the challenge: a query that combines increase and max_over_time to find extreme CPU spikes.
+
+                        This query works in two layers:
+                        
+                        The inner part - increase(node_cpu_seconds_total{mode="user"}[1m]) - calculates how much the CPU user-mode counter increased during each 1-minute window. This gives us the number of CPU seconds spent in user mode during that minute.
+                        
+                        The outer part - max_over_time(...[30m:1m]) - applies a subquery that examines these 1-minute increases over a 30-minute period, and returns the maximum value. In other words, it finds the minute with the highest CPU activity in the last half hour.
+                        
+                        This approach is extremely powerful for finding short bursts of intense CPU usage. For example, if a process runs for just 40 seconds but uses 100% CPU during that time, it might be missed by longer-term averages but would be clearly visible with this query.
+                        
+                        In production environments, this technique can help identify batch jobs, cron tasks, or other periodic processes that briefly consume significant resources. It can also help detect unusual activity patterns that might indicate security issues or application problems.
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Solution: Percentage-Based Anomaly</h2>
+                    <pre class="smallest-text"><code class="language-promql">max_over_time(
+  (increase(node_cpu_seconds_total{instance="localhost:9100",mode="user"}[1m]) 
+  / 
+  scalar(count(node_cpu_seconds_total{instance="localhost:9100",cpu="0"})))
+[30m:1m]) * 100</code></pre>
+                    <p>Normalizes by number of CPU cores</p>
+                    <p>Expresses result as a percentage of total capacity</p>
+                    <aside class="notes">
+                        Our second solution is more advanced and provides a percentage-based view of CPU anomalies, which is often more intuitive and comparable across systems with different numbers of CPU cores.
+                        
+                        This query builds on the previous one but adds normalization:
+                        
+                        First, we calculate the increase in user-mode CPU seconds over 1-minute periods as before.
+                        
+                        Then, we divide by the number of CPU cores, which we obtain by counting the number of time series with cpu="0" (a trick to count the total number of cores). We use scalar() to ensure this is treated as a single value rather than a vector.
+                        
+                        The subquery [30m:1m] and max_over_time() function work as before, finding the highest value over the 30-minute period.
+                        
+                        Finally, we multiply by 100 to express the result as a percentage of total CPU capacity.
+                        
+                        The end result is the highest percentage of total CPU capacity used in any 1-minute period within the last 30 minutes. This is particularly useful for multi-core systems, as it gives you a consistent view of CPU utilization regardless of the number of cores.
+                        
+                        For alerting purposes, percentage-based metrics like this are often more meaningful than absolute values, as they directly relate to the capacity of the system.
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Key Takeaways</h2>
+                    <ul>
+                        <li><code>max_over_time</code> captures peaks that averages miss</li>
+                        <li><code>increase</code> preserves the magnitude of changes</li>
+                        <li>Subqueries enable complex time-based analysis</li>
+                        <li>Anomaly detection requires context-aware thresholds</li>
+                    </ul>
+                    <aside class="notes">
+                        As we wrap up this lab on advanced CPU analysis and anomaly detection, let's review the key takeaways:
+                        
+                        First, max_over_time is an essential function for capturing peak values that would be missed by averages. This is critical for detecting brief but significant events that could indicate problems with your applications or infrastructure.
+                        
+                        Second, the increase function preserves the magnitude of changes over time, making it more suitable for anomaly detection than rate, which gives you an average. When looking for unusual patterns or spikes, increase often provides a clearer signal.
+                        
+                        Third, subqueries open up powerful possibilities for complex time-based analysis. They let you evaluate metrics at different resolutions and apply aggregation functions across time ranges, enabling sophisticated detection patterns.
+                        
+                        Finally, effective anomaly detection requires context-aware thresholds. What's "normal" for one system might be concerning for another, and what's "normal" during peak hours might be alarming during off-hours. Your monitoring should account for this context.
+                        
+                        These techniques aren't just academic exercises - they're practical tools that can help you detect and diagnose real-world problems before they impact your users. As systems become more complex, these advanced monitoring patterns become increasingly valuable.
+                    </aside>
+                </section>
+
+                <section>
+                    <h1>🌟 Great job!</h1>
+                    <p>Continue to Lab 6: Correlating Metrics</p>
+                    <p><small>Navigate: <a href="../index.html">All Slides</a> | <a href="../06_Correlating_Metrics/index.html">Next Lab</a></small></p>
+                    <aside class="notes">
+                        Congratulations on completing Lab 5! You've now expanded your PromQL toolkit with powerful techniques for advanced CPU analysis and anomaly detection.
+                        
+                        The skills you've learned in this lab - using max_over_time to capture peak values, using increase to preserve the magnitude of changes, working with subqueries for time-based analysis, and designing context-aware thresholds - are all applicable to many other metrics beyond just CPU.
+                        
+                        These techniques form the foundation of sophisticated monitoring and alerting systems that can detect subtle issues before they become major problems. They're particularly valuable in production environments where performance issues can have significant business impact.
+                        
+                        In the next lab, we'll take this a step further by learning how to correlate metrics from different sources. This is an essential skill for understanding complex system behaviors and troubleshooting problems that span multiple components.
+                        
+                        Thank you for your attention and participation! Feel free to experiment with these queries in your own Prometheus instance, adapting them to your specific monitoring needs.
+                    </aside>
+                </section>
+            </div>
+		</div>
+
+		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/dist/reveal.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/plugin/notes/notes.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/plugin/markdown/markdown.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/plugin/highlight/highlight.js"></script>
+		<script>
+			// More info about initialization & config:
+			// - https://revealjs.com/initialization/
+			// - https://revealjs.com/config/
+			Reveal.initialize({
+				hash: true,
+                slideNumber: true,
+				// Learn about plugins: https://revealjs.com/plugins/
+				plugins: [ RevealMarkdown, RevealHighlight, RevealNotes ]
+			});
+		</script>
+	</body>
+</html>

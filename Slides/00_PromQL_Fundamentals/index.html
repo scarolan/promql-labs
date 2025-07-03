@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lab 0: PromQL Fundamentals</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/dist/reset.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/dist/reveal.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/dist/theme/night.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.7.0/styles/monokai-sublime.css">
+</head>
+<body>
+    <div class="reveal">
+        <div class="slides">
+            <section data-markdown>
+                <textarea data-template>
+                    ## Lab 0: PromQL Fundamentals
+                    
+                    PromQL Labs
+                    
+                    <aside class="notes">
+                        Welcome everyone to our PromQL Fundamentals session! Today we're going to dive into Prometheus Query Language, or PromQL for short. This is the foundation for all your Prometheus monitoring work.
+                        
+                        By the end of this session, you'll be able to write basic PromQL queries, understand how to filter and manipulate metrics, and feel comfortable navigating the Prometheus UI to explore your data.
+                        
+                        Even if you've never used Prometheus before, don't worry - we'll start from the very basics and build your knowledge step by step.
+                    </aside>
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## Objectives
+                    
+                    * Learn PromQL basic syntax and operators
+                    * Understand time ranges and functions
+                    * Get comfortable with the Prometheus UI
+                    
+                    <aside class="notes">
+                        Our objectives for this session are straightforward:
+                        
+                        First, we'll learn the basic syntax and operators of PromQL - this is like learning the vocabulary of a new language.
+                        
+                        Second, we'll understand how time ranges and functions work - these are critical for analyzing metrics over periods of time.
+                        
+                        Finally, we'll get comfortable navigating the Prometheus UI - this is where you'll spend a lot of time exploring and visualizing your metrics.
+                        
+                        By meeting these objectives, you'll have the foundation needed for all the more advanced topics we'll cover in later labs.
+                    </aside>
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## Basic Metric Queries
+                    
+                    ```promql
+                    # Return all metrics for node_memory_MemTotal_bytes
+                    node_memory_MemTotal_bytes
+                    ```
+                    
+                    * Most basic form of PromQL query
+                    * Returns all time series with this metric name
+                    * Each result includes labels that uniquely identify the series
+                    
+                    <aside class="notes">
+                        Let's start with the most basic form of a PromQL query. When you type just a metric name like 'node_memory_MemTotal_bytes', Prometheus returns all the time series for that metric.
+                        
+                        Think of a metric like a category of measurement - in this case, the total memory bytes on a node. If you're monitoring multiple servers, you'll get one result per server.
+                        
+                        Each result comes with labels - these are key-value pairs like "instance=localhost:9100" or "job=node_exporter" that tell you which specific thing is being measured.
+                        
+                        This is similar to running a "SELECT *" in SQL - you're getting everything for that metric without any filtering. It's a great starting point for exploration.
+                    </aside>
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## Filtering by Labels
+                    
+                    ```promql
+                    # Filter by instance
+                    node_memory_MemTotal_bytes{instance="localhost:9100"}
+                    ```
+                    
+                    * Labels allow dimensional filtering
+                    * Multiple label matchers can be combined
+                    * Exact equality with `=`
+                    
+                    <aside class="notes">
+                        Now that we know how to query a metric, let's learn how to filter it. In real-world scenarios, you often have many servers or instances, and you want to focus on just one or a few of them.
+                        
+                        The curly braces syntax lets us filter metrics by their labels. Here, we're saying "show me the total memory, but only for the instance called 'localhost:9100'".
+                        
+                        Labels are extremely powerful in Prometheus - they let you slice and dice your metrics in many dimensions. For example, you could filter by both instance and job, or any other labels that your metrics have.
+                        
+                        The equals sign gives you exact matching. We'll see other matching operators soon that give you even more flexibility.
+                        
+                        Think of labels as the "WHERE" clause in your SQL query - they narrow down exactly what you want to see.
+                    </aside>
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## Regular Expression Filtering
+                    
+                    ```promql
+                    # Use regular expressions for label matching
+                    node_memory_MemTotal_bytes{instance=~"local.*"}
+                    ```
+                    
+                    * `=~` for regex match
+                    * `!~` for regex non-match
+                    * `!=` for exact non-equality
+                    * Powerful for multi-server filtering
+                    
+                    <aside class="notes">
+                        Sometimes exact matching isn't flexible enough. What if you want to see metrics for all hosts that start with "local"? This is where regular expression matching comes in.
+                        
+                        The operator `=~` allows you to use regex patterns to match label values. In this example, we're matching any instance where the name starts with "local" followed by any characters.
+                        
+                        We also have `!~` which matches anything that does NOT match the pattern, and `!=` which is exact non-equality.
+                        
+                        These regex operators are incredibly powerful when you're managing large environments. For example, you could use patterns like "prod.*" to see all production servers, or ".*db.*" to see all database servers.
+                        
+                        Just remember that regex matching is more computationally expensive than exact matching, so use it wisely in large environments.
+                    </aside>
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## Basic Operators - Division
+                    
+                    ```promql
+                    # Calculate memory used as fraction of total
+                    (node_memory_MemTotal_bytes{instance="localhost:9100"} - 
+                     node_memory_MemAvailable_bytes{instance="localhost:9100"}) / 
+                    node_memory_MemTotal_bytes{instance="localhost:9100"}
+                    ```
+                    
+                    * Arithmetic operators: `+, -, *, /, %, ^`
+                    * Parentheses for precedence
+                    * Label sets must match for binary operations
+                    
+                    <aside class="notes">
+                        Now let's start doing something useful with our metrics - mathematical operations!
+                        
+                        In this example, we're calculating what fraction of memory is used. We take the total memory, subtract the available memory to get used memory, and then divide by the total to get a fraction.
+                        
+                        PromQL supports all the standard arithmetic operators: addition, subtraction, multiplication, division, modulo, and exponentiation.
+                        
+                        Parentheses work just like in regular math expressions - they control the order of operations.
+                        
+                        One important thing to note: when you perform operations between metrics, their label sets must match. Prometheus needs to know exactly which time series should be combined with which. In our example, we're filtering all metrics for the same instance to ensure they match.
+                        
+                        This is one of the most powerful aspects of PromQL - the ability to perform calculations on your metrics directly in the query language.
+                    </aside>
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## Basic Operators - Percentage
+                    
+                    ```promql
+                    # Convert to percentage
+                    100 * ((node_memory_MemTotal_bytes{instance="localhost:9100"} - 
+                          node_memory_MemAvailable_bytes{instance="localhost:9100"}) / 
+                          node_memory_MemTotal_bytes{instance="localhost:9100"})
+                    ```
+                    
+                    * Multiply by 100 to convert to percentage
+                    * Formula pattern: `100 * (used / total)`
+                    * Common pattern in resource monitoring
+                    
+                    <aside class="notes">
+                        Let's take our previous example a step further. Fractions are useful, but percentages are often easier to understand at a glance.
+                        
+                        To convert our memory usage fraction to a percentage, we simply multiply by 100. The formula becomes: 100 * (used / total).
+                        
+                        This pattern is extremely common in monitoring. You'll use it for CPU usage, memory usage, disk usage, and many other metrics.
+                        
+                        Percentages make it much easier to set thresholds and alerts. For example, you might want to be alerted when memory usage exceeds 90%. Working with percentages makes this intuitive.
+                        
+                        In your dashboards, showing "Memory: 87%" is much more immediately understandable than showing "Memory: 0.87" - especially for non-technical stakeholders.
+                    </aside>
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## Time Ranges
+                    
+                    ```promql
+                    # Get data for the last 5 minutes
+                    node_cpu_seconds_total{instance="localhost:9100"}[5m]
+                    ```
+                    
+                    * Range vector: series of points over time
+                    * Syntax: `metric{labels}[time_range]`
+                    * Common ranges: `5m`, `1h`, `1d`
+                    * Cannot be directly graphed (returns matrix)
+                    
+                    <aside class="notes">
+                        So far, we've been working with instant vectors - single points in time for each metric. Now let's introduce time ranges, which give us data over a period.
+                        
+                        The syntax is simple - just add a time range in square brackets after your query. Here, we're asking for CPU data from the last 5 minutes.
+                        
+                        These queries return what's called a "range vector" - essentially a series of data points for each matching metric. This is different from the instant vector we've been using until now.
+                        
+                        Common time ranges are 5 minutes, 1 hour, and 1 day, but you can use any duration.
+                        
+                        One important thing to note: range vectors cannot be directly graphed in the Prometheus UI. They're typically used as input to functions like rate() or increase(), which we'll cover shortly.
+                        
+                        Time ranges are crucial for calculating rates of change, which is especially important for counter metrics like CPU seconds that continually increase.
+                    </aside>
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## Basic Functions - Sum
+                    
+                    ```promql
+                    # Get the sum of all CPU cores for system mode
+                    sum(node_cpu_seconds_total{instance="localhost:9100",mode="system"})
+                    ```
+                    
+                    * Aggregation across all matching time series
+                    * Eliminates labels by default
+                    * Returns a single value (unless grouped)
+                    
+                    <aside class="notes">
+                        Now let's start using functions, which are extremely powerful features in PromQL.
+                        
+                        The sum() function does exactly what it sounds like - it adds up all the values from matching time series. In this example, we're summing CPU seconds across all CPU cores for system mode.
+                        
+                        This is particularly useful when you have multiple series that you want to combine. For instance, if you have 8 CPU cores, sum() will aggregate them into a single value.
+                        
+                        By default, aggregation functions like sum() eliminate all labels, giving you a single scalar result. But we'll soon see how to preserve specific labels when aggregating.
+                        
+                        One thing to note - if you're not using any grouping, sum() will return just a single value, representing the total across all matching series.
+                        
+                        Think of sum() like the SUM() function in SQL or spreadsheets - it's combining multiple rows into one.
+                    </aside>
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## Basic Functions - Average
+                    
+                    ```promql
+                    # Get the average
+                    avg(node_cpu_seconds_total{instance="localhost:9100",mode="system"})
+                    ```
+                    
+                    * Calculates mean across all matching time series
+                    * Other aggregation functions: `min`, `max`, `count`
+                    * Similar behavior to `sum` regarding labels
+                    
+                    <aside class="notes">
+                        The avg() function calculates the average (mean) value across all matching time series.
+                        
+                        In our example, we're finding the average CPU time in system mode across all CPU cores. This gives you a per-core average rather than a total.
+                        
+                        PromQL offers other similar aggregation functions like min() to find the minimum value, max() for the maximum value, and count() to simply count the number of matching time series.
+                        
+                        Like sum(), these functions eliminate labels by default and return a single value unless you use grouping.
+                        
+                        When would you use avg() instead of sum()? It depends on what question you're asking. If you want to know the total CPU usage, use sum(). If you want to know the average load per core, use avg(). Different metrics tell different stories about your system.
+                        
+                        These aggregation functions are the building blocks for more complex queries and dashboards.
+                    </aside>
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## Challenge Solution
+                    
+                    ```promql
+                    # Count CPU cores (simpler approach)
+                    count without(cpu, mode) (node_cpu_seconds_total{instance="localhost:9100"})
+                    ```
+                    
+                    * `without` preserves all labels except those specified
+                    * Alternatively, use `by` to specify which labels to keep
+                    * Great for counting distinct entities
+                    
+                    <aside class="notes">
+                        Now let's look at how to solve a common challenge - counting the number of CPU cores on a system.
+                        
+                        This solution uses the count() function, but with a special modifier: "without". The "without" clause tells Prometheus which labels to remove during aggregation, preserving all others.
+                        
+                        In this case, we're saying "count the metrics, but don't differentiate between different CPUs or modes." This effectively counts each unique CPU core once, regardless of the different mode metrics it reports.
+                        
+                        The opposite of "without" is "by", which lets you specify which labels to keep instead of which ones to remove. For example, "count by (instance)" would count separately for each instance.
+                        
+                        This pattern of using count with label preservation is perfect for counting distinct entities like CPU cores, disks, network interfaces, or any other hardware component that reports multiple metrics.
+                        
+                        This is one of those tricks that, once you know it, you'll use all the time in your Prometheus work.
+                    </aside>
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## Challenge Solution (Alternative)
+                    
+                    ```promql
+                    # Count CPU cores (full explanation)
+                    count(node_cpu_seconds_total{instance="localhost:9100",mode="idle"}) / 
+                    count without(mode) (node_cpu_seconds_total{instance="localhost:9100",mode="idle"})
+                    ```
+                    
+                    * More complex approach showing division of aggregations
+                    * Divides total series count by modes to get core count
+                    * Demonstrates nested expressions
+                    
+                    <aside class="notes">
+                        Here's an alternative solution to the CPU core counting problem. It's more complex but helps explain the underlying data structure.
+                        
+                        This approach works by understanding that for each CPU core, Prometheus collects metrics for multiple modes (idle, user, system, etc.). 
+                        
+                        The numerator counts all the series - that's one series per CPU core per mode. The denominator counts the series but eliminates the mode distinction, leaving one entry per CPU core.
+                        
+                        By dividing these two counts, we get the number of modes per core, which is equal to the number of CPU cores.
+                        
+                        This solution demonstrates how to combine multiple aggregation operations and divide their results - a powerful technique in more complex PromQL scenarios.
+                        
+                        While the previous solution is simpler and probably what you'd use in practice, understanding this approach gives you deeper insight into how Prometheus stores and processes metrics.
+                    </aside>
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## Key PromQL Operators
+                    
+                    * **Regex Operators**
+                      * `=~` - matches regex
+                      * `!~` - doesn't match regex
+                    
+                    * **Math Operators**
+                      * `+, -, *, /, %, ^`
+                    
+                    * **Comparison Operators**
+                      * `==, !=, >, <, >=, <=`
+                    
+                    * **Logical Operators**
+                      * `and, or, unless`
+                      
+                    <aside class="notes">
+                        Let's summarize all the operators we've learned and introduce a few more that you'll find useful.
+                        
+                        For regex operators, we have =~ for matching and !~ for non-matching. These let you use powerful regular expressions to filter your metrics.
+                        
+                        The math operators are what you'd expect: addition, subtraction, multiplication, division, modulo, and exponentiation. These let you perform calculations directly in your queries.
+                        
+                        Comparison operators like equals, not equals, greater than, and less than are great for filtering based on values rather than labels. For example, you could find all disks with less than 10% free space.
+                        
+                        Finally, we have logical operators: and, or, and unless. These let you combine multiple conditions. "And" requires both conditions to be true, "or" requires at least one condition to be true, and "unless" is true if the first condition is true and the second is false.
+                        
+                        These operators give you tremendous flexibility in constructing exactly the queries you need. As you practice more, combining these operators will become second nature.
+                    </aside>
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## Continue Learning
+                    
+                    * [Continue to Lab 1: CPU Exploration](../01_CPU_Exploration/index.html)
+                    * [Return to Slides Index](../index.html)
+                    
+                    <aside class="notes">
+                        Congratulations! You've completed Lab 0 and now have a solid foundation in PromQL fundamentals.
+                        
+                        We've covered basic queries, label filtering, mathematical operations, time ranges, and aggregation functions. These are the building blocks for all the more advanced PromQL techniques we'll explore later.
+                        
+                        To continue your learning journey, proceed to Lab 1 where we'll dive deeper into CPU metrics exploration. We'll apply the concepts we've learned today to real-world CPU monitoring scenarios.
+                        
+                        If you want to review the full set of available labs, you can return to the Slides Index.
+                        
+                        Remember that mastering PromQL is like learning any language - it takes practice. Don't be afraid to experiment with different queries in your Prometheus environment. The more you use these concepts, the more intuitive they'll become.
+                        
+                        Any questions before we wrap up this session?
+                    </aside>
+                </textarea>
+            </section>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/dist/reveal.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/markdown/markdown.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/highlight/highlight.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/notes/notes.js"></script>
+    <script>
+        Reveal.initialize({
+            hash: true,
+            plugins: [RevealMarkdown, RevealHighlight, RevealNotes],
+            highlight: {
+                highlightOnLoad: true,
+                languages: ['promql']
+            }
+        });
+    </script>
+</body>
+</html>

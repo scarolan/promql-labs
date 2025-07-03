@@ -1,0 +1,542 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<title>Lab 7: Recording Rules and Alerting</title>
+
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/dist/reset.css">
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/dist/reveal.css">
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/dist/theme/night.css">
+
+		<!-- Theme used for syntax highlighted code -->
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/plugin/highlight/monokai.css">
+        <style>
+            .reveal pre {
+                margin: 0;
+                box-shadow: none;
+            }
+            .reveal pre code {
+                padding: 20px;
+                max-height: 400px;
+                line-height: 1.2;
+            }
+            .two-column {
+                display: flex;
+                justify-content: space-between;
+            }
+            .two-column .left {
+                width: 48%;
+            }
+            .two-column .right {
+                width: 48%;
+            }
+            .reveal .smaller-text {
+                font-size: 0.8em;
+            }
+            .reveal .smallest-text {
+                font-size: 0.6em;
+            }
+            .reveal img.border {
+                border: 1px solid #fff;
+                box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            }
+        </style>
+	</head>
+	<body>
+		<div class="reveal">
+			<div class="slides">
+                <section>
+                    <h1>Lab 7: Recording Rules and Alerting</h1>
+                    <p>🚨 Advanced PromQL</p>
+                    <p><small>Navigate: <a href="../index.html">All Slides</a></small></p>
+                    <aside class="notes">
+                        Welcome to Lab 7, where we'll explore Prometheus Recording Rules and Alerting!
+                        
+                        In our previous labs, we've learned how to write increasingly sophisticated PromQL queries to monitor various aspects of system performance. Today, we're taking a big step forward by learning how to make those queries more efficient and how to turn them into actionable alerts.
+                        
+                        Recording rules and alerting are essential components of a production-grade monitoring system. They allow you to optimize performance, reduce load on your Prometheus server, and ensure that the right people are notified when things go wrong.
+                        
+                        These concepts represent the transition from ad-hoc monitoring to a systematic, production-ready approach. Whether you're managing a small cluster or a large-scale distributed system, the techniques we'll cover today are crucial for building reliable, performant monitoring solutions.
+                        
+                        By the end of this lab, you'll understand how to make your complex queries more efficient and how to set up intelligent alerts that notify you about potential problems before they affect your users.
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Objectives</h2>
+                    <ul>
+                        <li>Understand Prometheus recording rules</li>
+                        <li>Create efficient, reusable PromQL queries</li>
+                        <li>Build effective alerting rules</li>
+                    </ul>
+                    <aside class="notes">
+                        Our objectives for this lab focus on three key areas:
+                        
+                        First, we'll understand what Prometheus recording rules are and why they're so important. Recording rules allow you to pre-compute complex expressions and save the results as new time series, which can dramatically improve performance for frequently used queries.
+                        
+                        Second, we'll learn how to create efficient, reusable PromQL queries that follow best practices. This includes adopting consistent naming conventions and structuring queries in ways that maximize their performance and usability.
+                        
+                        Finally, we'll explore how to build effective alerting rules that notify the right people at the right time. We'll cover how to define meaningful alert conditions, reduce noise and false positives, and create informative alert messages that help responders quickly understand and address issues.
+                        
+                        These skills are essential for anyone responsible for monitoring production systems. They help you balance comprehensive monitoring with performance considerations, and ensure that alerts are meaningful, actionable, and timely.
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>What are Recording Rules?</h2>
+                    <ul>
+                        <li>Pre-computed expressions saved as new metrics</li>
+                        <li>Improve query performance for complex expressions</li>
+                        <li>Make dashboards more responsive</li>
+                        <li>Simplify sharing and reuse of complex queries</li>
+                        <li>Follow consistent naming conventions</li>
+                    </ul>
+                    <aside class="notes">
+                        Recording rules are one of Prometheus's most powerful features, yet they're often underutilized. Let's understand what they are and why they matter.
+                        
+                        At their core, recording rules are pre-computed expressions that get evaluated at regular intervals and stored as new time series in Prometheus. Think of them as saved queries that automatically run on a schedule.
+                        
+                        The primary benefit is performance. Complex PromQL expressions, especially those with range functions like rate(), can be computationally expensive. When these queries are computed in real-time every time you load a dashboard, they can cause significant delays. Recording rules solve this by doing the calculation ahead of time.
+                        
+                        This makes dashboards much more responsive. Instead of waiting for complex calculations to complete each time you view a dashboard, you're simply retrieving pre-computed values, which is much faster.
+                        
+                        Recording rules also promote reuse. Once you've defined a useful metric calculation, you can reference it by name in multiple places. If you later need to modify the calculation, you only need to update it in one place rather than finding every dashboard or alert that uses it.
+                        
+                        Finally, recording rules use consistent naming conventions that make your metrics more understandable and maintainable. We'll look at these conventions in more detail shortly.
+                        
+                        In essence, recording rules transform Prometheus from a query engine into a streamlined metrics pipeline, making your entire monitoring system more efficient and maintainable.
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Recording Rules Format</h2>
+                    <pre><code class="language-yaml">groups:
+  - name: cpu_rules
+    rules:
+      - record: instance:node_cpu_usage:percent
+        expr: 100 * (1 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m]))))
+</code></pre>
+                    <ul>
+                        <li><code>groups</code>: Logical grouping of related rules</li>
+                        <li><code>record</code>: Name of the new metric (following naming conventions)</li>
+                        <li><code>expr</code>: PromQL expression to be pre-computed</li>
+                    </ul>
+                    <aside class="notes">
+                        Now let's look at the format of recording rules in Prometheus. They're defined in YAML files with a specific structure that's important to understand.
+                        
+                        At the top level, rules are organized into groups. A group is a logical collection of related rules that are evaluated together. This grouping helps with organization and allows Prometheus to optimize evaluation.
+                        
+                        In this example, we have a group named "cpu_rules" that contains rules related to CPU metrics. It's a good practice to group rules by their function or the resource they monitor.
+                        
+                        Within each group, you define the actual rules. Each rule has two key components:
+                        
+                        The "record" field specifies the name of the new time series that will be created. This name should follow the naming conventions we'll discuss in the next slide. In our example, we're creating a metric called "instance:node_cpu_usage:percent".
+                        
+                        The "expr" field contains the PromQL expression that will be evaluated to generate the new time series. This is where you put the query you want to pre-compute. In our example, we're calculating the CPU usage percentage, which should be familiar from our earlier labs.
+                        
+                        When Prometheus evaluates this rule, it will compute the CPU usage percentage for each instance and store the results as new time series with the name "instance:node_cpu_usage:percent". These new time series can then be queried directly, which is much faster than recomputing the expression each time.
+                        
+                        The structure is simple but powerful, allowing you to transform complex queries into efficiently stored metrics.
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Naming Conventions</h2>
+                    <p><code>instance:node_cpu_usage:percent</code></p>
+                    <ul>
+                        <li><b>Prefix</b>: <code>instance:</code> - Indicates level of aggregation</li>
+                        <li><b>Metric name</b>: <code>node_cpu_usage</code> - What is being measured</li>
+                        <li><b>Suffix</b>: <code>:percent</code> - Unit of measurement</li>
+                        <li>Colons separate these components</li>
+                        <li>Makes metrics self-descriptive and consistent</li>
+                    </ul>
+                    <aside class="notes">
+                        Naming conventions are crucial for maintaining a clean, understandable metrics ecosystem. Prometheus has specific recommendations for naming recording rules that make them self-descriptive and consistent.
+                        
+                        Let's break down the example: instance:node_cpu_usage:percent
+                        
+                        The prefix, "instance:", indicates the level of aggregation. In this case, the metric is aggregated at the instance level, meaning we have separate values for each monitored instance. Other common prefixes might include "job:" for job-level aggregation or no prefix for global metrics.
+                        
+                        The middle part, "node_cpu_usage", is the metric name itself, describing what's being measured. This should clearly indicate the resource or phenomenon being monitored. It's good practice to maintain consistency with the original metric names when possible.
+                        
+                        The suffix, ":percent", indicates the unit of measurement. This is particularly important for derived metrics where the unit might not be obvious. Other common suffixes include ":bytes", ":seconds", or ":operations".
+                        
+                        These components are separated by colons, making them visually distinct and easy to parse. This structure makes your metrics self-descriptive - anyone looking at the metric name can immediately understand what it represents and how it's aggregated.
+                        
+                        Following these conventions consistently makes your Prometheus ecosystem more maintainable and user-friendly. It reduces confusion, makes documentation easier, and helps new team members understand your monitoring system more quickly.
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Setting Up Recording Rules</h2>
+                    <ol>
+                        <li>Create rules directory: <code>mkdir -p /etc/prometheus/rules</code></li>
+                        <li>Create rule file: <code>/etc/prometheus/rules/cpu_rules.yml</code></li>
+                        <li>Update main Prometheus configuration:</li>
+                    </ol>
+                    <pre><code class="language-yaml"># In prometheus.yml
+rule_files:
+  - "/etc/prometheus/rules/*.yml"</code></pre>
+                    <p>Reload configuration: <code>curl -X POST http://localhost:9090/-/reload</code></p>
+                    <aside class="notes">
+                        Now that we understand what recording rules are and how they're structured, let's talk about how to set them up in your Prometheus environment. This is a straightforward process that involves a few configuration steps.
+                        
+                        First, create a directory to store your rule files. By convention, this is often a subdirectory called "rules" within your Prometheus configuration directory. The command shown uses mkdir with the -p flag to create the directory and any necessary parent directories.
+                        
+                        Next, create your rule file with the YAML structure we discussed earlier. It's a good practice to name these files according to their purpose, like "cpu_rules.yml" for CPU-related rules. This makes it easier to find and manage rules as your monitoring grows.
+                        
+                        Then, you need to tell Prometheus where to find these rule files by updating the main Prometheus configuration file, typically prometheus.yml. Add a section called "rule_files" that lists the paths to your rule files. You can use wildcards as shown to include all YAML files in the rules directory.
+                        
+                        Finally, after making these changes, you need to reload the Prometheus configuration. If you've enabled the HTTP API, you can do this without restarting Prometheus by sending a POST request to the reload endpoint as shown. Otherwise, you'll need to restart the Prometheus service.
+                        
+                        After these steps, Prometheus will start evaluating your recording rules at the default interval (usually 1 minute, though this can be configured). You can verify that your rules are working by querying the new metrics they create.
+                        
+                        This process makes it easy to add, modify, or remove recording rules as your monitoring needs evolve.
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Performance Benefits</h2>
+                    <pre><code class="language-promql"># Complex query - calculate in real time
+100 * (1 - (avg by (instance) (rate(node_cpu_seconds_total{instance="localhost:9100",mode="idle"}[5m]))))
+
+# With recording rule (faster)
+instance:node_cpu_usage:percent{instance="localhost:9100"}</code></pre>
+                    <ul>
+                        <li>Recording rules are evaluated at regular intervals</li>
+                        <li>Results are stored as time series data</li>
+                        <li>Queries using recording rules execute significantly faster</li>
+                        <li>Essential for dashboards with many complex queries</li>
+                    </ul>
+                    <aside class="notes">
+                        Let's talk about the performance benefits of recording rules, which are substantial and often the primary reason for implementing them.
+                        
+                        Consider the two queries shown here. The first is a complex query that calculates CPU usage percentage in real-time. It involves multiple operations: a rate calculation over a 5-minute window, averaging across instances, and arithmetic operations. Each time this query is executed, Prometheus has to perform all these calculations from scratch.
+                        
+                        The second query simply retrieves a pre-computed metric created by a recording rule. It's much simpler and therefore much faster to execute.
+                        
+                        The performance difference becomes significant because recording rules are evaluated at regular intervals (typically every minute) and the results are stored as regular time series data in Prometheus's database. This means that when you query a recording rule metric, you're just doing a simple lookup rather than a complex computation.
+                        
+                        For individual queries, this might save a few hundred milliseconds. But the real impact becomes apparent in dashboards that contain many complex queries. Without recording rules, loading such a dashboard might take several seconds or even minutes as each panel executes its complex query. With recording rules, the same dashboard might load almost instantly.
+                        
+                        This performance improvement is particularly important for frequently viewed dashboards, especially those used during incidents when every second counts. It also reduces the load on your Prometheus server, allowing it to handle more queries and monitor more targets without performance degradation.
+                        
+                        In production environments with large volumes of metrics, recording rules are not just a nice optimization but an essential component of a well-functioning monitoring system.
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>What are Alert Rules?</h2>
+                    <ul>
+                        <li>Special type of rule that triggers notifications</li>
+                        <li>Based on PromQL expressions meeting defined conditions</li>
+                        <li>Can use recording rules for better performance</li>
+                        <li>Include delay period to prevent flapping</li>
+                        <li>Contain metadata about the alert's meaning</li>
+                    </ul>
+                    <aside class="notes">
+                        Now let's shift our focus to alert rules, which are the mechanism Prometheus uses to notify you when something needs attention.
+                        
+                        Alert rules are a special type of rule that triggers notifications when certain conditions are met. While recording rules create new metrics, alert rules create notifications based on metric values.
+                        
+                        Like recording rules, alert rules are based on PromQL expressions, but with a twist: the expression must evaluate to a condition that can be either true or false. For example, "is CPU usage above 80%?" or "has the error rate increased by more than 10% in the last hour?".
+                        
+                        You can (and often should) use recording rules in your alert conditions. This improves performance and makes your alerts more maintainable by building on well-defined, consistent metrics.
+                        
+                        A key feature of Prometheus alerts is the delay period, specified by the "for" clause. This requires the condition to be true for a certain duration before the alert fires, which helps prevent "flapping" - alerts that trigger and resolve rapidly due to brief spikes or fluctuations.
+                        
+                        Alert rules also contain metadata in the form of labels and annotations. This metadata provides context about what the alert means, why it's important, and potentially how to respond to it. This information is crucial for the people receiving the alerts, especially during high-stress incidents.
+                        
+                        Well-designed alerts are a critical component of reliable systems. They should be specific, actionable, and meaningful, drawing attention to real problems while avoiding false alarms that might lead to alert fatigue.
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Alert Rule Structure</h2>
+                    <pre class="smaller-text"><code class="language-yaml">groups:
+  - name: example_alerts
+    rules:
+      - alert: HighCPUUsage
+        expr: instance:node_cpu_usage:percent > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage on {{ $labels.instance }}"
+          description: "CPU usage has exceeded 80% for 5 minutes on {{ $labels.instance }}"</code></pre>
+                    <aside class="notes">
+                        Now let's look at the structure of an alert rule in Prometheus. The format is similar to recording rules, with some additional fields specific to alerting.
+                        
+                        Like recording rules, alert rules are organized into groups. This example shows a group named "example_alerts" that might contain various system-level alerts.
+                        
+                        Each rule within the group has several key components:
+                        
+                        The "alert" field defines the name of the alert. This should be descriptive but concise, as it will be used in alert notifications. CamelCase is commonly used for alert names.
+                        
+                        The "expr" field contains the PromQL expression that determines when the alert should fire. Notice that we're using our recording rule from earlier, which improves performance. The expression must return a boolean result - either true (alert fires) or false (no alert).
+                        
+                        The "for" field specifies how long the condition must be true before the alert transitions from "pending" to "firing". In this example, CPU usage must exceed 80% for 5 continuous minutes before the alert fires. This helps filter out brief spikes and reduces alert noise.
+                        
+                        The "labels" section adds metadata that can be used for routing alerts to different notification channels or representing the alert's severity. The "severity" label is commonly used to distinguish between different levels of urgency, such as "info", "warning", or "critical".
+                        
+                        Finally, the "annotations" section provides human-readable information about the alert. The "summary" is a brief description, while the "description" provides more detailed context. Notice the template variables like {{ $labels.instance }} - these will be replaced with the actual values when the alert fires.
+                        
+                        This structure provides a flexible, powerful way to define alerts that are both technically precise and humanly informative.
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Alert Rule Components</h2>
+                    <ul>
+                        <li><code>alert</code>: Name of the alert</li>
+                        <li><code>expr</code>: PromQL expression that triggers the alert</li>
+                        <li><code>for</code>: Duration the condition must be true before alerting</li>
+                        <li><code>labels</code>: Key-value pairs for routing and filtering</li>
+                        <li><code>annotations</code>: Human-readable info with template variables</li>
+                    </ul>
+                    <aside class="notes">
+                        Let's break down the key components of alert rules in more detail, as each one plays an important role in creating effective alerts.
+                        
+                        The "alert" component defines the name of the alert. This should be descriptive, unique, and follow a consistent naming convention. Good alert names quickly communicate what's happening without requiring the recipient to read the full description - for example, "HighCPUUsage" or "APIHighErrorRate".
+                        
+                        The "expr" component contains the PromQL expression that determines when the alert should fire. This is the heart of the alert rule - it defines the condition you're monitoring. This expression should evaluate to either true or false (or more accurately, to data or no data). For best performance, especially with complex queries, consider using recording rules in your alert expressions.
+                        
+                        The "for" component specifies how long the condition must be true before the alert fires. This is crucial for reducing noise from transient issues. The appropriate duration depends on the context - it might be 30 seconds for a critical service outage, or several hours for a slow-growing disk space issue. Consider how quickly action would need to be taken when setting this value.
+                        
+                        The "labels" component adds metadata to the alert as key-value pairs. These labels can be used for routing alerts to different notification channels, categorizing alerts, or providing additional context. The "severity" label is particularly important as it often determines how urgently an alert is treated.
+                        
+                        Finally, the "annotations" component provides human-readable information about the alert. This is what people will read when trying to understand the alert. The summary should be concise, while the description can provide more detailed context, potential causes, or troubleshooting steps.
+                        
+                        Taken together, these components allow you to create alerts that are technically precise, properly routed, and humanly informative.
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Template Variables</h2>
+                    <pre><code class="language-yaml">annotations:
+  summary: "High CPU usage on {{ $labels.instance }}"
+  description: "CPU usage has exceeded 80% for 5 minutes on {{ $labels.instance }}"</code></pre>
+                    <ul>
+                        <li><code>{{ $labels.X }}</code>: Refers to label values from the alert</li>
+                        <li><code>{{ $value }}</code>: Refers to the value that triggered the alert</li>
+                        <li>Makes alerts more informative and actionable</li>
+                        <li>Variables are replaced with actual values when alert fires</li>
+                    </ul>
+                    <aside class="notes">
+                        Template variables are what transform Prometheus alerts from generic notifications into specific, actionable information. They're a key part of making your alerts useful to the people who receive them.
+                        
+                        In the example shown, we're using template variables in the annotations section of our alert rule. The double curly braces syntax {{ }} indicates a template variable that will be replaced with an actual value when the alert fires.
+                        
+                        The most commonly used variable is {{ $labels.X }}, where X is the name of a label from your metrics. In our example, {{ $labels.instance }} will be replaced with the specific instance name where CPU usage is high, such as "localhost:9100". This immediately tells the recipient which server is experiencing the issue, without them having to do additional investigation.
+                        
+                        Another useful variable is {{ $value }}, which contains the actual value that triggered the alert. For example, if CPU usage is at 85%, {{ $value }} would be replaced with 85. This gives recipients important context about the severity of the issue.
+                        
+                        These variables make alerts more informative and actionable by including specific details about what's happening, where it's happening, and how severe it is. A good alert should contain enough information for the recipient to understand the problem and begin addressing it without having to gather additional information.
+                        
+                        You can use these template variables in both the summary and description fields, and even in the alert name if needed. When designing your alerts, think about what information would be most useful to someone responding to the issue, and include that information using template variables.
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Setting Up Alert Rules</h2>
+                    <ol>
+                        <li>Create alert file: <code>/etc/prometheus/rules/cpu_alerts.yml</code></li>
+                        <li>Add the alert rule configuration</li>
+                        <li>Reload Prometheus: <code>curl -X POST http://localhost:9090/-/reload</code></li>
+                        <li>View alerts in Prometheus UI: <code>http://localhost:9090/alerts</code></li>
+                    </ol>
+                    <aside class="notes">
+                        Setting up alert rules follows a similar process to setting up recording rules. Let me walk you through the steps:
+                        
+                        First, create a file for your alert rules. It's a good practice to separate alerts into different files based on their category or the system they monitor. For example, we're creating a file specifically for CPU-related alerts. This organization makes it easier to manage and update alerts as your monitoring system grows.
+                        
+                        Next, add your alert rule configuration using the YAML format we discussed earlier. This includes the alert name, the expression that triggers it, the duration before it fires, and any labels or annotations that provide additional context.
+                        
+                        After saving your configuration, reload Prometheus to apply the changes. If you've enabled the HTTP API (which is recommended), you can do this with a simple curl command as shown. This allows you to update alert rules without disrupting your monitoring service. If the HTTP API isn't enabled, you'll need to restart the Prometheus service instead.
+                        
+                        Finally, verify that your alert rules have been loaded correctly by checking the Alerts page in the Prometheus UI. This page shows all configured alerts and their current status - whether they're inactive, pending (condition is true but duration hasn't been met), or firing (condition has been true for the specified duration).
+                        
+                        It's important to check that your alerts are working as expected. A common issue is syntax errors in the alert rule YAML file, which might prevent the rules from loading properly. If you don't see your alerts in the UI, check the Prometheus logs for error messages.
+                        
+                        Remember that alert rules in Prometheus only detect the conditions for alerts - to actually send notifications, you'll need to integrate with Alertmanager, which handles notification routing, grouping, and delivery to various channels like email, Slack, or PagerDuty.
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Testing Alert Rules</h2>
+                    <pre><code class="language-promql"># Query to check if condition is met
+instance:node_cpu_usage:percent{instance="localhost:9100"} > 80</code></pre>
+                    <ul>
+                        <li>Returns no data when condition is false</li>
+                        <li>Returns data points when condition is true</li>
+                        <li>Generate load to test: <code>stress-ng --cpu 4 --timeout 300s</code></li>
+                        <li>Alert will fire after condition persists for the duration</li>
+                    </ul>
+                    <aside class="notes">
+                        Testing alert rules is a crucial step in ensuring your monitoring system works correctly when it's needed most. Let's look at how to do this effectively.
+                        
+                        The first step is to understand how alert expressions work in Prometheus. When you use a boolean comparison in PromQL, like the example shown, it follows a filtering model. If the condition is false, the time series is filtered out, resulting in no data. If the condition is true, the time series passes through the filter, resulting in data points.
+                        
+                        You can test your alert expressions directly in the Prometheus UI by entering them in the query box. This helps you verify that the expression correctly identifies the conditions you're trying to alert on.
+                        
+                        For thorough testing, you often need to create the conditions that would trigger the alert. In our example, we want to test an alert that fires when CPU usage exceeds 80%. To create this condition artificially, we can use a tool like stress-ng, which puts load on system resources. The command shown will stress 4 CPU cores for 300 seconds (5 minutes), which should cause CPU usage to spike and potentially trigger our alert.
+                        
+                        Remember that Prometheus follows the "for" duration in your alert rule before transitioning from "pending" to "firing". In our example, the condition needs to be true for 5 continuous minutes. During testing, you should verify that:
+                        1. The alert enters "pending" state when the condition becomes true
+                        2. The alert transitions to "firing" after the specified duration
+                        3. The alert resolves once the condition is no longer true
+                        
+                        Testing with real conditions helps identify issues with your alert rules before they matter in production. Common problems include expressions that are too sensitive (causing alert noise) or not sensitive enough (missing important events), or "for" durations that are too short or too long for the specific scenario.
+                        
+                        After testing, remember to stop your test load generator to return your system to normal operation.
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Challenge: Memory Usage Rules</h2>
+                    <p>Create a recording rule for memory usage percentage that follows Prometheus naming conventions</p>
+                    <div class="fragment">
+                        <h3>Solution:</h3>
+                        <pre><code class="language-yaml">groups:
+  - name: memory_rules
+    rules:
+      - record: instance:node_memory_usage:percent
+        expr: 100 * (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes))</code></pre>
+                    </div>
+                    <aside class="notes">
+                        Now let's tackle a challenge that tests your understanding of recording rules and Prometheus naming conventions. The task is to create a recording rule for memory usage percentage.
+                        
+                        When presenting this challenge to students, encourage them to think about:
+                        1. What metrics are available for memory usage in Prometheus?
+                        2. How do we calculate memory usage percentage from these metrics?
+                        3. What's an appropriate name following Prometheus conventions?
+                        
+                        Give students a few minutes to work on their solution. They should be able to look at the node exporter metrics in the Prometheus UI to find the available memory metrics.
+                        
+                        The solution is shown on the slide. Let's break it down:
+                        
+                        We've created a group called "memory_rules" to organize our memory-related recording rules.
+                        
+                        The record name "instance:node_memory_usage:percent" follows the naming convention we discussed earlier:
+                        - "instance:" prefix indicates it's instance-level data
+                        - "node_memory_usage" describes what we're measuring
+                        - ":percent" suffix indicates the unit
+                        
+                        The expression calculates memory usage percentage by:
+                        1. Finding the ratio of available memory to total memory
+                        2. Subtracting from 1 to get usage instead of availability
+                        3. Multiplying by 100 to convert to a percentage
+                        
+                        This approach correctly uses the node_memory_MemAvailable_bytes and node_memory_MemTotal_bytes metrics, which are standard in the node exporter. The calculation gives us the percentage of memory that's in use, which is a key metric for system monitoring.
+                        
+                        Point out to students that this is similar to how we calculated CPU usage, but with different metrics. The pattern of "100 * (1 - (available / total))" is common for calculating resource usage percentages.
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Challenge: Memory Alert Rule</h2>
+                    <div class="fragment">
+                        <pre class="smaller-text"><code class="language-yaml">groups:
+  - name: memory_alerts
+    rules:
+      - alert: HighMemoryUsage
+        expr: instance:node_memory_usage:percent > 90
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage on {{ $labels.instance }}"
+          description: "Memory usage has exceeded 90% for 5 minutes on {{ $labels.instance }}"</code></pre>
+                    </div>
+                    <aside class="notes">
+                        Building on our previous challenge, let's create an alert rule that uses our memory usage recording rule. This is an excellent opportunity for students to apply what they've learned about alert rule structure.
+                        
+                        When presenting this challenge, ask students to consider:
+                        1. What threshold would be appropriate for a memory usage alert?
+                        2. How long should the condition persist before alerting?
+                        3. What information would be helpful in the alert annotations?
+                        
+                        The solution shown demonstrates a well-structured memory usage alert:
+                        
+                        We've created a group called "memory_alerts" to organize memory-related alerts.
+                        
+                        The alert name "HighMemoryUsage" clearly communicates what the alert is about. It's concise and follows the CamelCase convention commonly used for alert names.
+                        
+                        The expression uses our recording rule from the previous challenge. This is a best practice - using recording rules in your alerts improves performance and ensures consistency. The threshold is set at 90%, which is a reasonable value for memory usage alerts. Unlike CPU, which can safely run at high utilization, high memory usage often indicates a potential problem such as a memory leak.
+                        
+                        The "for" duration is set to 5 minutes. This helps filter out temporary spikes while still alerting quickly enough for action to be taken before memory exhaustion occurs.
+                        
+                        The "severity" label is set to "warning" rather than "critical", which might be appropriate depending on your environment. For some systems, high memory usage might warrant a critical alert instead.
+                        
+                        The annotations use template variables to provide specific information about which instance is experiencing high memory usage. This makes the alert actionable - the recipient immediately knows which server to investigate.
+                        
+                        Emphasize to students that effective alerts strike a balance between promptness and reliability. An alert that fires too easily becomes noise that's eventually ignored; an alert that's too conservative might miss important issues until it's too late.
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Benefits of Recording Rules</h2>
+                    <ul>
+                        <li><b>Performance</b>: Queries execute faster with pre-computation</li>
+                        <li><b>Consistency</b>: Same named metrics ensure consistent results</li>
+                        <li><b>Readability</b>: Complex expressions replaced with descriptive names</li>
+                        <li><b>Efficiency</b>: Reduces Prometheus load for complex queries</li>
+                        <li><b>Maintainability</b>: Easier to update queries in one place</li>
+                    </ul>
+                    <aside class="notes">
+                        As we wrap up our discussion of recording rules, let's summarize their key benefits to reinforce why they're such an important part of a production Prometheus deployment.
+                        
+                        Performance is perhaps the most immediate benefit. Recording rules pre-compute complex expressions and store the results, so queries execute much faster. This is especially noticeable in dashboards with multiple complex panels or when querying over long time ranges. What might take seconds or even minutes to compute in real-time can be retrieved instantly from a recording rule.
+                        
+                        Consistency is another significant advantage. When you define a metric calculation in a recording rule, you ensure that the same calculation is used everywhere that metric is referenced. This eliminates subtle differences that might occur when similar but slightly different expressions are used across multiple dashboards or alerts.
+                        
+                        Readability improves dramatically with recording rules. Compare a query like "instance:node_cpu_usage:percent" to "100 * (1 - (avg by (instance) (rate(node_cpu_seconds_total{mode='idle'}[5m]))))". The recording rule name clearly communicates what the metric represents, making dashboards and alerts more understandable at a glance.
+                        
+                        Efficiency extends beyond just query performance. Recording rules reduce the computational load on your Prometheus server, allowing it to handle more queries, more metrics, and more targets without performance degradation. This can be crucial as your monitoring scales up.
+                        
+                        Maintainability is perhaps the most strategic benefit. When a calculation needs to be updated - perhaps to fix a bug or improve accuracy - you only need to update it in one place: the recording rule. Without recording rules, you'd need to find and update every dashboard, alert, and query that uses that calculation, which is error-prone and time-consuming.
+                        
+                        Together, these benefits make recording rules an essential tool for scaling and maintaining a production Prometheus deployment. As your monitoring system grows in complexity and importance, investing time in well-designed recording rules pays significant dividends.
+                    </aside>
+                </section>
+
+                <section>
+                    <h1>🌟 Great job!</h1>
+                    <p>Continue to Lab 8: Advanced PromQL Operations</p>
+                    <p><small>Navigate: <a href="../index.html">All Slides</a> | <a href="../08_Advanced_PromQL_Operations/index.html">Next Lab</a></small></p>
+                    <aside class="notes">
+                        Congratulations! You've completed Lab 7 on Recording Rules and Alerting, which represents a significant step in your Prometheus journey.
+                        
+                        In this lab, we've moved beyond simply querying and visualizing metrics to making our monitoring system more efficient and actionable. You now understand how to use recording rules to improve performance and maintain consistency in your queries. You also know how to set up alert rules that notify you when specific conditions occur, helping you respond quickly to potential issues.
+                        
+                        These concepts are essential building blocks for production-grade monitoring systems. Recording rules and alerts transform Prometheus from a passive observer into an active participant in maintaining your system's health and reliability.
+                        
+                        As your monitoring needs grow more sophisticated, the practices you've learned today will become increasingly valuable. Recording rules will help you maintain performance as your metrics volume increases, and well-designed alerts will ensure that you're notified about important issues without being overwhelmed by false alarms.
+                        
+                        In the next lab, we'll build on these foundations by exploring advanced PromQL operations that allow for even more sophisticated analysis and monitoring. You'll learn techniques that expand the expressive power of your queries and enable new insights into your systems.
+                        
+                        Before moving on, make sure you're comfortable with the material we've covered. Try creating your own recording and alert rules beyond the examples we've discussed, and experiment with different thresholds and durations to get a feel for how they affect alert behavior.
+                    </aside>
+                </section>
+            </div>
+		</div>
+
+		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/dist/reveal.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/plugin/notes/notes.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/plugin/markdown/markdown.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/plugin/highlight/highlight.js"></script>
+		<script>
+			// More info about initialization & config:
+			// - https://revealjs.com/initialization/
+			// - https://revealjs.com/config/
+			Reveal.initialize({
+				hash: true,
+                slideNumber: true,
+				// Learn about plugins: https://revealjs.com/plugins/
+				plugins: [ RevealMarkdown, RevealHighlight, RevealNotes ]
+			});
+		</script>
+	</body>
+</html>
