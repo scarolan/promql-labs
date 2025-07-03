@@ -824,16 +824,45 @@ The advanced techniques we've covered today separate casual PromQL users from tr
 </aside>
                 </textarea>
             </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    # 🌟 Great job!
+                    
+                    Continue to Lab 9: Histograms and Quantiles
+                    
+                    <small>Navigate: [All Slides](../index.html) | [Next Lab](../09_Histograms_Quantiles/index.html)</small>
+                    
+<aside class="notes">
+Congratulations! You've completed Lab 8 on Advanced PromQL Operations, which has equipped you with powerful techniques for sophisticated data analysis in Prometheus.
+
+In this lab, we explored a variety of advanced PromQL features that extend your monitoring capabilities far beyond basic metrics. You've learned how to transform labels, compare metrics across time periods, analyze complex time-based patterns, identify important outliers, and detect missing metrics.
+
+These techniques represent the transition from basic monitoring to sophisticated observability. With these tools at your disposal, you can create context-aware alerts, perform detailed system analysis, and extract more meaningful insights from your metrics.
+
+As your monitoring needs grow more complex, the advanced techniques covered in this lab will become increasingly valuable. They allow you to adapt to changing requirements without reconfiguring your entire monitoring pipeline, and they help you build more intelligent, less noisy alerting systems.
+
+In the next and final lab, we'll explore histograms and quantiles, which are essential for understanding distributions - particularly for latency and response time metrics. These concepts will complete your PromQL toolkit and allow you to implement sophisticated service level objectives.
+
+Before moving on, try applying some of these advanced techniques to your own metrics. Experiment with label transformations, historical comparisons, or outlier detection to gain new insights into your systems.
+</aside>
+                </textarea>
+            </section>
         </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/dist/reveal.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/notes/notes.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/markdown/markdown.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/highlight/highlight.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/notes/notes.js"></script>
     <script>
         Reveal.initialize({
             hash: true,
-            plugins: [ RevealMarkdown, RevealHighlight, RevealNotes ]
+            transition: 'none', // Disable slide animations
+            plugins: [RevealMarkdown, RevealHighlight, RevealNotes],
+            highlight: {
+                highlightOnLoad: true,
+                languages: ['promql']
+            }
         });
     </script>
 </body>

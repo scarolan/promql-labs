@@ -19,15 +19,15 @@
                     
                     PromQL Labs
                     
-                    <aside class="notes">
-                        Welcome to Lab 2 of our PromQL series! In this session, we'll build on what we learned about CPU metrics in Lab 1 and learn how to calculate meaningful CPU usage rates.
-                        
-                        In Lab 1, we explored the raw CPU counter metrics, but as we saw, those raw values don't directly tell us how busy our CPUs are right now. They're just ever-increasing counters.
-                        
-                        Today, we'll learn how to transform those raw counters into actual CPU utilization percentages that you can use for monitoring, alerting, and capacity planning.
-                        
-                        This is where PromQL really starts to show its power - the ability to transform raw data into actionable insights with just a few functions.
-                    </aside>
+<aside class="notes">
+Welcome to Lab 2 of our PromQL series! In this session, we'll build on what we learned about CPU metrics in Lab 1 and learn how to calculate meaningful CPU usage rates.
+
+In Lab 1, we explored the raw CPU counter metrics, but as we saw, those raw values don't directly tell us how busy our CPUs are right now. They're just ever-increasing counters.
+
+Today, we'll learn how to transform those raw counters into actual CPU utilization percentages that you can use for monitoring, alerting, and capacity planning.
+
+This is where PromQL really starts to show its power - the ability to transform raw data into actionable insights with just a few functions.
+</aside>
                 </textarea>
             </section>
 
@@ -39,16 +39,16 @@
                     * Aggregate CPU usage by mode
                     * Visualize CPU usage in Grafana
                     
-                    <aside class="notes">
-                        Our objectives for this lab are very practical:
-                        
-                        First, we'll learn how to use the rate() function - one of the most important functions in PromQL. It will transform our raw counter values into rates of change per second, which are much more useful for monitoring.
-                        
-                        Next, we'll aggregate CPU usage by mode to understand what our CPUs are actually doing - how much time they're spending in user code, system code, or sitting idle.
-                        
-                        Finally, we'll discuss how to visualize these CPU metrics in Grafana, turning our PromQL queries into intuitive dashboards that help you monitor system health at a glance.
-                        
-                        By the end of this lab, you'll be able to create meaningful CPU utilization metrics that tell you exactly how busy your systems are and what they're busy doing.
+<aside class="notes">
+Our objectives for this lab are very practical:
+
+First, we'll learn how to use the rate() function - one of the most important functions in PromQL. It will transform our raw counter values into rates of change per second, which are much more useful for monitoring.
+
+Next, we'll aggregate CPU usage by mode to understand what our CPUs are actually doing - how much time they're spending in user code, system code, or sitting idle.
+
+Finally, we'll discuss how to visualize these CPU metrics in Grafana, turning our PromQL queries into intuitive dashboards that help you monitor system health at a glance.
+
+By the end of this lab, you'll be able to create meaningful CPU utilization metrics that tell you exactly how busy your systems are and what they're busy doing.
                     </aside>
                 </textarea>
             </section>
@@ -67,18 +67,18 @@
                     * Can't see small changes in large values
                     * Need to calculate rate of change
                     
-                    <aside class="notes">
-                        Let's first revisit the problem with raw counters, which we touched on in Lab 1.
-                        
-                        When you look at a raw counter like node_cpu_seconds_total, you're seeing cumulative values that have been increasing since the system started. The longer your system runs, the larger these values get.
-                        
-                        These raw values are hard to interpret directly. If I tell you that CPU 0 has spent 12,345 seconds in user mode, that doesn't tell you anything about how busy it is right now.
-                        
-                        Also, when values get very large, it becomes impossible to see small changes. A change from 12,345 to 12,346 is negligible when looking at the raw values, but might represent an important spike in activity.
-                        
-                        What we really want to know is the rate of change - how quickly is this counter increasing? That tells us how much CPU time is being used right now, which is much more useful for monitoring.
-                        
-                        This is where the rate() function comes in, which we'll explore next.
+<aside class="notes">
+Let's first revisit the problem with raw counters, which we touched on in Lab 1.
+
+When you look at a raw counter like node_cpu_seconds_total, you're seeing cumulative values that have been increasing since the system started. The longer your system runs, the larger these values get.
+
+These raw values are hard to interpret directly. If I tell you that CPU 0 has spent 12,345 seconds in user mode, that doesn't tell you anything about how busy it is right now.
+
+Also, when values get very large, it becomes impossible to see small changes. A change from 12,345 to 12,346 is negligible when looking at the raw values, but might represent an important spike in activity.
+
+What we really want to know is the rate of change - how quickly is this counter increasing? That tells us how much CPU time is being used right now, which is much more useful for monitoring.
+
+This is where the rate() function comes in, which we'll explore next.
                     </aside>
                 </textarea>
             </section>
@@ -97,18 +97,18 @@
                     * Returns actual CPU utilization (0-1 fraction)
                     * Better for visualizing trends
                     
-                    <aside class="notes">
-                        The rate() function is one of the most important functions in PromQL. It calculates the per-second rate of increase for counter metrics.
-                        
-                        The syntax requires a time range in square brackets - here we're using [5m] for 5 minutes. This tells Prometheus to look at how much the counter has increased over the last 5 minutes, and divide by the number of seconds to get a per-second rate.
-                        
-                        For CPU metrics, the result is a fraction between 0 and 1 representing utilization. For example, 0.25 means the CPU spent 25% of its time in that mode. Since a CPU core can only do one thing at a time, this directly translates to utilization.
-                        
-                        Why use [5m] and not [1m] or [30s]? Longer ranges smooth out short spikes and give more stable values, while shorter ranges show more immediate changes but can be noisier. 5 minutes is often a good balance for CPU metrics.
-                        
-                        This transformation makes the data much better for visualizing trends. Now we can easily see if CPU usage is increasing, decreasing, or stable over time.
-                        
-                        Note that rate() automatically handles counter resets (which happen when a service restarts), making it robust for real-world monitoring.
+<aside class="notes">
+The rate() function is one of the most important functions in PromQL. It calculates the per-second rate of increase for counter metrics.
+
+The syntax requires a time range in square brackets - here we're using [5m] for 5 minutes. This tells Prometheus to look at how much the counter has increased over the last 5 minutes, and divide by the number of seconds to get a per-second rate.
+
+For CPU metrics, the result is a fraction between 0 and 1 representing utilization. For example, 0.25 means the CPU spent 25% of its time in that mode. Since a CPU core can only do one thing at a time, this directly translates to utilization.
+
+Why use [5m] and not [1m] or [30s]? Longer ranges smooth out short spikes and give more stable values, while shorter ranges show more immediate changes but can be noisier. 5 minutes is often a good balance for CPU metrics.
+
+This transformation makes the data much better for visualizing trends. Now we can easily see if CPU usage is increasing, decreasing, or stable over time.
+
+Note that rate() automatically handles counter resets (which happen when a service restarts), making it robust for real-world monitoring.
                     </aside>
                 </textarea>
             </section>
@@ -124,18 +124,18 @@
                     * Extrapolates to per-second value
                     * Results in instant vector
                     
-                    <aside class="notes">
-                        This diagram from the Prometheus documentation illustrates how the rate function works behind the scenes.
-                        
-                        First, it takes all the samples within the specified time range - in our case, the last 5 minutes.
-                        
-                        Then, it calculates the slope of the increase, essentially finding out how quickly the counter is incrementing. It's smart enough to ignore counter resets, which appear as sudden drops in the value when services restart.
-                        
-                        Next, it extrapolates this to a per-second value, giving us the average rate of change over that time period.
-                        
-                        The result is an instant vector - a single point in time showing the current rate - rather than a range vector. This makes it suitable for graphing and further calculations.
-                        
-                        Understanding how rate() works helps you choose appropriate time ranges and interpret the results correctly. Remember that rate() calculates an average over the time range, so very short spikes might be smoothed out with longer ranges.
+<aside class="notes">
+This diagram from the Prometheus documentation illustrates how the rate function works behind the scenes.
+
+First, it takes all the samples within the specified time range - in our case, the last 5 minutes.
+
+Then, it calculates the slope of the increase, essentially finding out how quickly the counter is incrementing. It's smart enough to ignore counter resets, which appear as sudden drops in the value when services restart.
+
+Next, it extrapolates this to a per-second value, giving us the average rate of change over that time period.
+
+The result is an instant vector - a single point in time showing the current rate - rather than a range vector. This makes it suitable for graphing and further calculations.
+
+Understanding how rate() works helps you choose appropriate time ranges and interpret the results correctly. Remember that rate() calculates an average over the time range, so very short spikes might be smoothed out with longer ranges.
                     </aside>
                 </textarea>
             </section>
@@ -150,16 +150,16 @@
                     * `rate(idle[5m])` near 1 means mostly idle
                     * `rate(user[5m])` near 1 means full user-space usage
                     
-                    <aside class="notes">
-                        Let's interpret the results from our rate query. When we calculate the rate of CPU seconds, we get values between 0 and 1 for each CPU core and mode.
-                        
-                        These values represent the fraction of time the CPU core spent in each mode. A value of 0 means 0% of time was spent in that mode, while 1 means 100% of time was spent there.
-                        
-                        For example, if rate(node_cpu_seconds_total{mode="idle"}[5m]) returns 0.8 for a particular CPU, it means that CPU was idle 80% of the time over the last 5 minutes.
-                        
-                        Similarly, if rate(node_cpu_seconds_total{mode="user"}[5m]) returns 0.15, it means the CPU spent 15% of its time executing user-space applications.
-                        
-                        These values are much more intuitive for monitoring than raw counters. You can directly see how busy your CPUs are and what they're busy doing, which is essential for performance troubleshooting and capacity planning.
+<aside class="notes">
+Let's interpret the results from our rate query. When we calculate the rate of CPU seconds, we get values between 0 and 1 for each CPU core and mode.
+
+These values represent the fraction of time the CPU core spent in each mode. A value of 0 means 0% of time was spent in that mode, while 1 means 100% of time was spent there.
+
+For example, if rate(node_cpu_seconds_total{mode="idle"}[5m]) returns 0.8 for a particular CPU, it means that CPU was idle 80% of the time over the last 5 minutes.
+
+Similarly, if rate(node_cpu_seconds_total{mode="user"}[5m]) returns 0.15, it means the CPU spent 15% of its time executing user-space applications.
+
+These values are much more intuitive for monitoring than raw counters. You can directly see how busy your CPUs are and what they're busy doing, which is essential for performance troubleshooting and capacity planning.
                     </aside>
                 </textarea>
             </section>
@@ -176,16 +176,16 @@
                     * `sum by (mode)` - Aggregates across all cores
                     * Values now show total CPU seconds per second
                     
-                    <aside class="notes">
-                        Now that we have per-core rates, let's aggregate them to see overall CPU usage across all cores.
-                        
-                        The query uses sum by (mode) to add up the rates across all CPU cores while keeping the modes separate. This is powerful because it lets us see a breakdown of overall CPU usage by the type of work being done.
-                        
-                        The values now represent total CPU seconds per second across all cores. For example, on an 8-core system, the maximum possible value would be 8 for any mode, meaning all cores are spending 100% of their time in that mode.
-                        
-                        This aggregation is particularly useful for monitoring multi-core systems, where you care about total CPU capacity rather than individual cores. Most modern applications and operating systems distribute load across cores, so the aggregate view often gives better insight into overall system health.
-                        
-                        Notice how we're combining two powerful PromQL features here: the rate() function and the sum by() aggregation. This pattern of transforming and then aggregating metrics is common in PromQL and allows for very flexible analysis.
+<aside class="notes">
+Now that we have per-core rates, let's aggregate them to see overall CPU usage across all cores.
+
+The query uses sum by (mode) to add up the rates across all CPU cores while keeping the modes separate. This is powerful because it lets us see a breakdown of overall CPU usage by the type of work being done.
+
+The values now represent total CPU seconds per second across all cores. For example, on an 8-core system, the maximum possible value would be 8 for any mode, meaning all cores are spending 100% of their time in that mode.
+
+This aggregation is particularly useful for monitoring multi-core systems, where you care about total CPU capacity rather than individual cores. Most modern applications and operating systems distribute load across cores, so the aggregate view often gives better insight into overall system health.
+
+Notice how we're combining two powerful PromQL features here: the rate() function and the sum by() aggregation. This pattern of transforming and then aggregating metrics is common in PromQL and allows for very flexible analysis.
                     </aside>
                     * Value > 1 indicates usage across multiple cores
                 </textarea>
@@ -200,18 +200,18 @@
                     * All modes sum to total number of cores
                     * Easy to see distribution of CPU activity across modes
                     
-                    <aside class="notes">
-                        Let's interpret these aggregated results in practical terms.
-                        
-                        When sum(rate(node_cpu_seconds_total{mode="idle"}[5m])) returns 3.9, it means that the equivalent of about 4 CPU cores are sitting idle. On an 8-core system, this suggests about half of your CPU capacity is unused.
-                        
-                        Similarly, if sum(rate(node_cpu_seconds_total{mode="user"}[5m])) returns 2.3, it means the equivalent of 2.3 CPU cores are busy running user-space applications.
-                        
-                        An important principle to remember: across all modes, the values will sum to the total number of cores in your system. This is because a CPU core can only be in one mode at any given time.
-                        
-                        This aggregated view makes it easy to see the distribution of CPU activity across different modes. You can quickly identify if your system is CPU-bound, I/O-bound, or has plenty of spare capacity.
-                        
-                        For capacity planning, this view is invaluable - it shows not just how much CPU is being used, but what it's being used for, helping you make more informed scaling decisions.
+<aside class="notes">
+Let's interpret these aggregated results in practical terms.
+
+When sum(rate(node_cpu_seconds_total{mode="idle"}[5m])) returns 3.9, it means that the equivalent of about 4 CPU cores are sitting idle. On an 8-core system, this suggests about half of your CPU capacity is unused.
+
+Similarly, if sum(rate(node_cpu_seconds_total{mode="user"}[5m])) returns 2.3, it means the equivalent of 2.3 CPU cores are busy running user-space applications.
+
+An important principle to remember: across all modes, the values will sum to the total number of cores in your system. This is because a CPU core can only be in one mode at any given time.
+
+This aggregated view makes it easy to see the distribution of CPU activity across different modes. You can quickly identify if your system is CPU-bound, I/O-bound, or has plenty of spare capacity.
+
+For capacity planning, this view is invaluable - it shows not just how much CPU is being used, but what it's being used for, helping you make more informed scaling decisions.
                     </aside>
                 </textarea>
             </section>
@@ -227,18 +227,18 @@
                       * Percentage: multiply by (100 / # of cores)
                     * Stack values for complete picture
                     
-                    <aside class="notes">
-                        Now let's talk about visualizing these CPU metrics in Grafana for better insights.
-                        
-                        Time series visualization works particularly well for CPU metrics because it shows trends over time and makes it easy to spot patterns or anomalies.
-                        
-                        When setting up your Grafana panel, set the legend to {{mode}} - this uses the mode label from Prometheus to automatically label each line in your graph. This way, you can easily distinguish between user, system, idle, and other CPU modes.
-                        
-                        For the Y-axis, you have two main options. You can show raw aggregates, where the values represent the number of CPU cores, or you can convert to percentages by multiplying by (100 / number of cores). The percentage view is often more intuitive, especially when comparing systems with different numbers of cores.
-                        
-                        I recommend enabling the "stack" option in Grafana for these metrics. This stacks the different modes on top of each other, making it easier to see both the total CPU usage and the breakdown by mode. The stacked graph should add up to your total number of cores (or to 100% if using percentages).
-                        
-                        This visualization makes it immediately obvious when your system is under heavy load or when there's an unusual distribution of CPU activity between different modes.
+<aside class="notes">
+Now let's talk about visualizing these CPU metrics in Grafana for better insights.
+
+Time series visualization works particularly well for CPU metrics because it shows trends over time and makes it easy to spot patterns or anomalies.
+
+When setting up your Grafana panel, set the legend to {{mode}} - this uses the mode label from Prometheus to automatically label each line in your graph. This way, you can easily distinguish between user, system, idle, and other CPU modes.
+
+For the Y-axis, you have two main options. You can show raw aggregates, where the values represent the number of CPU cores, or you can convert to percentages by multiplying by (100 / number of cores). The percentage view is often more intuitive, especially when comparing systems with different numbers of cores.
+
+I recommend enabling the "stack" option in Grafana for these metrics. This stacks the different modes on top of each other, making it easier to see both the total CPU usage and the breakdown by mode. The stacked graph should add up to your total number of cores (or to 100% if using percentages).
+
+This visualization makes it immediately obvious when your system is under heavy load or when there's an unusual distribution of CPU activity between different modes.
                     </aside>
                 </textarea>
             </section>
@@ -257,18 +257,18 @@
                     * Makes small variations more visible
                     * Better for monitoring active workloads
                     
-                    <aside class="notes">
-                        Now for a practical challenge: filtering out the idle mode to focus on active CPU usage.
-                        
-                        The solution uses the negative matching operator != to exclude the idle mode. This says "show me all modes except idle."
-                        
-                        Why would we want to do this? The idle mode often dominates the graph, especially on systems with moderate load. By excluding it, we focus only on the active CPU usage - user, system, iowait, and other modes.
-                        
-                        This makes small variations in active usage much more visible. A change from 5% to 10% user CPU might be barely noticeable when idle is shown (as it goes from 95% to 90%), but becomes very clear when idle is excluded.
-                        
-                        This approach is particularly useful for monitoring production workloads where you care about the breakdown of active CPU usage rather than how much is idle. For example, if you see a sudden increase in system CPU time compared to user CPU time, it might indicate a kernel-related issue that needs investigation.
-                        
-                        In Grafana, creating two panels - one with all modes and one excluding idle - gives you the best of both worlds: a complete view of CPU usage and a focused view of active usage.
+<aside class="notes">
+Now for a practical challenge: filtering out the idle mode to focus on active CPU usage.
+
+The solution uses the negative matching operator != to exclude the idle mode. This says "show me all modes except idle."
+
+Why would we want to do this? The idle mode often dominates the graph, especially on systems with moderate load. By excluding it, we focus only on the active CPU usage - user, system, iowait, and other modes.
+
+This makes small variations in active usage much more visible. A change from 5% to 10% user CPU might be barely noticeable when idle is shown (as it goes from 95% to 90%), but becomes very clear when idle is excluded.
+
+This approach is particularly useful for monitoring production workloads where you care about the breakdown of active CPU usage rather than how much is idle. For example, if you see a sudden increase in system CPU time compared to user CPU time, it might indicate a kernel-related issue that needs investigation.
+
+In Grafana, creating two panels - one with all modes and one excluding idle - gives you the best of both worlds: a complete view of CPU usage and a focused view of active usage.
                     </aside>
                 </textarea>
             </section>
@@ -283,16 +283,16 @@
                       * Longer (e.g., [5m]) = Smoother, less sensitive
                     * CPU saturation = When non-idle modes approach total cores
                     
-                    <aside class="notes">
-                        Let's briefly look beyond basic rate calculations to some advanced concepts.
-                        
-                        Besides rate(), Prometheus offers the irate() function - "i" for "instantaneous." While rate() calculates the average rate over the entire time range, irate() only considers the last two data points. This makes irate() much more responsive to sudden changes but also more volatile.
-                        
-                        Use rate() for dashboards and general monitoring, and consider irate() when you need to catch very short-lived spikes or for alerting where you need immediate responsiveness.
-                        
-                        The time range you choose creates a trade-off between sensitivity and stability. A shorter range like [1m] will show more immediate changes but creates spikier graphs. A longer range like [5m] smooths out short-term fluctuations but might miss brief spikes. Choose based on your monitoring needs - longer ranges for dashboards, shorter ranges for detailed investigation.
-                        
-                        Finally, understanding CPU saturation is important - this occurs when the sum of all non-idle modes approaches the total number of CPU cores. This indicates that your system is running at or near maximum capacity, which can lead to performance issues. Monitoring for CPU saturation is a key use case for these queries.
+<aside class="notes">
+Let's briefly look beyond basic rate calculations to some advanced concepts.
+
+Besides rate(), Prometheus offers the irate() function - "i" for "instantaneous." While rate() calculates the average rate over the entire time range, irate() only considers the last two data points. This makes irate() much more responsive to sudden changes but also more volatile.
+
+Use rate() for dashboards and general monitoring, and consider irate() when you need to catch very short-lived spikes or for alerting where you need immediate responsiveness.
+
+The time range you choose creates a trade-off between sensitivity and stability. A shorter range like [1m] will show more immediate changes but creates spikier graphs. A longer range like [5m] smooths out short-term fluctuations but might miss brief spikes. Choose based on your monitoring needs - longer ranges for dashboards, shorter ranges for detailed investigation.
+
+Finally, understanding CPU saturation is important - this occurs when the sum of all non-idle modes approaches the total number of CPU cores. This indicates that your system is running at or near maximum capacity, which can lead to performance issues. Monitoring for CPU saturation is a key use case for these queries.
                     </aside>
                 </textarea>
             </section>
@@ -304,18 +304,18 @@
                     * [Continue to Lab 3: Memory and Filesystem](../03_Memory_Filesystem/index.html)
                     * [Return to Slides Index](../index.html)
                     
-                    <aside class="notes">
-                        Congratulations! You've completed Lab 2 and now understand how to calculate and interpret CPU usage rates using PromQL.
-                        
-                        We've covered how to transform raw counter metrics into meaningful rates, how to aggregate these rates across CPU cores, and how to visualize the results effectively. These are foundational skills for any Prometheus monitoring setup.
-                        
-                        To continue your PromQL journey, proceed to Lab 3 where we'll explore Memory and Filesystem metrics. While CPU metrics focus on processing capacity, memory and filesystem metrics help you understand resource constraints that can affect application performance in different ways.
-                        
-                        If you want to review the full curriculum, you can return to the Slides Index.
-                        
-                        Remember that understanding CPU usage patterns is critical for capacity planning, performance troubleshooting, and setting appropriate alerts. The techniques you've learned here apply not just to CPU metrics, but to many other counter metrics in Prometheus.
-                        
-                        Any questions before we wrap up this session?
+<aside class="notes">
+Congratulations! You've completed Lab 2 and now understand how to calculate and interpret CPU usage rates using PromQL.
+
+We've covered how to transform raw counter metrics into meaningful rates, how to aggregate these rates across CPU cores, and how to visualize the results effectively. These are foundational skills for any Prometheus monitoring setup.
+
+To continue your PromQL journey, proceed to Lab 3 where we'll explore Memory and Filesystem metrics. While CPU metrics focus on processing capacity, memory and filesystem metrics help you understand resource constraints that can affect application performance in different ways.
+
+If you want to review the full curriculum, you can return to the Slides Index.
+
+Remember that understanding CPU usage patterns is critical for capacity planning, performance troubleshooting, and setting appropriate alerts. The techniques you've learned here apply not just to CPU metrics, but to many other counter metrics in Prometheus.
+
+Any questions before we wrap up this session?
                     </aside>
                 </textarea>
             </section>
