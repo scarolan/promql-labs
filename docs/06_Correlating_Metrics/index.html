@@ -6,12 +6,10 @@
 
 		<title>Lab 6: Correlating Metrics & Building Composite Dashboards</title>
 
-		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/dist/reset.css">
-		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/dist/reveal.css">
-		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/dist/theme/night.css">
-
-		<!-- Theme used for syntax highlighted code -->
-		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/plugin/highlight/monokai.css">
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/dist/reset.css">
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/dist/reveal.css">
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/dist/theme/night.css">
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.7.0/styles/monokai-sublime.css">
 		<!-- Common styles for all slide decks -->
 		<link rel="stylesheet" href="../common.css">
 	</head>
@@ -83,9 +81,11 @@
 
                 <section>
                     <h2>CPU Usage Query</h2>
-                    <pre class="smaller-text"><code class="language-promql"># CPU usage %
+                    <pre><code data-trim data-noescape class="promql">
+# CPU usage %
 100 * (1 - (avg by (instance) (rate(node_cpu_seconds_total{instance="localhost:9100",mode="idle"}[5m])) / 
-count by (instance) (node_cpu_seconds_total{instance="localhost:9100",mode="idle"})))</code></pre>
+count by (instance) (node_cpu_seconds_total{instance="localhost:9100",mode="idle"})))
+                    </code></pre>
                     <ul>
                         <li>Calculates percentage of CPU used across all cores</li>
                         <li>Finds average idle rate then subtracts from 100%</li>
@@ -108,9 +108,11 @@ count by (instance) (node_cpu_seconds_total{instance="localhost:9100",mode="idle
 
                 <section>
                     <h2>Memory Usage Query</h2>
-                    <pre><code class="language-promql"># Memory usage %
+                    <pre><code data-trim data-noescape class="promql">
+# Memory usage %
 100 * (1 - (node_memory_MemAvailable_bytes{instance="localhost:9100"} / 
-node_memory_MemTotal_bytes{instance="localhost:9100"}))</code></pre>
+node_memory_MemTotal_bytes{instance="localhost:9100"}))
+                    </code></pre>
                     <ul>
                         <li>Shows percentage of memory currently in use</li>
                         <li>Uses available memory rather than free memory</li>
@@ -129,10 +131,12 @@ node_memory_MemTotal_bytes{instance="localhost:9100"}))</code></pre>
                     </aside>
                 </section>
 
-                <section>
+                <section class="dense-content">
                     <h2>Network Usage Query</h2>
-                    <pre><code class="language-promql"># Network receive rate (bytes/sec)
-sum by (instance) (rate(node_network_receive_bytes_total{instance="localhost:9100",device!="lo"}[5m]))</code></pre>
+                    <pre><code data-trim data-noescape class="promql">
+# Network receive rate (bytes/sec)
+sum by (instance) (rate(node_network_receive_bytes_total{instance="localhost:9100",device!="lo"}[5m]))
+                    </code></pre>
                     <ul>
                         <li>Measures total bytes per second being received</li>
                         <li>Aggregates across all non-loopback interfaces</li>
@@ -274,7 +278,9 @@ sum by (instance) (rate(node_network_receive_bytes_total{instance="localhost:910
 
                 <section>
                     <h2>Simulating System Load</h2>
-                    <pre><code class="language-bash">stress-ng --cpu 1 --cpu-load 80 --timeout 60s</code></pre>
+                    <pre><code data-trim data-noescape class="bash">
+stress-ng --cpu 1 --cpu-load 80 --timeout 60s
+                    </code></pre>
                     <ul>
                         <li>Generates 80% load on a single CPU core</li>
                         <li>Runs for 60 seconds</li>
@@ -448,19 +454,20 @@ node_memory_MemTotal_bytes{instance="localhost:9100"})) > 80)</code></pre>
             </div>
 		</div>
 
-		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/dist/reveal.js"></script>
-		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/plugin/notes/notes.js"></script>
-		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/plugin/markdown/markdown.js"></script>
-		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/plugin/highlight/highlight.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/dist/reveal.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/markdown/markdown.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/highlight/highlight.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/notes/notes.js"></script>
 		<script>
-			// More info about initialization & config:
-			// - https://revealjs.com/initialization/
-			// - https://revealjs.com/config/
 			Reveal.initialize({
 				hash: true,
                 slideNumber: true,
-				// Learn about plugins: https://revealjs.com/plugins/
-				plugins: [ RevealMarkdown, RevealHighlight, RevealNotes ]
+				transition: 'none', // Disable slide animations
+				plugins: [ RevealMarkdown, RevealHighlight, RevealNotes ],
+				highlight: {
+					highlightOnLoad: true,
+					languages: ['promql']
+				}
 			});
 		</script>
 	</body>

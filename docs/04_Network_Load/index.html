@@ -6,22 +6,12 @@
 
 		<title>Lab 4: Network, Load, and Advanced Aggregations</title>
 
-		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/dist/reset.css">
-		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/dist/reveal.css">
-		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/dist/theme/night.css">
-
-		<!-- Theme used for syntax highlighted code -->
-		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/plugin/highlight/monokai.css">
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/dist/reset.css">
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/dist/reveal.css">
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/dist/theme/night.css">
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.7.0/styles/monokai-sublime.css">
 		<!-- Common styles for all slide decks -->
 		<link rel="stylesheet" href="../common.css">
-            }
-            .reveal .smaller-text {
-                font-size: 0.8em;
-            }
-            .reveal .smallest-text {
-                font-size: 0.6em;
-            }
-        </style>
 	</head>
 	<body>
 		<div class="reveal">
@@ -84,7 +74,9 @@
 
                 <section>
                     <h2>Network Receive Rate</h2>
-                    <pre><code class="language-promql">rate(node_network_receive_bytes_total{instance="localhost:9100",device!="lo"}[5m])</code></pre>
+                    <pre><code data-trim data-noescape class="promql">
+rate(node_network_receive_bytes_total{instance="localhost:9100",device!="lo"}[5m])
+                    </code></pre>
                     <p>Measures bytes per second flowing <em>into</em> your network interfaces</p>
                     <ul>
                         <li><code>device!="lo"</code> excludes the loopback interface</li>
@@ -105,7 +97,9 @@
 
                 <section>
                     <h2>Network Transmit Rate</h2>
-                    <pre><code class="language-promql">rate(node_network_transmit_bytes_total{instance="localhost:9100",device!="lo"}[5m])</code></pre>
+                    <pre><code data-trim data-noescape class="promql">
+rate(node_network_transmit_bytes_total{instance="localhost:9100",device!="lo"}[5m])
+                    </code></pre>
                     <p>Measures bytes per second flowing <em>out of</em> your network interfaces</p>
                     <ul>
                         <li>Same filtering as receive metrics</li>
@@ -151,7 +145,9 @@
 
                 <section>
                     <h2>1-Minute Load Average</h2>
-                    <pre><code class="language-promql">node_load1{instance="localhost:9100"}</code></pre>
+                    <pre><code data-trim data-noescape class="promql">
+node_load1{instance="localhost:9100"}
+                    </code></pre>
                     <p>Most responsive to recent changes</p>
                     <p>Good for detecting sudden spikes</p>
                     <aside class="notes">
@@ -171,8 +167,12 @@
 
                 <section>
                     <h2>5 & 15-Minute Load Averages</h2>
-                    <pre><code class="language-promql">node_load5{instance="localhost:9100"}</code></pre>
-                    <pre><code class="language-promql">node_load15{instance="localhost:9100"}</code></pre>
+                    <pre><code data-trim data-noescape class="promql">
+node_load5{instance="localhost:9100"}
+                    </code></pre>
+                    <pre><code data-trim data-noescape class="promql">
+node_load15{instance="localhost:9100"}
+                    </code></pre>
                     <p>Smoother view over longer periods</p>
                     <p>Better for detecting sustained load issues</p>
                     <aside class="notes">
@@ -194,13 +194,13 @@
                     <h2>Load Average Interpretation</h2>
                     <div class="two-column">
                         <div class="left">
-                            <h3>Healthy System</h3>
+                            <h3>Healthy</h3>
                             <p>Load averages < CPU core count</p>
                             <p>Resources available</p>
                             <p>No significant waiting</p>
                         </div>
                         <div class="right">
-                            <h3>Overloaded System</h3>
+                            <h3>Overloaded</h3>
                             <p>Load averages > CPU core count</p>
                             <p>CPU contention</p>
                             <p>Processes waiting</p>
@@ -246,9 +246,11 @@
 
                 <section>
                     <h2>Aggregating Network Traffic</h2>
-                    <pre><code class="language-promql">sum by (instance) (
+                    <pre><code data-trim data-noescape class="promql">
+sum by (instance) (
   rate(node_network_receive_bytes_total{instance="localhost:9100",device!="lo"}[5m])
-)</code></pre>
+)
+                    </code></pre>
                     <p>Sums traffic across all interfaces per server</p>
                     <ul>
                         <li>Keeps the <code>instance</code> label</li>
@@ -271,9 +273,11 @@
 
                 <section>
                     <h2>Aggregating Transmit Traffic</h2>
-                    <pre><code class="language-promql">sum by (instance) (
+                    <pre><code data-trim data-noescape class="promql">
+sum by (instance) (
   rate(node_network_transmit_bytes_total{instance="localhost:9100",device!="lo"}[5m])
-)</code></pre>
+)
+                    </code></pre>
                     <p>Same pattern for outbound traffic</p>
                     <p>Useful for overall traffic monitoring</p>
                     <aside class="notes">
@@ -314,9 +318,11 @@
                 <section>
                     <h2>Solution: CPU Core Count</h2>
                     <p>First, determine the number of CPU cores:</p>
-                    <pre><code class="language-promql">count without(cpu, mode) (
+                    <pre><code data-trim data-noescape class="promql">
+count without(cpu, mode) (
   node_cpu_seconds_total{instance="localhost:9100"}
-)</code></pre>
+)
+                    </code></pre>
                     <aside class="notes">
                         The first step in our high load alert solution is to determine the number of CPU cores on each server.
                         
@@ -334,10 +340,12 @@
 
                 <section>
                     <h2>Solution: Direct Comparison</h2>
-                    <pre><code class="language-promql"># Compare 1-minute load average to core count
+                    <pre><code data-trim data-noescape class="promql">
+# Compare 1-minute load average to core count
 node_load1{instance="localhost:9100"} > count without(cpu, mode) (
   node_cpu_seconds_total{instance="localhost:9100"}
-)</code></pre>
+)
+                    </code></pre>
                     <p>Returns 1 (true) when load exceeds core count</p>
                     <aside class="notes">
                         One approach to our high load alert is a direct comparison using the greater-than operator.
@@ -356,10 +364,12 @@ node_load1{instance="localhost:9100"} > count without(cpu, mode) (
 
                 <section>
                     <h2>Solution: Ratio Approach</h2>
-                    <pre><code class="language-promql"># Calculate ratio of load to core count
+                    <pre><code data-trim data-noescape class="promql">
+# Calculate ratio of load to core count
 node_load1{instance="localhost:9100"} / count without(cpu, mode) (
   node_cpu_seconds_total{instance="localhost:9100"}
-)</code></pre>
+)
+                    </code></pre>
                     <p>Values > 1 indicate overload</p>
                     <p>Alert on ratio > 1 for 5 minutes</p>
                     <aside class="notes">
@@ -448,19 +458,20 @@ node_load1{instance="localhost:9100"} / count without(cpu, mode) (
             </div>
 		</div>
 
-		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/dist/reveal.js"></script>
-		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/plugin/notes/notes.js"></script>
-		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/plugin/markdown/markdown.js"></script>
-		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/plugin/highlight/highlight.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/dist/reveal.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/markdown/markdown.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/highlight/highlight.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/notes/notes.js"></script>
 		<script>
-			// More info about initialization & config:
-			// - https://revealjs.com/initialization/
-			// - https://revealjs.com/config/
 			Reveal.initialize({
 				hash: true,
                 slideNumber: true,
-				// Learn about plugins: https://revealjs.com/plugins/
-				plugins: [ RevealMarkdown, RevealHighlight, RevealNotes ]
+				transition: 'none', // Disable slide animations
+				plugins: [ RevealMarkdown, RevealHighlight, RevealNotes ],
+				highlight: {
+					highlightOnLoad: true,
+					languages: ['promql']
+				}
 			});
 		</script>
 	</body>

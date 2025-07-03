@@ -6,12 +6,12 @@
 
 		<title>Lab 9: Histograms and Quantiles</title>
 
-		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/dist/reset.css">
-		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/dist/reveal.css">
-		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/dist/theme/night.css">
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/dist/reset.css">
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/dist/reveal.css">
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/dist/theme/night.css">
 
 		<!-- Theme used for syntax highlighted code -->
-		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/plugin/highlight/monokai.css">
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/highlight/monokai.css">
 		<!-- Common styles for all slide decks -->
 		<link rel="stylesheet" href="../common.css">
 	</head>
@@ -85,7 +85,7 @@
 
                 <section>
                     <h2>Histogram Structure</h2>
-                    <pre><code class="language-promql"># Examine the structure of a histogram metric
+                    <pre><code data-trim data-noescape class="promql"># Examine the structure of a histogram metric
 prometheus_http_request_duration_seconds_bucket</code></pre>
                     <ul>
                         <li>Multiple time series with <code>le</code> (less than or equal) labels</li>
@@ -110,7 +110,7 @@ prometheus_http_request_duration_seconds_bucket</code></pre>
 
                 <section>
                     <h2>Exploring Histogram Buckets</h2>
-                    <pre><code class="language-promql"># Filter to see specific bucket counts
+                    <pre><code data-trim data-noescape class="promql"># Filter to see specific bucket counts
 prometheus_http_request_duration_seconds_bucket{handler="/api/v1/query"}</code></pre>
                     <p>Returns a list of buckets with cumulative counts:</p>
                     <ul class="smaller-text">
@@ -138,9 +138,9 @@ prometheus_http_request_duration_seconds_bucket{handler="/api/v1/query"}</code><
                     </aside>
                 </section>
 
-                <section>
+                <section class="dense-content">
                     <h2>The histogram_quantile Function</h2>
-                    <pre><code class="language-promql"># Calculate 95th percentile latency
+                    <pre><code data-trim data-noescape class="promql"># Calculate 95th percentile latency
 histogram_quantile(0.95, sum(rate(prometheus_http_request_duration_seconds_bucket[5m])) by (le))</code></pre>
                     <ul>
                         <li>Calculates percentiles from histogram buckets</li>
@@ -169,7 +169,7 @@ histogram_quantile(0.95, sum(rate(prometheus_http_request_duration_seconds_bucke
                     </aside>
                 </section>
 
-                <section>
+                <section class="dense-content">
                     <h2>Common Quantiles</h2>
                     <ul>
                         <li><b>0.5</b>: Median (50th percentile)</li>
@@ -201,7 +201,7 @@ histogram_quantile(0.95, sum(rate(prometheus_http_request_duration_seconds_bucke
 
                 <section>
                     <h2>Analyzing Latency by Handler</h2>
-                    <pre><code class="language-promql"># Calculate median latency by handler
+                    <pre><code data-trim data-noescape class="promql"># Calculate median latency by handler
 histogram_quantile(0.5, sum by (handler, le) (
   rate(prometheus_http_request_duration_seconds_bucket[5m])
 ))</code></pre>
@@ -232,7 +232,7 @@ histogram_quantile(0.5, sum by (handler, le) (
 
                 <section>
                     <h2>SLO Metrics with Histograms</h2>
-                    <pre class="smaller-text"><code class="language-promql"># Percentage of requests under 500ms (0.5s) SLO threshold
+                    <pre class="smaller-text"><code data-trim data-noescape class="promql"># Percentage of requests under 500ms (0.5s) SLO threshold
 (sum(rate(prometheus_http_request_duration_seconds_bucket{le="0.5"}[5m])) / 
 sum(rate(prometheus_http_request_duration_seconds_count[5m]))) * 100</code></pre>
                     <ul>
@@ -262,7 +262,7 @@ sum(rate(prometheus_http_request_duration_seconds_count[5m]))) * 100</code></pre
 
                 <section>
                     <h2>Error Budget Calculation</h2>
-                    <pre class="smaller-text"><code class="language-promql"># Percentage of requests exceeding 500ms SLO threshold
+                    <pre class="smaller-text"><code data-trim data-noescape class="promql"># Percentage of requests exceeding 500ms SLO threshold
 (1 - sum(rate(prometheus_http_request_duration_seconds_bucket{le="0.5"}[5m])) / 
 sum(rate(prometheus_http_request_duration_seconds_count[5m]))) * 100</code></pre>
                     <ul>
@@ -294,7 +294,7 @@ sum(rate(prometheus_http_request_duration_seconds_count[5m]))) * 100</code></pre
 
                 <section>
                     <h2>Working with Gauge Metrics</h2>
-                    <pre><code class="language-promql"># Calculate rate of change for a gauge metric
+                    <pre><code data-trim data-noescape class="promql"># Calculate rate of change for a gauge metric
 deriv(node_memory_Active_bytes{instance="localhost:9100"}[1h])</code></pre>
                     <ul>
                         <li>The <code>deriv</code> function calculates per-second derivative</li>
@@ -326,7 +326,7 @@ deriv(node_memory_Active_bytes{instance="localhost:9100"}[1h])</code></pre>
 
                 <section>
                     <h2>Predicting Future Values</h2>
-                    <pre><code class="language-promql"># Predict memory usage 1 hour in the future
+                    <pre><code data-trim data-noescape class="promql"># Predict memory usage 1 hour in the future
 predict_linear(node_memory_Active_bytes{instance="localhost:9100"}[1h], 3600)</code></pre>
                     <ul>
                         <li>Uses linear regression on recent data points</li>
@@ -388,9 +388,9 @@ predict_linear(node_memory_Active_bytes{instance="localhost:9100"}[1h], 3600)</c
                     </aside>
                 </section>
 
-                <section>
+                <section class="dense-content">
                     <h2>Challenge Solution</h2>
-                    <pre class="smallest-text"><code class="language-promql"># Create synthetic buckets from CPU usage
+                    <pre class="smaller-code"><code data-trim data-noescape class="promql"># Create synthetic buckets from CPU usage
 quantize(
   clamp_max(
     100 * (1 - (avg by (instance) (rate(node_cpu_seconds_total{instance="localhost:9100",mode="idle"}[5m])) / 
@@ -427,9 +427,9 @@ quantize(
                     </aside>
                 </section>
 
-                <section>
+                <section class="dense-content">
                     <h2>Heatmap Query</h2>
-                    <pre class="smallest-text"><code class="language-promql"># Create histogram for heatmap visualization
+                    <pre class="smaller-code"><code data-trim data-noescape class="promql"># Create histogram for heatmap visualization
 sum(count_values("le", floor(clamp_max(
   100 * (1 - (avg by (instance) (rate(node_cpu_seconds_total{instance="localhost:9100",mode="idle"}[5m])) / 
   count by (instance) (node_cpu_seconds_total{instance="localhost:9100",mode="idle"}))), 
@@ -544,10 +544,10 @@ sum(count_values("le", floor(clamp_max(
             </div>
 		</div>
 
-		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/dist/reveal.js"></script>
-		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/plugin/notes/notes.js"></script>
-		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/plugin/markdown/markdown.js"></script>
-		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/plugin/highlight/highlight.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/dist/reveal.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/notes/notes.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/markdown/markdown.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/highlight/highlight.js"></script>
 		<script>
 			// More info about initialization & config:
 			// - https://revealjs.com/initialization/
@@ -555,6 +555,7 @@ sum(count_values("le", floor(clamp_max(
 			Reveal.initialize({
 				hash: true,
                 slideNumber: true,
+				transition: 'none', // Disable slide animations
 				// Learn about plugins: https://revealjs.com/plugins/
 				plugins: [ RevealMarkdown, RevealHighlight, RevealNotes ]
 			});

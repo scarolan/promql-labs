@@ -2,15 +2,26 @@
 .reveal {
     font-size: 1.8em; /* Dramatically increased for better visibility on 1920x1080 */
 }
+
+/* Enhanced animations and transitions */
+.reveal .slides section {
+    transition: transform 0.8s ease, opacity 0.8s ease;
+}
 .reveal pre {
-    margin: 0;
+    margin: 0 auto;
     box-shadow: none;
+    width: 95%; /* Make pre elements wider to accommodate code */
+    max-width: 950px; /* Increased maximum width */
 }
 .reveal pre code {
-    padding: 20px;
-    max-height: 500px; /* Increased to allow more content to be visible */
-    line-height: 1.3; /* Increased for better readability */
-    font-size: 1.1em; /* Significantly enlarged code font size */
+    padding: 25px;
+    max-height: 550px; /* Further increased to allow more content to be visible */
+    line-height: 1.4; /* Increased for better readability */
+    font-size: 1.5em; /* Further increased for better visibility on large displays */
+    border-radius: 8px; /* Add rounded corners to code blocks */
+    width: 100%; /* Ensure code blocks use full width */
+    max-width: 900px; /* Increased maximum width for wider code blocks */
+    margin: 0 auto; /* Center the code block */
 }
 .two-column {
     display: flex;
@@ -39,8 +50,17 @@
 }
 .reveal ul, .reveal ol {
     display: block;
-    line-height: 1.6; /* Increased for better spacing between list items */
-    font-size: 1.2em; /* Enlarged list items for better readability */
+    line-height: 1.7; /* Further increased for better spacing between list items */
+    font-size: 1.3em; /* Further enlarged list items for better readability */
+}
+
+.reveal ul li, .reveal ol li {
+    margin-bottom: 0.3em; /* Reduced from default spacing (~50% reduction) */
+}
+
+.reveal ul ul, .reveal ol ol, .reveal ul ol, .reveal ol ul {
+    margin-top: 8px; /* Add space before nested lists */
+    font-size: 0.9em; /* Slightly smaller font for nested lists */
 }
 
 /* Image styling */
@@ -56,11 +76,12 @@
 
 .light-bg-slide {
     background-color: #f8f9fa;
-    padding: 25px;
-    border-radius: 8px;
+    padding: 30px;
+    border-radius: 10px;
     color: #333;
-    width: 95%; /* Increased to use more screen space */
+    width: 95%; /* Uses most of the screen space */
     margin: 0 auto;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Add subtle shadow for depth */
 }
 
 .light-bg-slide img {
@@ -68,4 +89,86 @@
     height: auto;
     display: block;
     margin: 0 auto;
+}
+
+/* Special styling for comparison slides with dense content */
+.comparison-systems ul {
+    font-size: 0.7em !important; /* Further reduced font size for dense comparison slides */
+    line-height: 1.3 !important; /* Tighter line spacing */
+}
+
+.comparison-systems ul li {
+    margin-bottom: 10px; /* Add space between main list items */
+}
+
+.comparison-systems ul ul {
+    margin-top: 5px; /* Reduced space for nested lists */
+}
+
+/* Dense slides with lots of content */
+.dense-content ul {
+    font-size: 0.85em !important;
+    line-height: 1.3 !important;
+}
+
+.dense-content ul li {
+    margin-bottom: 0.25em; /* Even tighter spacing for dense content */
+}
+
+.dense-content pre code {
+    font-size: 1.3em !important; /* Slightly smaller code blocks for dense slides */
+}
+
+/* YAML code blocks - reduce size by ~30% */
+.reveal pre code.yaml {
+    font-size: 0.7em !important; /* Reduced size for YAML code blocks */
+}
+
+/* Reduce PromQL code block size for specific slides */
+.reveal pre.smaller-code code.promql {
+    font-size: 0.7em !important; /* Reduced size for large PromQL blocks */
+}
+
+
+
+/* Long code blocks with extended lines */
+.reveal pre.long-code {
+    width: 100%; /* Use full width for longer code */
+    max-width: 1000px; /* Further increase max width for long code blocks */
+}
+
+.reveal pre.long-code code {
+    font-size: 1.4em; /* Slightly adjusted font size for long code */
+    word-wrap: break-word; /* Allow breaking on very long lines if necessary */
+}
+
+/* Highlight important points */
+.reveal .highlight {
+    color: #ffcc00; /* Bright yellow for emphasis */
+    font-weight: bold;
+}
+
+/* Better visibility for links */
+.reveal a {
+    color: #42affa;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.reveal a:hover {
+    color: #8dcffc;
+    text-shadow: 0 0 10px rgba(66, 175, 250, 0.5);
+}
+
+/* Code block improvements */
+.reveal pre {
+    display: block;
+    position: relative;
+    overflow: auto;
+    overflow-y: auto; /* Allow scrolling for very tall code blocks if needed */
+}
+
+.reveal code {
+    white-space: pre; /* Preserve spaces and line breaks */
+    tab-size: 2; /* Smaller tab size for better code display */
 }

@@ -338,7 +338,7 @@
                 </textarea>
             </section>
 
-            <section data-markdown>
+            <section data-markdown class="dense-content">
                 <textarea data-template>
                     ## Key PromQL Operators
                     
@@ -403,6 +403,7 @@
     <script>
         Reveal.initialize({
             hash: true,
+            transition: 'none', // Disable slide animations
             plugins: [RevealMarkdown, RevealHighlight, RevealNotes],
             highlight: {
                 highlightOnLoad: true,

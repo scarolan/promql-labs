@@ -142,7 +142,7 @@
                     ## Filtering by Instance
                     
                     ```promql
-                    # Filter by instance
+                    # Filter by Instance
                     node_cpu_seconds_total{instance="localhost:9100"}
                     ```
                     
@@ -305,6 +305,7 @@
     <script>
         Reveal.initialize({
             hash: true,
+            transition: 'none', // Disable slide animations
             plugins: [RevealMarkdown, RevealHighlight, RevealNotes],
             highlight: {
                 highlightOnLoad: true,

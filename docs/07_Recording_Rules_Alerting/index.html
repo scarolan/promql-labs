@@ -6,12 +6,12 @@
 
 		<title>Lab 7: Recording Rules and Alerting</title>
 
-		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/dist/reset.css">
-		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/dist/reveal.css">
-		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/dist/theme/night.css">
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/dist/reset.css">
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/dist/reveal.css">
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/dist/theme/night.css">
 
 		<!-- Theme used for syntax highlighted code -->
-		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/plugin/highlight/monokai.css">
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/highlight/monokai.css">
 		<!-- Common styles for all slide decks -->
 		<link rel="stylesheet" href="../common.css">
 	</head>
@@ -83,7 +83,7 @@
 
                 <section>
                     <h2>Recording Rules Format</h2>
-                    <pre><code class="language-yaml">groups:
+                    <pre><code data-trim data-noescape class="yaml">groups:
   - name: cpu_rules
     rules:
       - record: instance:node_cpu_usage:percent
@@ -147,7 +147,7 @@
                         <li>Create rule file: <code>/etc/prometheus/rules/cpu_rules.yml</code></li>
                         <li>Update main Prometheus configuration:</li>
                     </ol>
-                    <pre><code class="language-yaml"># In prometheus.yml
+                    <pre><code data-trim data-noescape class="yaml"># In prometheus.yml
 rule_files:
   - "/etc/prometheus/rules/*.yml"</code></pre>
                     <p>Reload configuration: <code>curl -X POST http://localhost:9090/-/reload</code></p>
@@ -170,7 +170,7 @@ rule_files:
 
                 <section>
                     <h2>Performance Benefits</h2>
-                    <pre><code class="language-promql"># Complex query - calculate in real time
+                    <pre><code data-trim data-noescape class="promql"># Complex query - calculate in real time
 100 * (1 - (avg by (instance) (rate(node_cpu_seconds_total{instance="localhost:9100",mode="idle"}[5m]))))
 
 # With recording rule (faster)
@@ -226,7 +226,7 @@ instance:node_cpu_usage:percent{instance="localhost:9100"}</code></pre>
 
                 <section>
                     <h2>Alert Rule Structure</h2>
-                    <pre class="smaller-text"><code class="language-yaml">groups:
+                    <pre class="smaller-text"><code data-trim data-noescape class="yaml">groups:
   - name: example_alerts
     rules:
       - alert: HighCPUUsage
@@ -284,9 +284,9 @@ instance:node_cpu_usage:percent{instance="localhost:9100"}</code></pre>
                     </aside>
                 </section>
 
-                <section>
+                <section class="dense-content">
                     <h2>Template Variables</h2>
-                    <pre><code class="language-yaml">annotations:
+                    <pre><code data-trim data-noescape class="yaml">annotations:
   summary: "High CPU usage on {{ $labels.instance }}"
   description: "CPU usage has exceeded 80% for 5 minutes on {{ $labels.instance }}"</code></pre>
                     <ul>
@@ -370,7 +370,7 @@ instance:node_cpu_usage:percent{instance="localhost:9100"} > 80</code></pre>
                     <p>Create a recording rule for memory usage percentage that follows Prometheus naming conventions</p>
                     <div class="fragment">
                         <h3>Solution:</h3>
-                        <pre><code class="language-yaml">groups:
+                        <pre><code data-trim data-noescape class="yaml">groups:
   - name: memory_rules
     rules:
       - record: instance:node_memory_usage:percent
@@ -409,7 +409,7 @@ instance:node_cpu_usage:percent{instance="localhost:9100"} > 80</code></pre>
                 <section>
                     <h2>Challenge: Memory Alert Rule</h2>
                     <div class="fragment">
-                        <pre class="smaller-text"><code class="language-yaml">groups:
+                        <pre class="smaller-text"><code data-trim data-noescape class="yaml">groups:
   - name: memory_alerts
     rules:
       - alert: HighMemoryUsage
@@ -494,10 +494,10 @@ instance:node_cpu_usage:percent{instance="localhost:9100"} > 80</code></pre>
             </div>
 		</div>
 
-		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/dist/reveal.js"></script>
-		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/plugin/notes/notes.js"></script>
-		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/plugin/markdown/markdown.js"></script>
-		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/plugin/highlight/highlight.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/dist/reveal.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/notes/notes.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/markdown/markdown.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/highlight/highlight.js"></script>
 		<script>
 			// More info about initialization & config:
 			// - https://revealjs.com/initialization/
@@ -505,6 +505,7 @@ instance:node_cpu_usage:percent{instance="localhost:9100"} > 80</code></pre>
 			Reveal.initialize({
 				hash: true,
                 slideNumber: true,
+				transition: 'none', // Disable slide animations
 				// Learn about plugins: https://revealjs.com/plugins/
 				plugins: [ RevealMarkdown, RevealHighlight, RevealNotes ]
 			});

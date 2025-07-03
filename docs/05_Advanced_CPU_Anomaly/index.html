@@ -6,12 +6,10 @@
 
 		<title>Lab 5: Advanced CPU Analysis & Anomaly Detection</title>
 
-		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/dist/reset.css">
-		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/dist/reveal.css">
-		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/dist/theme/night.css">
-
-		<!-- Theme used for syntax highlighted code -->
-		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/plugin/highlight/monokai.css">
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/dist/reset.css">
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/dist/reveal.css">
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/dist/theme/night.css">
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.7.0/styles/monokai-sublime.css">
 		<!-- Common styles for all slide decks -->
 		<link rel="stylesheet" href="../common.css">
 	</head>
@@ -77,15 +75,17 @@
                     </aside>
                 </section>
 
-                <section>
+                <section class="dense-content">
                     <h2>CPU Saturation Detection</h2>
                     <p>Calculating peak CPU usage percentage</p>
-                    <pre class="smallest-text"><code class="language-promql">max_over_time(
+                    <pre><code data-trim data-noescape class="promql">
+max_over_time(
   (100 * (1 - (
     sum by (instance) (rate(node_cpu_seconds_total{instance="localhost:9100",mode="idle"}[5m])) / 
     count by (instance) (node_cpu_seconds_total{instance="localhost:9100",mode="idle"})
   )))[30m:1m]
-)</code></pre>
+)
+                    </code></pre>
                     <aside class="notes">
                         Let's start with detecting CPU saturation - periods when your CPU is running at or near maximum capacity.
                         
@@ -128,9 +128,11 @@
                     </aside>
                 </section>
 
-                <section>
+                <section class="dense-content">
                     <h2>Finding CPU Spikes with <code>increase</code></h2>
-                    <pre><code class="language-promql">increase(node_cpu_seconds_total{instance="localhost:9100",mode="user"}[10m])</code></pre>
+                    <pre><code data-trim data-noescape class="promql">
+increase(node_cpu_seconds_total{instance="localhost:9100",mode="user"}[10m])
+                    </code></pre>
                     <p>Measures absolute growth of CPU counter over 10 minutes</p>
                     <ul>
                         <li>Unlike <code>rate()</code>, shows total consumption, not average rate</li>
@@ -188,7 +190,9 @@
 
                 <section>
                     <h2>Understanding Subqueries</h2>
-                    <pre><code class="language-promql">[30m:1m]</code></pre>
+                    <pre><code data-trim data-noescape class="promql">
+[30m:1m]
+                    </code></pre>
                     <ul>
                         <li><strong>Outer range</strong>: 30m (how far back to look)</li>
                         <li><strong>Resolution</strong>: 1m (how often to evaluate inner query)</li>
@@ -284,9 +288,11 @@
 
                 <section>
                     <h2>Solution: Maximum Increase Detection</h2>
-                    <pre class="smaller-text"><code class="language-promql">max_over_time(
+                    <pre><code data-trim data-noescape class="promql">
+max_over_time(
   increase(node_cpu_seconds_total{instance="localhost:9100",mode="user"}[1m])
-[30m:1m])</code></pre>
+[30m:1m])
+                    </code></pre>
                     <p>Finds the highest 1-minute increase within a 30-minute period</p>
                     <p>Identifies the most intense CPU burst in the last half hour</p>
                     <aside class="notes">
@@ -306,11 +312,13 @@
 
                 <section>
                     <h2>Solution: Percentage-Based Anomaly</h2>
-                    <pre class="smallest-text"><code class="language-promql">max_over_time(
+                    <pre><code data-trim data-noescape class="promql">
+max_over_time(
   (increase(node_cpu_seconds_total{instance="localhost:9100",mode="user"}[1m]) 
   / 
   scalar(count(node_cpu_seconds_total{instance="localhost:9100",cpu="0"})))
-[30m:1m]) * 100</code></pre>
+[30m:1m]) * 100
+                    </code></pre>
                     <p>Normalizes by number of CPU cores</p>
                     <p>Expresses result as a percentage of total capacity</p>
                     <aside class="notes">
@@ -374,19 +382,20 @@
             </div>
 		</div>
 
-		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/dist/reveal.js"></script>
-		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/plugin/notes/notes.js"></script>
-		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/plugin/markdown/markdown.js"></script>
-		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.1.0/plugin/highlight/highlight.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/dist/reveal.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/markdown/markdown.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/highlight/highlight.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/notes/notes.js"></script>
 		<script>
-			// More info about initialization & config:
-			// - https://revealjs.com/initialization/
-			// - https://revealjs.com/config/
 			Reveal.initialize({
 				hash: true,
                 slideNumber: true,
-				// Learn about plugins: https://revealjs.com/plugins/
-				plugins: [ RevealMarkdown, RevealHighlight, RevealNotes ]
+				transition: 'none', // Disable slide animations
+				plugins: [ RevealMarkdown, RevealHighlight, RevealNotes ],
+				highlight: {
+					highlightOnLoad: true,
+					languages: ['promql']
+				}
 			});
 		</script>
 	</body>
