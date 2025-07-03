@@ -221,7 +221,7 @@ instance:node_cpu_usage:percent{instance="localhost:9100"}</code></pre>
 
                 <section>
                     <h2>Alert Rule Structure</h2>
-                    <pre class="smaller-text"><code data-trim data-noescape class="yaml">groups:
+                    <pre><code data-trim data-noescape class="yaml">groups:
   - name: example_alerts
     rules:
       - alert: HighCPUUsage
@@ -332,7 +332,7 @@ instance:node_cpu_usage:percent{instance="localhost:9100"}</code></pre>
 
                 <section>
                     <h2>Testing Alert Rules</h2>
-                    <pre><code class="language-promql"># Query to check if condition is met
+                    <pre><code data-trim data-noescape class="promql"># Query to check if condition is met
 instance:node_cpu_usage:percent{instance="localhost:9100"} > 80</code></pre>
                     <ul>
                         <li>Returns no data when condition is false</li>
@@ -404,7 +404,7 @@ instance:node_cpu_usage:percent{instance="localhost:9100"} > 80</code></pre>
                 <section>
                     <h2>Challenge: Memory Alert Rule</h2>
                     <div class="fragment">
-                        <pre class="smaller-text"><code data-trim data-noescape class="yaml">groups:
+                    <pre><code data-trim data-noescape class="yaml">groups:
   - name: memory_alerts
     rules:
       - alert: HighMemoryUsage
@@ -489,21 +489,21 @@ instance:node_cpu_usage:percent{instance="localhost:9100"} > 80</code></pre>
             </div>
 		</div>
 
-		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/dist/reveal.js"></script>
-		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/notes/notes.js"></script>
-		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/markdown/markdown.js"></script>
-		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/highlight/highlight.js"></script>
-		<script>
-			// More info about initialization & config:
-			// - https://revealjs.com/initialization/
-			// - https://revealjs.com/config/
-			Reveal.initialize({
-				hash: true,
-                slideNumber: true,
-				transition: 'none', // Disable slide animations
-				// Learn about plugins: https://revealjs.com/plugins/
-				plugins: [ RevealMarkdown, RevealHighlight, RevealNotes ]
-			});
-		</script>
-	</body>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/dist/reveal.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/markdown/markdown.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/highlight/highlight.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/notes/notes.js"></script>
+    <script>
+        Reveal.initialize({
+            hash: true,
+            transition: 'none', // Disable slide animations
+            plugins: [RevealMarkdown, RevealHighlight, RevealNotes],
+            highlight: {
+                highlightOnLoad: true,
+                languages: ['promql']
+            }
+        });
+    </script>
+</body>
 </html>
+

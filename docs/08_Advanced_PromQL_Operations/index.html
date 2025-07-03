@@ -207,7 +207,7 @@
 
                 <section class="dense-content">
                     <h2>Compare Current vs. Historical</h2>
-                    <pre class="smaller-code"><code data-trim data-noescape class="promql"># Compare current CPU usage with 1 hour ago
+                    <pre><code data-trim data-noescape class="promql"># Compare current CPU usage with 1 hour ago
 sum(rate(node_cpu_seconds_total{instance="localhost:9100",mode!="idle"}[5m])) and
 sum(rate(node_cpu_seconds_total{instance="localhost:9100",mode!="idle"}[5m] offset 1h))</code></pre>
                     <ul>
@@ -243,7 +243,7 @@ sum(rate(node_cpu_seconds_total{instance="localhost:9100",mode!="idle"}[5m] offs
 
                 <section>
                     <h2>Calculate Changes Over Time</h2>
-                    <pre class="smaller-code"><code data-trim data-noescape class="promql"># Calculate CPU usage increase from 1 hour ago
+                    <pre><code data-trim data-noescape class="promql"># Calculate CPU usage increase from 1 hour ago
 sum(rate(node_cpu_seconds_total{instance="localhost:9100",mode!="idle"}[5m])) - 
 sum(rate(node_cpu_seconds_total{instance="localhost:9100",mode!="idle"}[5m] offset 1h))</code></pre>
                     <ul>
@@ -404,7 +404,7 @@ topk(3, sum by (groupname) (
 
                 <section>
                     <h2>Subquery Syntax</h2>
-                    <pre class="smaller-code"><code data-trim data-noescape class="promql"># Calculate max CPU usage in 5m intervals over last 30m
+                    <pre><code data-trim data-noescape class="promql"># Calculate max CPU usage in 5m intervals over last 30m
 max_over_time(
   rate(node_cpu_seconds_total{instance="localhost:9100",mode="user"}[5m])[30m:5m]
 )</code></pre>
@@ -555,7 +555,7 @@ absent(node_cpu_seconds_total{instance="localhost:9100"})</code></pre>
                     <pre><code data-trim data-noescape class="promql"># This should return 1 (metric doesn't exist)
 absent(non_existent_metric{instance="localhost:9100"})</code></pre>
                     <p>A common alert pattern using absent:</p>
-                    <pre class="smaller-text"><code data-trim data-noescape class="yaml">- alert: NodeExporterDown
+                    <pre><code data-trim data-noescape class="yaml">- alert: NodeExporterDown
   expr: absent(up{job="node_exporter"} == 1)
   for: 5m
   labels:
@@ -598,7 +598,7 @@ absent(non_existent_metric{instance="localhost:9100"})</code></pre>
                     <p>Create a query that compares current memory usage with memory usage exactly one day ago and calculates the percentage change.</p>
                     <div class="fragment">
                         <h3>Solution:</h3>
-                        <pre class="smallest-text"><code data-trim data-noescape class="promql">(
+                        <pre><code data-trim data-noescape class="promql">(
   (100 * (1 - (node_memory_MemAvailable_bytes{instance="localhost:9100"} / 
      node_memory_MemTotal_bytes{instance="localhost:9100"})))
   -
@@ -631,7 +631,7 @@ absent(non_existent_metric{instance="localhost:9100"})</code></pre>
 
                 <section>
                     <h2>Simplifying with Recording Rules</h2>
-                    <pre class="smaller-text"><code data-trim data-noescape class="yaml"># In prometheus.yml rules section:
+                    <pre><code data-trim data-noescape class="yaml"># In prometheus.yml rules section:
 groups:
   - name: memory_usage
     rules:
@@ -639,7 +639,7 @@ groups:
         expr: 100 * (1 - (node_memory_MemAvailable_bytes{instance="localhost:9100"} / 
                node_memory_MemTotal_bytes{instance="localhost:9100"}))</code></pre>
                     <p>Then the comparison becomes much simpler:</p>
-                    <pre class="smaller-code"><code data-trim data-noescape class="promql">(memory_usage_percent - memory_usage_percent offset 1d) / 
+                    <pre><code data-trim data-noescape class="promql">(memory_usage_percent - memory_usage_percent offset 1d) / 
 memory_usage_percent offset 1d * 100</code></pre>
                     <aside class="notes">
                         This slide highlights the practical value of recording rules, which is a great opportunity to reinforce their benefits:
@@ -696,21 +696,21 @@ memory_usage_percent offset 1d * 100</code></pre>
             </div>
 		</div>
 
-		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/dist/reveal.js"></script>
-		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/notes/notes.js"></script>
-		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/markdown/markdown.js"></script>
-		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/highlight/highlight.js"></script>
-		<script>
-			// More info about initialization & config:
-			// - https://revealjs.com/initialization/
-			// - https://revealjs.com/config/
-			Reveal.initialize({
-				hash: true,
-                slideNumber: true,
-				transition: 'none', // Disable slide animations
-				// Learn about plugins: https://revealjs.com/plugins/
-				plugins: [ RevealMarkdown, RevealHighlight, RevealNotes ]
-			});
-		</script>
-	</body>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/dist/reveal.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/markdown/markdown.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/highlight/highlight.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/notes/notes.js"></script>
+    <script>
+        Reveal.initialize({
+            hash: true,
+            transition: 'none', // Disable slide animations
+            plugins: [RevealMarkdown, RevealHighlight, RevealNotes],
+            highlight: {
+                highlightOnLoad: true,
+                languages: ['promql']
+            }
+        });
+    </script>
+</body>
 </html>
+

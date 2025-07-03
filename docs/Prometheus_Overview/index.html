@@ -357,7 +357,7 @@
                 </textarea>
             </section>
 
-            <section data-markdown class="comparison-systems">
+            <section data-markdown class="dense-content">
                 <textarea data-template>
                     ## Comparison with Other Systems
                     
@@ -476,7 +476,11 @@
         Reveal.initialize({
             hash: true,
             transition: 'none', // Disable slide animations
-            plugins: [RevealMarkdown, RevealHighlight, RevealNotes]
+            plugins: [RevealMarkdown, RevealHighlight, RevealNotes],
+            highlight: {
+                highlightOnLoad: true,
+                languages: ['promql']
+            }
         });
     </script>
 </body>

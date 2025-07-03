@@ -320,70 +320,92 @@ stress-ng --cpu 1 --cpu-load 80 --timeout 60s
                     </aside>
                 </section>
 
-                <section>
-                    <h2>Solution: Step 1 - CPU Condition</h2>
-                    <pre class="smaller-text"><code class="language-promql">(100 * (1 - (avg by (instance) (rate(node_cpu_seconds_total{instance="localhost:9100",mode="idle"}[5m])) / 
-count by (instance) (node_cpu_seconds_total{instance="localhost:9100",mode="idle"}))) > 80)</code></pre>
-                    <p>Returns 1 (true) when CPU usage exceeds 80%</p>
-                    <aside class="notes">
-                        Let's walk through the solution step by step, starting with the CPU condition.
+                <section data-markdown>
+                    <textarea data-template>
+                        ## Solution: Step 1 - CPU Condition
                         
-                        This query begins with our familiar CPU usage percentage calculation that we've used throughout these labs. It takes the rate of idle CPU time, averages it across all cores, divides by the count of cores to get the idle percentage, and then converts to usage percentage with the formula 100 * (1 - idle_percentage).
+                        ```promql
+                        (100 * (1 - (avg by (instance) (rate(node_cpu_seconds_total{instance="localhost:9100",mode="idle"}[5m])) / 
+                        count by (instance) (node_cpu_seconds_total{instance="localhost:9100",mode="idle"}))) > 80)
+                        ```
                         
-                        The new element here is the comparison operator > 80 at the end. In PromQL, comparison operators transform a value query into a boolean condition. When the CPU usage exceeds 80%, this expression evaluates to 1 (true); otherwise, it evaluates to no data at all (effectively false).
+                        Returns 1 (true) when CPU usage exceeds 80%
                         
-                        This behavior of returning no data when the condition is false is critical for alerting and visualization. It means that data points only appear when the condition is met, which is perfect for alert triggers and conditional visualizations.
-                        
-                        It's worth noting that you could use this query directly as an alert condition. However, we want to build a more sophisticated alert that considers multiple factors, so this is just our first building block.
-                        
-                        In the next slide, we'll look at the memory condition, and then we'll combine the two to create our composite alert.
-                    </aside>
+                        <aside class="notes">
+                            Let's walk through the solution step by step, starting with the CPU condition.
+                            
+                            This query begins with our familiar CPU usage percentage calculation that we've used throughout these labs. It takes the rate of idle CPU time, averages it across all cores, divides by the count of cores to get the idle percentage, and then converts to usage percentage with the formula 100 * (1 - idle_percentage).
+                            
+                            The new element here is the comparison operator > 80 at the end. In PromQL, comparison operators transform a value query into a boolean condition. When the CPU usage exceeds 80%, this expression evaluates to 1 (true); otherwise, it evaluates to no data at all (effectively false).
+                            
+                            This behavior of returning no data when the condition is false is critical for alerting and visualization. It means that data points only appear when the condition is met, which is perfect for alert triggers and conditional visualizations.
+                            
+                            It's worth noting that you could use this query directly as an alert condition. However, we want to build a more sophisticated alert that considers multiple factors, so this is just our first building block.
+                            
+                            In the next slide, we'll look at the memory condition, and then we'll combine the two to create our composite alert.
+                        </aside>
+                    </textarea>
                 </section>
 
-                <section>
-                    <h2>Solution: Step 2 - Memory Condition</h2>
-                    <pre><code class="language-promql">(100 * (1 - (node_memory_MemAvailable_bytes{instance="localhost:9100"} / 
-node_memory_MemTotal_bytes{instance="localhost:9100"})) > 80)</code></pre>
-                    <p>Returns 1 (true) when memory usage exceeds 80%</p>
-                    <aside class="notes">
-                        Now for the second part of our solution: the memory condition.
+                <section data-markdown>
+                    <textarea data-template>
+                        ## Solution: Step 2 - Memory Condition
                         
-                        This query follows the same pattern as our CPU condition but focuses on memory usage instead. We calculate the percentage of memory in use with the formula 100 * (1 - (available_memory / total_memory)), then apply the same > 80 comparison operator.
+                        ```promql
+                        (100 * (1 - (node_memory_MemAvailable_bytes{instance="localhost:9100"} / 
+                        node_memory_MemTotal_bytes{instance="localhost:9100"})) > 80)
+                        ```
                         
-                        Again, this query will return 1 (true) when memory usage exceeds 80% and no data otherwise. This binary behavior is exactly what we need for building a composite alert condition.
+                        Returns 1 (true) when memory usage exceeds 80%
                         
-                        Notice the similarity in structure between the CPU and memory conditions. Both convert raw metrics to percentages and then apply a threshold. This consistent approach makes your monitoring more intuitive and easier to maintain. When possible, standardizing on common units (like percentages) across different resource types makes correlation much more straightforward.
-                        
-                        It's also worth noting that these individual conditions could be useful on their own. For example, you might want separate panels on your dashboard that highlight when CPU or memory individually cross certain thresholds, in addition to your combined alert.
-                        
-                        In the next slide, we'll bring these two conditions together to create our final composite alert.
-                    </aside>
+                        <aside class="notes">
+                            Now for the second part of our solution: the memory condition.
+                            
+                            This query follows the same pattern as our CPU condition but focuses on memory usage instead. We calculate the percentage of memory in use with the formula 100 * (1 - (available_memory / total_memory)), then apply the same > 80 comparison operator.
+                            
+                            Again, this query will return 1 (true) when memory usage exceeds 80% and no data otherwise. This binary behavior is exactly what we need for building a composite alert condition.
+                            
+                            Notice the similarity in structure between the CPU and memory conditions. Both convert raw metrics to percentages and then apply a threshold. This consistent approach makes your monitoring more intuitive and easier to maintain. When possible, standardizing on common units (like percentages) across different resource types makes correlation much more straightforward.
+                            
+                            It's also worth noting that these individual conditions could be useful on their own. For example, you might want separate panels on your dashboard that highlight when CPU or memory individually cross certain thresholds, in addition to your combined alert.
+                            
+                            In the next slide, we'll bring these two conditions together to create our final composite alert.
+                        </aside>
+                    </textarea>
                 </section>
 
-                <section>
-                    <h2>Solution: Step 3 - Combined Alert</h2>
-                    <pre class="smallest-text"><code class="language-promql">(100 * (1 - (avg by (instance) (rate(node_cpu_seconds_total{instance="localhost:9100",mode="idle"}[5m])) / 
-count by (instance) (node_cpu_seconds_total{instance="localhost:9100",mode="idle"}))) > 80) 
-and 
-(100 * (1 - (node_memory_MemAvailable_bytes{instance="localhost:9100"} / 
-node_memory_MemTotal_bytes{instance="localhost:9100"})) > 80)</code></pre>
-                    <p>Returns data only when both conditions are true</p>
-                    <p>Reduces false positives from single-resource spikes</p>
-                    <aside class="notes">
-                        Here's our final solution: a composite alert condition that combines our CPU and memory thresholds using the logical AND operator.
+                <section data-markdown>
+                    <textarea data-template>
+                        ## Solution: Step 3 - Combined Alert
                         
-                        The and operator in PromQL combines boolean conditions and returns data only when both operands evaluate to true. In our case, data will only be returned when both CPU usage and memory usage exceed 80%.
+                        ```promql
+                        (100 * (1 - (avg by (instance) (rate(node_cpu_seconds_total{instance="localhost:9100",mode="idle"}[5m])) / 
+                        count by (instance) (node_cpu_seconds_total{instance="localhost:9100",mode="idle"}))) > 80) 
+                        and 
+                        (100 * (1 - (node_memory_MemAvailable_bytes{instance="localhost:9100"} / 
+                        node_memory_MemTotal_bytes{instance="localhost:9100"})) > 80)
+                        ```
                         
-                        This is a powerful pattern for reducing false positives in your alerting. Many systems will occasionally experience spikes in individual resources that don't actually impact service performance. For example, a brief CPU spike might be completely normal during a scheduled task, or memory usage might temporarily increase during data processing.
+                        Returns data only when both conditions are true
                         
-                        By requiring multiple conditions to be true simultaneously, we filter out these benign single-resource spikes and focus on situations that are more likely to indicate real problems. When both CPU and memory are constrained at the same time, the system has less flexibility to manage the load, and performance issues are much more likely.
+                        Reduces false positives from single-resource spikes
                         
-                        This query can be used directly in a Prometheus alert rule or in a Grafana panel. In an alert context, you might also want to add a time component with for clauses to ensure the condition persists for a certain duration before alerting.
-                        
-                        You can extend this pattern to include additional resources or conditions. For example, you might add disk I/O or network conditions, or you might create more complex combinations using or operators for alternative conditions.
-                        
-                        This type of multi-resource alerting is a cornerstone of mature monitoring systems that focus on service impact rather than isolated resource metrics.
-                    </aside>
+                        <aside class="notes">
+                            Here's our final solution: a composite alert condition that combines our CPU and memory thresholds using the logical AND operator.
+                            
+                            The and operator in PromQL combines boolean conditions and returns data only when both operands evaluate to true. In our case, data will only be returned when both CPU usage and memory usage exceed 80%.
+                            
+                            This is a powerful pattern for reducing false positives in your alerting. Many systems will occasionally experience spikes in individual resources that don't actually impact service performance. For example, a brief CPU spike might be completely normal during a scheduled task, or memory usage might temporarily increase during data processing.
+                            
+                            By requiring multiple conditions to be true simultaneously, we filter out these benign single-resource spikes and focus on situations that are more likely to indicate real problems. When both CPU and memory are constrained at the same time, the system has less flexibility to manage the load, and performance issues are much more likely.
+                            
+                            This query can be used directly in a Prometheus alert rule or in a Grafana panel. In an alert context, you might also want to add a time component with for clauses to ensure the condition persists for a certain duration before alerting.
+                            
+                            You can extend this pattern to include additional resources or conditions. For example, you might add disk I/O or network conditions, or you might create more complex combinations using or operators for alternative conditions.
+                            
+                            This type of multi-resource alerting is a cornerstone of mature monitoring systems that focus on service impact rather than isolated resource metrics.
+                        </aside>
+                    </textarea>
                 </section>
 
                 <section>
@@ -451,21 +473,20 @@ node_memory_MemTotal_bytes{instance="localhost:9100"})) > 80)</code></pre>
             </div>
 		</div>
 
-		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/dist/reveal.js"></script>
-		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/markdown/markdown.js"></script>
-		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/highlight/highlight.js"></script>
-		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/notes/notes.js"></script>
-		<script>
-			Reveal.initialize({
-				hash: true,
-                slideNumber: true,
-				transition: 'none', // Disable slide animations
-				plugins: [ RevealMarkdown, RevealHighlight, RevealNotes ],
-				highlight: {
-					highlightOnLoad: true,
-					languages: ['promql']
-				}
-			});
-		</script>
-	</body>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/dist/reveal.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/markdown/markdown.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/highlight/highlight.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/notes/notes.js"></script>
+    <script>
+        Reveal.initialize({
+            hash: true,
+            transition: 'none', // Disable slide animations
+            plugins: [RevealMarkdown, RevealHighlight, RevealNotes],
+            highlight: {
+                highlightOnLoad: true,
+                languages: ['promql']
+            }
+        });
+    </script>
+</body>
 </html>

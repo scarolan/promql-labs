@@ -11,7 +11,7 @@
     margin: 0 auto;
     box-shadow: none;
     width: 95%; /* Make pre elements wider to accommodate code */
-    max-width: 950px; /* Increased maximum width */
+    max-width: 1000px; /* Increased maximum width */
 }
 .reveal pre code {
     padding: 25px;
@@ -20,7 +20,7 @@
     font-size: 1.5em; /* Further increased for better visibility on large displays */
     border-radius: 8px; /* Add rounded corners to code blocks */
     width: 100%; /* Ensure code blocks use full width */
-    max-width: 900px; /* Increased maximum width for wider code blocks */
+    max-width: 1000px; /* Increased maximum width for wider code blocks */
     margin: 0 auto; /* Center the code block */
 }
 .two-column {
@@ -91,20 +91,6 @@
     margin: 0 auto;
 }
 
-/* Special styling for comparison slides with dense content */
-.comparison-systems ul {
-    font-size: 0.7em !important; /* Further reduced font size for dense comparison slides */
-    line-height: 1.3 !important; /* Tighter line spacing */
-}
-
-.comparison-systems ul li {
-    margin-bottom: 10px; /* Add space between main list items */
-}
-
-.comparison-systems ul ul {
-    margin-top: 5px; /* Reduced space for nested lists */
-}
-
 /* Dense slides with lots of content */
 .dense-content ul {
     font-size: 0.85em !important;
@@ -119,17 +105,15 @@
     font-size: 1.3em !important; /* Slightly smaller code blocks for dense slides */
 }
 
-/* YAML code blocks - reduce size by ~30% */
+/* YAML code blocks */
 .reveal pre code.yaml {
-    font-size: 0.7em !important; /* Reduced size for YAML code blocks */
+    font-size: 1.4em !important; 
 }
 
 /* Reduce PromQL code block size for specific slides */
 .reveal pre.smaller-code code.promql {
     font-size: 0.7em !important; /* Reduced size for large PromQL blocks */
 }
-
-
 
 /* Long code blocks with extended lines */
 .reveal pre.long-code {

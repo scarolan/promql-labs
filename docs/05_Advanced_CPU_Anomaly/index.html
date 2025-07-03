@@ -215,7 +215,6 @@ increase(node_cpu_seconds_total{instance="localhost:9100",mode="user"}[10m])
 
                 <section>
                     <h2>Visualizing Anomalies in Grafana</h2>
-                    <p>Best practices:</p>
                     <ul>
                         <li>Use threshold bands to highlight severity levels</li>
                         <li>Add annotations for context</li>
@@ -379,21 +378,21 @@ max_over_time(
             </div>
 		</div>
 
-		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/dist/reveal.js"></script>
-		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/markdown/markdown.js"></script>
-		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/highlight/highlight.js"></script>
-		<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/notes/notes.js"></script>
-		<script>
-			Reveal.initialize({
-				hash: true,
-                slideNumber: true,
-				transition: 'none', // Disable slide animations
-				plugins: [ RevealMarkdown, RevealHighlight, RevealNotes ],
-				highlight: {
-					highlightOnLoad: true,
-					languages: ['promql']
-				}
-			});
-		</script>
-	</body>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/dist/reveal.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/markdown/markdown.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/highlight/highlight.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/notes/notes.js"></script>
+    <script>
+        Reveal.initialize({
+            hash: true,
+            transition: 'none', // Disable slide animations
+            plugins: [RevealMarkdown, RevealHighlight, RevealNotes],
+            highlight: {
+                highlightOnLoad: true,
+                languages: ['promql']
+            }
+        });
+    </script>
+</body>
 </html>
+
