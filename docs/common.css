@@ -1,6 +1,6 @@
 /* Common styles for all PromQL Labs slide decks */
 .reveal {
-    font-size: 0.9em;
+    font-size: 1.2em; /* Increased from 0.9em for better readability on 1920x1080 */
 }
 .reveal pre {
     margin: 0;
@@ -10,7 +10,7 @@
     padding: 20px;
     max-height: 400px;
     line-height: 1.2;
-    font-size: 0.85em;
+    font-size: 0.9em; /* Increased from 0.85em */
 }
 .two-column {
     display: flex;
@@ -23,23 +23,24 @@
     width: 48%;
 }
 .reveal .smaller-text {
-    font-size: 0.75em;
+    font-size: 0.85em; /* Increased from 0.75em */
 }
 .reveal .smallest-text {
-    font-size: 0.55em;
+    font-size: 0.7em; /* Increased from 0.55em */
 }
 .reveal h1 {
-    font-size: 2.2em;
+    font-size: 2.5em; /* Increased from 2.2em */
 }
 .reveal h2 {
-    font-size: 1.7em;
+    font-size: 1.9em; /* Increased from 1.7em */
 }
 .reveal h3 {
-    font-size: 1.3em;
+    font-size: 1.5em; /* Increased from 1.3em */
 }
 .reveal ul, .reveal ol {
     display: block;
-    line-height: 1.4;
+    line-height: 1.5; /* Increased from 1.4 for better readability */
+    font-size: 1.0em; /* Explicit size for list items */
 }
 
 /* Image styling */
@@ -58,4 +59,13 @@
     padding: 20px;
     border-radius: 8px;
     color: #333;
+    width: 90%;
+    margin: 0 auto;
+}
+
+.light-bg-slide img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 0 auto;
 }
