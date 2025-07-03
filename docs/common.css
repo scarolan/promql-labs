@@ -47,3 +47,15 @@
     border: 1px solid #fff;
     box-shadow: 0 0 10px rgba(0,0,0,0.5);
 }
+
+/* Light background for slides with transparent images */
+.reveal .slide-background.light-bg {
+    background-color: #f8f9fa !important;
+}
+
+.light-bg-slide {
+    background-color: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    color: #333;
+}
