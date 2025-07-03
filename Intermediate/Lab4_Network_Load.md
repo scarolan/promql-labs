@@ -63,13 +63,13 @@ To create an alert for high load average (when load1 exceeds the CPU core count)
 2. **Create a Grafana alert based on this query:**
    ```
    # This compares 1-minute load average to the core count
-   node_load1{instance="localhost:9100"} > count without(cpu, mode) (node_cpu_seconds_total{instance="localhost:9100"})
+   node_load1{instance="localhost:9100"} > count by(instance) (node_cpu_seconds_total{instance="localhost:9100",mode="idle"})
    ```
 
 3. **Alternative approach using a ratio:**
    ```
    # This gives a ratio of load to core count (values > 1 indicate overload)
-   node_load1{instance="localhost:9100"} / count without(cpu, mode) (node_cpu_seconds_total{instance="localhost:9100"})
+   node_load1{instance="localhost:9100"} / count by(instance) (node_cpu_seconds_total{instance="localhost:9100",mode="idle"})
    ```
 
 4. **In Grafana, set up the alert:**
