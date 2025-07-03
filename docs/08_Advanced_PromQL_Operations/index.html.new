@@ -732,6 +732,8 @@ When implementing these checks, it's important to set appropriate thresholds for
                     ```
                     
                     * Advanced queries can combine multiple techniques
+                    * Build complex queries incrementally
+                    * Test each component separately
                     
 <aside class="notes">
 In this final section, we'll look at a complex query that combines several of the advanced techniques we've learned to solve a sophisticated monitoring challenge.

@@ -1,194 +1,229 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Lab 4: Network, Load, and Advanced Aggregations</title>
+    <title>Lab 4: Network, Load, and Advanced Aggregations</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/dist/reset.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/dist/reveal.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/dist/theme/night.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/highlight/monokai.css">
     <link rel="stylesheet" href="../common.css">
 </head>
-	<body>
-		<div class="reveal">
-			<div class="slides">
-                <section>
-                    <h1>Lab 4: Network, Load, and Advanced Aggregations</h1>
-                    <p>🌐 Intermediate PromQL</p>
-                    <p><small>Navigate: <a href="../index.html">All Slides</a></small></p>
+<body>
+    <div class="reveal">
+        <div class="slides">
+            <section data-markdown>
+                <textarea data-template>
+                    # Lab 4: Network, Load, and Advanced Aggregations
+                    
+                    🌐 Intermediate PromQL
+                    
+                    <small>Navigate: [All Slides](../index.html)</small>
+                    
                     <aside class="notes">
-                        Welcome to Lab 4 of our PromQL series! We're now moving into intermediate territory as we explore network metrics, system load averages, and advanced aggregation techniques.
-                        
-                        Now that you've mastered CPU, memory, and filesystem monitoring in the previous labs, we'll round out your core system monitoring skills with network and load metrics. These are crucial for understanding how your systems interact with each other and how they're handling their overall workload.
-                        
-                        We'll also dive deeper into PromQL's aggregation capabilities, showing you how to combine metrics in powerful ways that provide clearer insights into your systems.
-                        
-                        By the end of this lab, you'll have a comprehensive understanding of how to monitor all the major resource types in a typical infrastructure, and you'll be ready for the more advanced techniques we'll cover in future labs.
-                    </aside>
-                </section>
+Welcome to Lab 4 of our PromQL series! We're now moving into intermediate territory as we explore network metrics, system load averages, and advanced aggregation techniques.                      
 
-                <section>
-                    <h2>Objectives</h2>
-                    <ul>
-                        <li>Query network traffic and system load metrics</li>
-                        <li>Use advanced PromQL aggregations</li>
-                        <li>Build multi-metric dashboards</li>
-                    </ul>
+Now that you've mastered CPU, memory, and filesystem monitoring in the previous labs, we'll round out your core system monitoring skills with network and load metrics. These are crucial for understanding how your systems interact with each other and how they're handling their overall workload.
+
+We'll also dive deeper into PromQL's aggregation capabilities, showing you how to combine metrics in powerful ways that provide clearer insights into your systems.
+
+By the end of this lab, you'll have a comprehensive understanding of how to monitor all the major resource types in a typical infrastructure, and you'll be ready for the more advanced techniques we'll cover in future labs.
+                    </aside>
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## Objectives
+                    
+                    * Query network traffic and system load metrics
+                    * Use advanced PromQL aggregations
+                    * Build multi-metric dashboards
+                    
                     <aside class="notes">
-                        Our objectives for this lab cover three important areas:
-                        
-                        First, we'll learn how to query network traffic and system load metrics. Network metrics are crucial for understanding communication between systems, while load averages provide one of the best high-level indicators of overall system health.
-                        
-                        Next, we'll explore advanced PromQL aggregations. So far, we've used simple aggregation functions, but now we'll learn how to preserve specific labels and combine metrics in more sophisticated ways.
-                        
-                        Finally, we'll discuss how to build multi-metric dashboards that combine different resource types for a comprehensive view of your systems.
-                        
-                        These skills are particularly valuable because they help you move from monitoring individual metrics in isolation to seeing the bigger picture of how your systems are performing as a whole.
-                    </aside>
-                </section>
+Our objectives for this lab cover three important areas:
 
-                <section>
-                    <h2>Network Traffic: The Basics</h2>
-                    <ul>
-                        <li>Network metrics track bytes sent and received</li>
-                        <li>Available for each network interface</li>
-                        <li>Stored as ever-increasing counters</li>
-                        <li>Use <code>rate()</code> to convert to bytes/second</li>
-                    </ul>
+First, we'll learn how to query network traffic and system load metrics. Network metrics are crucial for understanding communication between systems, while load averages provide one of the best high-level indicators of overall system health.
+
+Next, we'll explore advanced PromQL aggregations. So far, we've used simple aggregation functions, but now we'll learn how to preserve specific labels and combine metrics in more sophisticated ways.
+
+Finally, we'll discuss how to build multi-metric dashboards that combine different resource types for a comprehensive view of your systems.
+
+These skills are particularly valuable because they help you move from monitoring individual metrics in isolation to seeing the bigger picture of how your systems are performing as a whole.
+                    </aside>
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## Network Traffic: The Basics
+                    
+                    * Network metrics track bytes sent and received
+                    * Available for each network interface
+                    * Stored as ever-increasing counters
+                    * Use `rate()` to convert to bytes/second
+                    
                     <aside class="notes">
-                        Let's start with the basics of network traffic monitoring.
-                        
-                        Network metrics in Prometheus primarily track bytes sent and received across your network interfaces. These metrics are available for each interface on your system - for example, eth0, wlan0, or more complex interface names in cloud environments.
-                        
-                        Like the CPU metrics we saw earlier, network metrics are stored as ever-increasing counters. The raw values simply show the total bytes transmitted since the system started, which isn't directly useful for monitoring.
-                        
-                        That's why we'll use the rate() function again to convert these counters into bytes per second, giving us a meaningful measure of current network throughput.
-                        
-                        Understanding network traffic patterns is essential for capacity planning, troubleshooting connectivity issues, and identifying potential security concerns like unexpected traffic spikes that might indicate an attack or data exfiltration.
-                    </aside>
-                </section>
+Let's start with the basics of network traffic monitoring.
 
-                <section>
-                    <h2>Network Receive Rate</h2>
-                    <pre><code data-trim data-noescape class="promql">
-rate(node_network_receive_bytes_total{instance="localhost:9100",device!="lo"}[5m])
-                    </code></pre>
-                    <p>Measures bytes per second flowing <em>into</em> your network interfaces</p>
-                    <ul>
-                        <li><code>device!="lo"</code> excludes the loopback interface</li>
-                        <li>Focus on real network traffic, not internal communication</li>
-                    </ul>
+Network metrics in Prometheus primarily track bytes sent and received across your network interfaces. These metrics are available for each interface on your system - for example, eth0, wlan0, or more complex interface names in cloud environments.
+
+Like the CPU metrics we saw earlier, network metrics are stored as ever-increasing counters. The raw values simply show the total bytes transmitted since the system started, which isn't directly useful for monitoring.
+
+That's why we'll use the rate() function again to convert these counters into bytes per second, giving us a meaningful measure of current network throughput.
+
+Understanding network traffic patterns is essential for capacity planning, troubleshooting connectivity issues, and identifying potential security concerns like unexpected traffic spikes that might indicate an attack or data exfiltration.
+                    </aside>
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## Network Receive Rate
+                    
+                    ```promql
+                    rate(node_network_receive_bytes_total{instance="localhost:9100",device!="lo"}[5m])
+                    ```
+                    
+                    Measures bytes per second flowing *into* your network interfaces
+                    
+                    * `device!="lo"` excludes the loopback interface
+                    * Focus on real network traffic, not internal communication
+                    
                     <aside class="notes">
-                        Let's examine our first network metric - the receive rate, which measures bytes flowing into your network interfaces.
-                        
-                        The query uses rate() with a 5-minute time window to calculate bytes per second. Notice that we're filtering with device!="lo" - this excludes the loopback interface, which is used for localhost communication between processes on the same machine. We typically want to focus on real network traffic coming from external sources, not internal communications.
-                        
-                        When analyzing receive rates, you're looking at inbound traffic - data coming into your system. This could be client requests to your services, database query results, file downloads, or any other incoming data.
-                        
-                        High receive rates might indicate heavy client traffic to your services, which could be either good (high usage) or bad (potential DoS attack) depending on context. Unexpected spikes in receive traffic might warrant investigation.
-                        
-                        For capacity planning, knowing your typical and peak receive rates helps you ensure your network infrastructure can handle the load. Many cloud services charge for ingress traffic, so monitoring this metric can also help with cost management.
-                    </aside>
-                </section>
+Let's examine our first network metric - the receive rate, which measures bytes flowing into your network interfaces.
 
-                <section>
-                    <h2>Network Transmit Rate</h2>
-                    <pre><code data-trim data-noescape class="promql">
-rate(node_network_transmit_bytes_total{instance="localhost:9100",device!="lo"}[5m])
-                    </code></pre>
-                    <p>Measures bytes per second flowing <em>out of</em> your network interfaces</p>
-                    <ul>
-                        <li>Same filtering as receive metrics</li>
-                        <li>Together with receive rate, provides complete traffic picture</li>
-                    </ul>
+The query uses rate() with a 5-minute time window to calculate bytes per second. Notice that we're filtering with device!="lo" - this excludes the loopback interface, which is used for localhost communication between processes on the same machine. We typically want to focus on real network traffic coming from external sources, not internal communications.
+
+When analyzing receive rates, you're looking at inbound traffic - data coming into your system. This could be client requests to your services, database query results, file downloads, or any other incoming data.
+
+High receive rates might indicate heavy client traffic to your services, which could be either good (high usage) or bad (potential DoS attack) depending on context. Unexpected spikes in receive traffic might warrant investigation.
+
+For capacity planning, knowing your typical and peak receive rates helps you ensure your network infrastructure can handle the load. Many cloud services charge for ingress traffic, so monitoring this metric can also help with cost management.
+                    </aside>
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## Network Transmit Rate
+                    
+                    ```promql
+                    rate(node_network_transmit_bytes_total{instance="localhost:9100",device!="lo"}[5m])
+                    ```
+                    
+                    Measures bytes per second flowing *out of* your network interfaces
+                    
+                    * Same filtering as receive metrics
+                    * Together with receive rate, provides complete traffic picture
+                    
                     <aside class="notes">
-                        The complement to receive rate is transmit rate, which measures bytes flowing out of your network interfaces.
-                        
-                        The query structure is identical to our receive query, just using the transmit metric instead. We're still excluding the loopback interface to focus on real external network traffic.
-                        
-                        Transmit rates represent outbound traffic - data your system is sending to other systems. This could be responses to client requests, data being sent to other services, backup data, or any other outgoing information.
-                        
-                        High transmit rates could indicate that your services are sending a lot of data to clients or other systems. This might be expected for services like file servers or video streaming, but unusual for other types of applications.
-                        
-                        Many cloud providers charge significantly more for egress (outbound) traffic than ingress, so monitoring transmit rates is especially important for cost control in cloud environments.
-                        
-                        Together, receive and transmit rates give you a complete picture of network utilization. Comparing the two can also provide insights into the nature of your services - for example, a web server typically receives small requests and sends larger responses, resulting in higher transmit than receive rates.
-                    </aside>
-                </section>
+The complement to receive rate is transmit rate, which measures bytes flowing out of your network interfaces.
 
-                <section>
-                    <h2>System Load Averages</h2>
-                    <p>Load averages represent processes waiting for or using CPU resources</p>
-                    <ul>
-                        <li>Higher values indicate higher contention</li>
-                        <li>Compare to CPU core count to gauge capacity</li>
-                        <li>Three time windows provide trend information</li>
-                    </ul>
+The query structure is identical to our receive query, just using the transmit metric instead. We're still excluding the loopback interface to focus on real external network traffic.
+
+Transmit rates represent outbound traffic - data your system is sending to other systems. This could be responses to client requests, data being sent to other services, backup data, or any other outgoing information.
+
+High transmit rates could indicate that your services are sending a lot of data to clients or other systems. This might be expected for services like file servers or video streaming, but unusual for other types of applications.
+
+Many cloud providers charge significantly more for egress (outbound) traffic than ingress, so monitoring transmit rates is especially important for cost control in cloud environments.
+
+Together, receive and transmit rates give you a complete picture of network utilization. Comparing the two can also provide insights into the nature of your services - for example, a web server typically receives small requests and sends larger responses, resulting in higher transmit than receive rates.
+                    </aside>
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## System Load Averages
+                    
+                    Load averages represent processes waiting for or using CPU resources
+                    
+                    * Higher values indicate higher contention
+                    * Compare to CPU core count to gauge capacity
+                    * Three time windows provide trend information
+                    
                     <aside class="notes">
-                        Now let's shift our focus to system load averages, which are some of the most valuable but sometimes misunderstood metrics in Linux systems monitoring.
-                        
-                        Load averages represent the number of processes that are either running on the CPU or waiting for CPU time, averaged over different time periods. They essentially measure the "queue length" for your CPUs.
-                        
-                        Higher load averages indicate higher contention for CPU resources. When processes have to wait for CPU time, it can lead to performance degradation and slower response times.
-                        
-                        The key insight for interpreting load averages is to compare them to your CPU core count. A load average equal to your core count means your CPUs are exactly at capacity - every core has one process. Values below your core count indicate spare capacity, while values above suggest processes are waiting.
-                        
-                        Linux provides three load averages measured over 1, 5, and 15 minutes. This gives you valuable trend information - are things getting better or worse? A high 1-minute average with lower 5 and 15-minute averages suggests a recent spike. Conversely, increasing values across all three metrics suggests a worsening situation.
-                        
-                        Load averages provide one of the best high-level health indicators for your systems, which is why they're often among the first metrics administrators check when investigating performance issues.
-                    </aside>
-                </section>
+Now let's shift our focus to system load averages, which are some of the most valuable but sometimes misunderstood metrics in Linux systems monitoring.
 
-                <section>
-                    <h2>1-Minute Load Average</h2>
-                    <pre><code data-trim data-noescape class="promql">
-node_load1{instance="localhost:9100"}
-                    </code></pre>
-                    <p>Most responsive to recent changes</p>
-                    <p>Good for detecting sudden spikes</p>
+Load averages represent the number of processes that are either running on the CPU or waiting for CPU time, averaged over different time periods. They essentially measure the "queue length" for your CPUs.
+
+Higher load averages indicate higher contention for CPU resources. When processes have to wait for CPU time, it can lead to performance degradation and slower response times.
+
+The key insight for interpreting load averages is to compare them to your CPU core count. A load average equal to your core count means your CPUs are exactly at capacity - every core has one process. Values below your core count indicate spare capacity, while values above suggest processes are waiting.
+
+Linux provides three load averages measured over 1, 5, and 15 minutes. This gives you valuable trend information - are things getting better or worse? A high 1-minute average with lower 5 and 15-minute averages suggests a recent spike. Conversely, increasing values across all three metrics suggests a worsening situation.
+
+Load averages provide one of the best high-level health indicators for your systems, which is why they're often among the first metrics administrators check when investigating performance issues.
+                    </aside>
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## 1-Minute Load Average
+                    
+                    ```promql
+                    node_load1{instance="localhost:9100"}
+                    ```
+                    
+                    Most responsive to recent changes
+                    
+                    Good for detecting sudden spikes
+                    
                     <aside class="notes">
-                        Let's look at each load average metric individually, starting with the 1-minute load average.
-                        
-                        This metric, node_load1, shows the average system load over the past minute. It's the most responsive to recent changes in your system's activity.
-                        
-                        The 1-minute load average is particularly good for detecting sudden spikes in activity. If a process suddenly starts consuming a lot of CPU or if there's a flood of new requests, you'll see this metric increase rapidly.
-                        
-                        However, because it only covers a short time window, it can also be quite volatile. Brief spikes that don't actually impact users significantly might show up prominently in this metric.
-                        
-                        When monitoring, the 1-minute load is useful for real-time alerting where you need to know about problems quickly. However, you might want to set a higher threshold or require that the value stays elevated for a certain period before alerting, to avoid false alarms from brief, harmless spikes.
-                        
-                        Remember to interpret this value in the context of your CPU core count. On a 4-core system, a load of 3 might be perfectly normal, while on a single-core system, it would indicate significant contention.
-                    </aside>
-                </section>
+Let's look at each load average metric individually, starting with the 1-minute load average.
 
-                <section>
-                    <h2>5 & 15-Minute Load Averages</h2>
-                    <pre><code data-trim data-noescape class="promql">
-node_load5{instance="localhost:9100"}
-                    </code></pre>
-                    <pre><code data-trim data-noescape class="promql">
-node_load15{instance="localhost:9100"}
-                    </code></pre>
-                    <p>Smoother view over longer periods</p>
-                    <p>Better for detecting sustained load issues</p>
+This metric, node_load1, shows the average system load over the past minute. It's the most responsive to recent changes in your system's activity.
+
+The 1-minute load average is particularly good for detecting sudden spikes in activity. If a process suddenly starts consuming a lot of CPU or if there's a flood of new requests, you'll see this metric increase rapidly.
+
+However, because it only covers a short time window, it can also be quite volatile. Brief spikes that don't actually impact users significantly might show up prominently in this metric.
+
+When monitoring, the 1-minute load is useful for real-time alerting where you need to know about problems quickly. However, you might want to set a higher threshold or require that the value stays elevated for a certain period before alerting, to avoid false alarms from brief, harmless spikes.
+
+Remember to interpret this value in the context of your CPU core count. On a 4-core system, a load of 3 might be perfectly normal, while on a single-core system, it would indicate significant contention.
+                    </aside>
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## 5 & 15-Minute Load Averages
+                    
+                    ```promql
+                    node_load5{instance="localhost:9100"}
+                    ```
+                    
+                    ```promql
+                    node_load15{instance="localhost:9100"}
+                    ```
+                    
+                    Smoother view over longer periods
+                    
+                    Better for detecting sustained load issues
+                    
                     <aside class="notes">
-                        The 5 and 15-minute load averages provide a longer-term view of your system's activity.
-                        
-                        These metrics show the average load over the past 5 and 15 minutes, respectively. They're less responsive to sudden changes than the 1-minute average but provide a smoother view that filters out brief spikes.
-                        
-                        The 5-minute average strikes a balance between responsiveness and stability. It's useful for general monitoring and provides context for the more volatile 1-minute metric.
-                        
-                        The 15-minute average shows longer-term trends. If this value is high, it indicates sustained load over a significant period, which might warrant investigation even if shorter-term metrics have started to decrease.
-                        
-                        When all three load averages are examined together, they tell a story about your system's recent history. If you see 1 > 5 > 15, the load is increasing. If 1 < 5 < 15, the load is decreasing. Equal values suggest a stable situation.
-                        
-                        For capacity planning, the 15-minute average is often the most valuable, as it gives you a sense of your sustained load rather than brief peaks. If this value regularly approaches your core count, it might be time to consider scaling up.
-                    </aside>
-                </section>
+The 5 and 15-minute load averages provide a longer-term view of your system's activity.
 
-                <section>
-                    <h2>Load Average Interpretation</h2>
+These metrics show the average load over the past 5 and 15 minutes, respectively. They're less responsive to sudden changes than the 1-minute average but provide a smoother view that filters out brief spikes.
+
+The 5-minute average strikes a balance between responsiveness and stability. It's useful for general monitoring and provides context for the more volatile 1-minute metric.
+
+The 15-minute average shows longer-term trends. If this value is high, it indicates sustained load over a significant period, which might warrant investigation even if shorter-term metrics have started to decrease.
+
+When all three load averages are examined together, they tell a story about your system's recent history. If you see 1 > 5 > 15, the load is increasing. If 1 < 5 < 15, the load is decreasing. Equal values suggest a stable situation.
+
+For capacity planning, the 15-minute average is often the most valuable, as it gives you a sense of your sustained load rather than brief peaks. If this value regularly approaches your core count, it might be time to consider scaling up.
+                    </aside>
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## Load Average Interpretation
+                    
                     <div class="two-column">
                         <div class="left">
                             <h3>Healthy</h3>
@@ -203,258 +238,301 @@ node_load15{instance="localhost:9100"}
                             <p>Processes waiting</p>
                         </div>
                     </div>
+                    
                     <aside class="notes">
-                        Let's talk about how to interpret load averages in practical terms.
-                        
-                        On a healthy system, load averages are typically less than the CPU core count. This means there are enough CPU resources to handle all the work without significant waiting. Processes can get CPU time when they need it, leading to responsive system behavior.
-                        
-                        On an overloaded system, load averages exceed the CPU core count. This means there's contention for CPU resources - processes are waiting in line for their turn on the CPU. This waiting can lead to slower response times and degraded performance.
-                        
-                        For example, on a 4-core system, a load average of 2 indicates the system is running at about 50% capacity - there's plenty of headroom. A load of 4 means the system is at full capacity but not overloaded. A load of 8 suggests significant overload, with twice as many processes wanting CPU time as can be served simultaneously.
-                        
-                        It's worth noting that brief excursions above your core count are usually fine - modern systems can handle short bursts of high activity. It's sustained high load averages that typically indicate problems.
-                        
-                        In production environments, you might set warning alerts when load approaches your core count and critical alerts when it significantly exceeds it for an extended period.
-                    </aside>
-                </section>
+Let's talk about how to interpret load averages in practical terms.
 
-                <section>
-                    <h2>Advanced Aggregations</h2>
-                    <p>Combining metrics across dimensions</p>
-                    <ul>
-                        <li>Sum across multiple instances</li>
-                        <li>Aggregate across different devices</li>
-                        <li>Preserve important labels with <code>by</code></li>
-                    </ul>
+On a healthy system, load averages are typically less than the CPU core count. This means there are enough CPU resources to handle all the work without significant waiting. Processes can get CPU time when they need it, leading to responsive system behavior.
+
+On an overloaded system, load averages exceed the CPU core count. This means there's contention for CPU resources - processes are waiting in line for their turn on the CPU. This waiting can lead to slower response times and degraded performance.
+
+For example, on a 4-core system, a load average of 2 indicates the system is running at about 50% capacity - there's plenty of headroom. A load of 4 means the system is at full capacity but not overloaded. A load of 8 suggests significant overload, with twice as many processes wanting CPU time as can be served simultaneously.
+
+It's worth noting that brief excursions above your core count are usually fine - modern systems can handle short bursts of high activity. It's sustained high load averages that typically indicate problems.
+
+In production environments, you might set warning alerts when load approaches your core count and critical alerts when it significantly exceeds it for an extended period.
+                    </aside>
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## Advanced Aggregations
+                    
+                    Combining metrics across dimensions
+                    
+                    * Sum across multiple instances
+                    * Aggregate across different devices
+                    * Preserve important labels with `by`
+                    
                     <aside class="notes">
-                        Now let's explore advanced aggregation techniques in PromQL, which allow you to combine metrics across different dimensions.
-                        
-                        Aggregations are powerful because they let you consolidate metrics from multiple sources into more manageable, actionable insights. For example, you might want to sum network traffic across all your web servers, or average CPU usage across all nodes in a cluster.
-                        
-                        You can sum across multiple instances of the same service to get total resource usage for that service. This is valuable for understanding the overall footprint of distributed applications.
-                        
-                        You can also aggregate across different devices or components within a single instance. For example, summing disk I/O across all disks or network traffic across all interfaces.
-                        
-                        A key concept in advanced aggregations is preserving important labels using the "by" clause. This lets you keep the dimensions that matter for your analysis while aggregating across others. We'll see this in action in the next slides.
-                        
-                        Advanced aggregations are particularly valuable in large, complex environments where looking at individual metrics would be overwhelming. They help you see the forest, not just the trees.
-                    </aside>
-                </section>
+Now let's explore advanced aggregation techniques in PromQL, which allow you to combine metrics across different dimensions.
 
-                <section>
-                    <h2>Aggregating Network Traffic</h2>
-                    <pre><code data-trim data-noescape class="promql">
-sum by (instance) (
-  rate(node_network_receive_bytes_total{instance="localhost:9100",device!="lo"}[5m])
-)
-                    </code></pre>
-                    <p>Sums traffic across all interfaces per server</p>
-                    <ul>
-                        <li>Keeps the <code>instance</code> label</li>
-                        <li>Total throughput rather than per-interface</li>
-                    </ul>
+Aggregations are powerful because they let you consolidate metrics from multiple sources into more manageable, actionable insights. For example, you might want to sum network traffic across all your web servers, or average CPU usage across all nodes in a cluster.
+
+You can sum across multiple instances of the same service to get total resource usage for that service. This is valuable for understanding the overall footprint of distributed applications.
+
+You can also aggregate across different devices or components within a single instance. For example, summing disk I/O across all disks or network traffic across all interfaces.
+
+A key concept in advanced aggregations is preserving important labels using the "by" clause. This lets you keep the dimensions that matter for your analysis while aggregating across others. We'll see this in action in the next slides.
+                    </aside>
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## Aggregating Network Traffic
+                    
+                    ```promql
+                    sum by (instance) (
+                      rate(node_network_receive_bytes_total{instance="localhost:9100",device!="lo"}[5m])
+                    )
+                    ```
+                    
+                    Sums traffic across all interfaces per server
+                    
+                    * Keeps the `instance` label
+                    * Total throughput rather than per-interface
+                    
                     <aside class="notes">
-                        Let's look at how to aggregate network traffic across multiple interfaces.
-                        
-                        This query sums the receive rates across all network interfaces for each instance, while preserving the instance label. The "sum by (instance)" clause is what makes this happen - it tells Prometheus to group the results by the instance label and sum everything else.
-                        
-                        The result is the total incoming network throughput for each server, regardless of how many network interfaces it has. This gives you a clearer picture of overall network utilization without getting bogged down in per-interface details.
-                        
-                        This aggregation is particularly useful in modern environments where servers might have multiple network interfaces - perhaps one for management traffic, another for application traffic, and a third for storage. When you want to understand total network utilization, summing across all interfaces makes sense.
-                        
-                        You could extend this approach to aggregate across multiple instances as well. For example, "sum(rate(node_network_receive_bytes_total{job="web-servers"}[5m]))" would give you the total network receive rate across your entire web server fleet.
-                        
-                        The key to effective aggregation is thinking about which dimensions are important to preserve and which can be combined. In this case, we're preserving the instance dimension while aggregating across the device dimension.
-                    </aside>
-                </section>
+Let's look at how to aggregate network traffic across multiple interfaces.
 
-                <section>
-                    <h2>Aggregating Transmit Traffic</h2>
-                    <pre><code data-trim data-noescape class="promql">
-sum by (instance) (
-  rate(node_network_transmit_bytes_total{instance="localhost:9100",device!="lo"}[5m])
-)
-                    </code></pre>
-                    <p>Same pattern for outbound traffic</p>
-                    <p>Useful for overall traffic monitoring</p>
+This query sums the receive rates across all network interfaces for each instance, while preserving the instance label. The "sum by (instance)" clause is what makes this happen - it tells Prometheus to group the results by the instance label and sum everything else.
+
+The result is the total incoming network throughput for each server, regardless of how many network interfaces it has. This gives you a clearer picture of overall network utilization without getting bogged down in per-interface details.
+
+This aggregation is particularly useful in modern environments where servers might have multiple network interfaces - perhaps one for management traffic, another for application traffic, and a third for storage. When you want to understand total network utilization, summing across all interfaces makes sense.
+
+You could extend this approach to aggregate across multiple instances as well. For example, "sum(rate(node_network_receive_bytes_total{job="web-servers"}[5m]))" would give you the total network receive rate across your entire web server fleet.
+
+The key to effective aggregation is thinking about which dimensions are important to preserve and which can be combined. In this case, we're preserving the instance dimension while aggregating across the device dimension.
+                    </aside>
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## Aggregating Transmit Traffic
+                    
+                    ```promql
+                    sum by (instance) (
+                      rate(node_network_transmit_bytes_total{instance="localhost:9100",device!="lo"}[5m])
+                    )
+                    ```
+                    
+                    Same pattern for outbound traffic
+                    
+                    Useful for overall traffic monitoring
+                    
                     <aside class="notes">
-                        The same aggregation pattern applies to outbound (transmit) traffic.
-                        
-                        This query sums the transmit rates across all network interfaces for each instance, preserving the instance label. The structure is identical to our receive aggregation, just using the transmit metric instead.
-                        
-                        This gives you the total outbound network throughput for each server, which complements the inbound throughput we calculated earlier. Together, these two metrics provide a complete picture of network utilization.
-                        
-                        When monitoring network traffic, it's often useful to look at both aggregated and per-interface metrics. The aggregated view tells you about overall utilization, while the per-interface view can help you identify imbalances or issues with specific interfaces.
-                        
-                        In Grafana dashboards, you might create a top-level panel showing aggregated traffic, with drill-down panels that show per-interface details for more in-depth analysis when needed.
-                        
-                        This pattern of aggregating across some dimensions while preserving others is a common and powerful technique in Prometheus monitoring. It lets you adjust the granularity of your metrics to match your current analysis needs.
-                    </aside>
-                </section>
+The same aggregation pattern applies to outbound (transmit) traffic.
 
-                <section>
-                    <h2>Challenge: High Load Alerts</h2>
-                    <p>How would you create an alert for high load average?</p>
-                    <p>(e.g., load1 > core count)</p>
+This query sums the transmit rates across all network interfaces for each instance, preserving the instance label. The structure is identical to our receive aggregation, just using the transmit metric instead.
+
+This gives you the total outbound network throughput for each server, which complements the inbound throughput we calculated earlier. Together, these two metrics provide a complete picture of network utilization.
+
+When monitoring network traffic, it's often useful to look at both aggregated and per-interface metrics. The aggregated view tells you about overall utilization, while the per-interface view can help you identify imbalances or issues with specific interfaces.
+
+In Grafana dashboards, you might create a top-level panel showing aggregated traffic, with drill-down panels that show per-interface details for more in-depth analysis when needed.
+
+This pattern of aggregating across some dimensions while preserving others is a common and powerful technique in Prometheus monitoring. It lets you adjust the granularity of your metrics to match your current analysis needs.
+                    </aside>
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## Challenge: High Load Alerts
+                    
+                    How would you create an alert for high load average?
+                    
+                    (e.g., load1 > core count)
+                    
                     <aside class="notes">
-                        Now for a practical challenge: How would you create an alert for high load average - specifically, when the 1-minute load average exceeds the CPU core count?
-                        
-                        This is a common monitoring requirement, as load averages above the core count can indicate CPU contention that might affect application performance.
-                        
-                        The challenge here is that we need to compare two different metrics - the load average and the CPU core count. We can't simply alert on a fixed threshold, because different servers might have different numbers of CPU cores.
-                        
-                        Take a moment to think about how you might approach this. We need to:
-                        1. Get the CPU core count for each server
-                        2. Compare the 1-minute load average to that count
-                        3. Alert when the load average exceeds the count
-                        
-                        In the next slides, we'll walk through a solution to this challenge, demonstrating some advanced PromQL techniques that allow us to compare different metrics.
-                    </aside>
-                </section>
+Now for a practical challenge: How would you create an alert for high load average - specifically, when the 1-minute load average exceeds the CPU core count?
 
-                <section>
-                    <h2>Solution: CPU Core Count</h2>
-                    <p>First, determine the number of CPU cores:</p>
-                    <pre><code data-trim data-noescape class="promql">
-count without(cpu, mode) (
-  node_cpu_seconds_total{instance="localhost:9100"}
-)
-                    </code></pre>
+This is a common monitoring requirement, as load averages above the core count can indicate CPU contention that might affect application performance.
+
+The challenge here is that we need to compare two different metrics - the load average and the CPU core count. We can't simply alert on a fixed threshold, because different servers might have different numbers of CPU cores.
+
+Take a moment to think about how you might approach this. We need to:
+1. Get the CPU core count for each server
+2. Compare the 1-minute load average to that count
+3. Alert when the load average exceeds the count
+
+In the next slides, we'll walk through a solution to this challenge, demonstrating some advanced PromQL techniques that allow us to compare different metrics.
+                    </aside>
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## Solution: CPU Core Count
+                    
+                    First, determine the number of CPU cores:
+                    
+                    ```promql
+                    count without(cpu, mode) (
+                      node_cpu_seconds_total{instance="localhost:9100"}
+                    )
+                    ```
+                    
                     <aside class="notes">
-                        The first step in our high load alert solution is to determine the number of CPU cores on each server.
-                        
-                        We can do this with the count function, using a technique we've seen before. The "count without(cpu, mode)" clause tells Prometheus to count the number of time series while ignoring the cpu and mode labels.
-                        
-                        Since node_cpu_seconds_total has one time series per CPU core and mode combination, this effectively gives us the number of CPU cores on the system.
-                        
-                        This query returns a single value per instance representing the number of CPU cores. For example, on a quad-core system, it would return 4.
-                        
-                        In a real monitoring environment, this query would automatically adapt to different servers with different CPU configurations. That's the power of using the actual metrics rather than hardcoded values - your monitoring automatically adjusts to your infrastructure.
-                        
-                        Now that we have the CPU core count, we can use it in our comparison with the load average.
-                    </aside>
-                </section>
+The first step in our high load alert solution is to determine the number of CPU cores on each server.
 
-                <section>
-                    <h2>Solution: Direct Comparison</h2>
-                    <pre><code data-trim data-noescape class="promql">
-# Compare 1-minute load average to core count
-node_load1{instance="localhost:9100"} > count without(cpu, mode) (
-  node_cpu_seconds_total{instance="localhost:9100"}
-)
-                    </code></pre>
-                    <p>Returns 1 (true) when load exceeds core count</p>
+We can do this with the count function, using a technique we've seen before. The "count without(cpu, mode)" clause tells Prometheus to count the number of time series while ignoring the cpu and mode labels.
+
+Since node_cpu_seconds_total has one time series per CPU core and mode combination, this effectively gives us the number of CPU cores on the system.
+
+This query returns a single value per instance representing the number of CPU cores. For example, on a quad-core system, it would return 4.
+
+In a real monitoring environment, this query would automatically adapt to different servers with different CPU configurations. That's the power of using the actual metrics rather than hardcoded values - your monitoring automatically adjusts to your infrastructure.
+
+Now that we have the CPU core count, we can use it in our comparison with the load average.
+                    </aside>
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## Solution: Direct Comparison
+                    
+                    ```promql
+                    # Compare 1-minute load average to core count
+                    node_load1{instance="localhost:9100"} > count without(cpu, mode) (
+                      node_cpu_seconds_total{instance="localhost:9100"}
+                    )
+                    ```
+                    
+                    Returns 1 (true) when load exceeds core count
+                    
                     <aside class="notes">
-                        One approach to our high load alert is a direct comparison using the greater-than operator.
-                        
-                        This query compares the 1-minute load average directly to the CPU core count. When the load exceeds the core count, the comparison returns 1 (true); otherwise, it returns 0 (false).
-                        
-                        The beauty of this approach is that it returns a simple boolean result that can be used directly for alerting. In Prometheus alerting rules, any value greater than 0 is considered an alert condition, so this works perfectly.
-                        
-                        This query would automatically adjust to different servers with different CPU configurations. A 4-core server would alert when load exceeds 4, while an 8-core server would alert when load exceeds 8.
-                        
-                        In a production environment, you might want to add a duration condition to avoid alerting on brief spikes. For example, you might only alert if the load has exceeded the core count for at least 5 minutes.
-                        
-                        This direct comparison approach is clean and intuitive, but there's another approach that provides more information for dashboard visualization.
-                    </aside>
-                </section>
+One approach to our high load alert is a direct comparison using the greater-than operator.
 
-                <section>
-                    <h2>Solution: Ratio Approach</h2>
-                    <pre><code data-trim data-noescape class="promql">
-# Calculate ratio of load to core count
-node_load1{instance="localhost:9100"} / count without(cpu, mode) (
-  node_cpu_seconds_total{instance="localhost:9100"}
-)
-                    </code></pre>
-                    <p>Values > 1 indicate overload</p>
-                    <p>Alert on ratio > 1 for 5 minutes</p>
+This query compares the 1-minute load average directly to the CPU core count. When the load exceeds the core count, the comparison returns 1 (true); otherwise, it returns 0 (false).
+
+The beauty of this approach is that it returns a simple boolean result that can be used directly for alerting. In Prometheus alerting rules, any value greater than 0 is considered an alert condition, so this works perfectly.
+
+This query would automatically adjust to different servers with different CPU configurations. A 4-core server would alert when load exceeds 4, while an 8-core server would alert when load exceeds 8.
+
+In a production environment, you might want to add a duration condition to avoid alerting on brief spikes. For example, you might only alert if the load has exceeded the core count for at least 5 minutes.
+
+This direct comparison approach is clean and intuitive, but there's another approach that provides more information for dashboard visualization.
+                    </aside>
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## Solution: Ratio Approach
+                    
+                    ```promql
+                    # Calculate ratio of load to core count
+                    node_load1{instance="localhost:9100"} / count without(cpu, mode) (
+                      node_cpu_seconds_total{instance="localhost:9100"}
+                    )
+                    ```
+                    
+                    Values > 1 indicate overload
+                    
+                    Alert on ratio > 1 for 5 minutes
+                    
                     <aside class="notes">
-                        An alternative approach is to calculate the ratio of load average to CPU core count.
-                        
-                        This query divides the 1-minute load average by the CPU core count. The result is a ratio that indicates how close the system is to capacity. A value of 1 means the load exactly matches the available CPU cores - the system is at capacity but not overloaded. Values above 1 indicate overload, while values below 1 indicate spare capacity.
-                        
-                        This ratio approach has several advantages for monitoring. First, it gives you a normalized value that works the same way across all your systems, regardless of how many CPU cores they have. Second, it provides more granular information - you can see not just whether a system is overloaded, but by how much.
-                        
-                        In Grafana, this ratio makes for an excellent gauge visualization. You could color-code it with thresholds - perhaps green up to 0.7, yellow from 0.7 to 1.0, and red above 1.0.
-                        
-                        For alerting, you would trigger when this ratio exceeds 1 for a sustained period, such as 5 minutes. This avoids false alarms from brief spikes while catching genuine overload conditions.
-                        
-                        This ratio approach is particularly valuable for capacity planning, as it lets you see how close each system is to its limit and identify trends over time.
-                    </aside>
-                </section>
+An alternative approach is to calculate the ratio of load average to CPU core count.
 
-                <section>
-                    <h2>Dashboard Best Practices</h2>
-                    <ul>
-                        <li>Combine related metrics in a single panel</li>
-                        <li>Use different visualization types (graphs, gauges)</li>
-                        <li>Add thresholds for quick visual assessment</li>
-                        <li>Include both raw metrics and derived calculations</li>
-                    </ul>
+This query divides the 1-minute load average by the CPU core count. The result is a ratio that indicates how close the system is to capacity. A value of 1 means the load exactly matches the available CPU cores - the system is at capacity but not overloaded. Values above 1 indicate overload, while values below 1 indicate spare capacity.
+
+This ratio approach has several advantages for monitoring. First, it gives you a normalized value that works the same way across all your systems, regardless of how many CPU cores they have. Second, it provides more granular information - you can see not just whether a system is overloaded, but by how much.
+
+In Grafana, this ratio makes for an excellent gauge visualization. You could color-code it with thresholds - perhaps green up to 0.7, yellow from 0.7 to 1.0, and red above 1.0.
+
+For alerting, you would trigger when this ratio exceeds 1 for a sustained period, such as 5 minutes. This avoids false alarms from brief spikes while catching genuine overload conditions.
+
+This ratio approach is particularly valuable for capacity planning, as it lets you see how close each system is to its limit and identify trends over time.
+                    </aside>
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## Dashboard Best Practices
+                    
+                    * Combine related metrics in a single panel
+                    * Use different visualization types (graphs, gauges)
+                    * Add thresholds for quick visual assessment
+                    * Include both raw metrics and derived calculations
+                    
                     <aside class="notes">
-                        Let's finish with some best practices for building effective monitoring dashboards.
-                        
-                        First, combine related metrics in a single panel. For example, you might show receive and transmit network rates on the same graph, or display all three load averages together. This makes it easier to see relationships and patterns.
-                        
-                        Use different visualization types based on what best communicates the information. Time series graphs are great for showing trends over time, while gauges provide at-a-glance status for current values. Stat panels are perfect for key metrics that need prominent display.
-                        
-                        Add thresholds to your visualizations for quick assessment. Color-coding based on thresholds lets users instantly see which metrics need attention, even from across the room. Green, yellow, and red provide intuitive status indicators.
-                        
-                        Include both raw metrics and derived calculations. Raw metrics provide the foundation, but calculated values like percentages, ratios, and rates often provide more actionable insights.
-                        
-                        Other dashboard best practices include organizing panels logically, using consistent naming and labeling, providing context with documentation, and designing for different user personas. Operators might need detailed metrics, while managers might prefer high-level summaries.
-                        
-                        Remember that the goal of a dashboard is to communicate information effectively, not just to display data. A good dashboard tells a story about your systems' health and performance.
-                    </aside>
-                </section>
+Let's finish with some best practices for building effective monitoring dashboards.
 
-                <section>
-                    <h2>Key Takeaways</h2>
-                    <ul>
-                        <li>Network metrics require rate() to be useful</li>
-                        <li>Load averages should be compared to core count</li>
-                        <li>Aggregations simplify monitoring complex systems</li>
-                        <li>Multi-metric dashboards provide comprehensive views</li>
-                    </ul>
+First, combine related metrics in a single panel. For example, you might show receive and transmit network rates on the same graph, or display all three load averages together. This makes it easier to see relationships and patterns.
+
+Use different visualization types based on what best communicates the information. Time series graphs are great for showing trends over time, while gauges provide at-a-glance status for current values. Stat panels are perfect for key metrics that need prominent display.
+
+Add thresholds to your visualizations for quick assessment. Color-coding based on thresholds lets users instantly see which metrics need attention, even from across the room. Green, yellow, and red provide intuitive status indicators.
+
+Include both raw metrics and derived calculations. Raw metrics provide the foundation, but calculated values like percentages, ratios, and rates often provide more actionable insights.
+
+Other dashboard best practices include organizing panels logically, using consistent naming and labeling, providing context with documentation, and designing for different user personas. Operators might need detailed metrics, while managers might prefer high-level summaries.
+
+Remember that the goal of a dashboard is to communicate information effectively, not just to display data. A good dashboard tells a story about your systems' health and performance.
+                    </aside>
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## Key Takeaways
+                    
+                    * Network metrics require rate() to be useful
+                    * Load averages should be compared to core count
+                    * Aggregations simplify monitoring complex systems
+                    * Multi-metric dashboards provide comprehensive views
+                    
                     <aside class="notes">
-                        Let's summarize the key takeaways from this lab:
-                        
-                        First, network metrics in Prometheus are stored as ever-increasing counters and require the rate() function to be transformed into useful bytes-per-second metrics. This pattern is common for many types of metrics in Prometheus.
-                        
-                        Second, load averages provide valuable insight into system health, but they must be interpreted in the context of the CPU core count. A load of 4 might be perfectly normal on an 8-core system but problematic on a 2-core system.
-                        
-                        Third, aggregations with the "by" clause allow you to simplify monitoring in complex environments by combining metrics across some dimensions while preserving others. This helps you focus on what matters without getting lost in details.
-                        
-                        Finally, multi-metric dashboards that combine different resource types provide comprehensive views of your systems, helping you understand the relationships between different aspects of performance.
-                        
-                        These concepts build on the foundations we established in the earlier labs and prepare you for the more advanced techniques we'll cover in the upcoming advanced labs.
-                        
-                        As your monitoring sophistication grows, you'll find that these techniques become second nature, allowing you to quickly create effective monitoring solutions for complex environments.
-                    </aside>
-                </section>
+Let's summarize the key takeaways from this lab:
 
-                <section>
-                    <h1>🌟 Great job!</h1>
-                    <p>You're ready for the Advanced Labs</p>
-                    <p><small>Navigate: <a href="../index.html">All Slides</a> | <a href="../05_Advanced_CPU_Anomaly/index.html">Next Lab</a></small></p>
+First, network metrics in Prometheus are stored as ever-increasing counters and require the rate() function to be transformed into useful bytes-per-second metrics. This pattern is common for many types of metrics in Prometheus.
+
+Second, load averages provide valuable insight into system health, but they must be interpreted in the context of the CPU core count. A load of 4 might be perfectly normal on an 8-core system but problematic on a 2-core system.
+
+Third, aggregations with the "by" clause allow you to simplify monitoring in complex environments by combining metrics across some dimensions while preserving others. This helps you focus on what matters without getting lost in details.
+
+Finally, multi-metric dashboards that combine different resource types provide comprehensive views of your systems, helping you understand the relationships between different aspects of performance.
+
+These concepts build on the foundations we established in the earlier labs and prepare you for the more advanced techniques we'll cover in the upcoming advanced labs.
+
+As your monitoring sophistication grows, you'll find that these techniques become second nature, allowing you to quickly create effective monitoring solutions for complex environments.
+                    </aside>
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    # 🌟 Great job!
+                    
+                    You're ready for the Advanced Labs
+                    
+                    <small>Navigate: [All Slides](../index.html) | [Next Lab](../05_Advanced_CPU_Anomaly/index.html)</small>
+                    
                     <aside class="notes">
-                        Congratulations! You've completed Lab 4 and are now proficient in monitoring all the major resource types in typical infrastructure - CPU, memory, filesystem, network, and system load.
-                        
-                        You've also learned about advanced PromQL aggregation techniques that help you manage complexity in larger environments.
-                        
-                        To continue your PromQL journey, proceed to Lab 5 where we'll dive into advanced CPU anomaly detection. We'll build on what you've learned to develop more sophisticated monitoring approaches that can automatically detect unusual patterns in your metrics.
-                        
-                        If you want to review the overall curriculum, you can return to the Slides Index.
-                        
-                        With the skills you've developed so far, you're already capable of building comprehensive monitoring solutions for most common infrastructure scenarios. The advanced labs will help you tackle more complex monitoring challenges and extract even more value from your metrics.
-                        
-                        Any questions before we wrap up this session?
-                    </aside>
-                </section>
-            </div>
-		</div>
+Congratulations! You've completed Lab 4 and are now proficient in monitoring all the major resource types in typical infrastructure - CPU, memory, filesystem, network, and system load.
 
+You've also learned about advanced PromQL aggregation techniques that help you manage complexity in larger environments.
+
+To continue your PromQL journey, proceed to Lab 5 where we'll dive into advanced CPU anomaly detection. We'll build on what you've learned to develop more sophisticated monitoring approaches that can automatically detect unusual patterns in your metrics.
+
+If you want to review the overall curriculum, you can return to the Slides Index.
+
+With the skills you've developed so far, you're already capable of building comprehensive monitoring solutions for most common infrastructure scenarios. The advanced labs will help you tackle more complex monitoring challenges and extract even more value from your metrics.
+
+Any questions before we wrap up this session?
+                    </aside>
+                </textarea>
+            </section>
+        </div>
+    </div>
+    
     <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/dist/reveal.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/markdown/markdown.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/highlight/highlight.js"></script>
@@ -468,6 +546,20 @@ node_load1{instance="localhost:9100"} / count without(cpu, mode) (
                 highlightOnLoad: true,
                 languages: ['promql']
             }
+        });
+        
+        // Fix speaker notes formatting
+        Reveal.addEventListener('ready', function() {
+            document.querySelectorAll('.reveal aside.notes, .notes-preview').forEach(function(noteElem) {
+                noteElem.style.fontFamily = 'inherit';
+                noteElem.style.whiteSpace = 'normal';
+                
+                // Also fix all paragraph elements within notes
+                noteElem.querySelectorAll('p').forEach(function(p) {
+                    p.style.fontFamily = 'inherit';
+                    p.style.whiteSpace = 'normal';
+                });
+            });
         });
     </script>
 </body>

@@ -1,323 +1,360 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Lab 6: Correlating Metrics & Building Composite Dashboards</title>
+    <title>Lab 6: Correlating Metrics & Building Composite Dashboards</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/dist/reset.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/dist/reveal.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/dist/theme/night.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/highlight/monokai.css">
     <link rel="stylesheet" href="../common.css">
 </head>
-	<body>
-		<div class="reveal">
-			<div class="slides">
-                <section>
-                    <h1>Lab 6: Correlating Metrics & Building Composite Dashboards</h1>
-                    <p>🧠 Advanced PromQL</p>
-                    <p><small>Navigate: <a href="../index.html">All Slides</a></small></p>
+<body>
+    <div class="reveal">
+        <div class="slides">
+            <section data-markdown>
+                <textarea data-template>
+                    # Lab 6: Correlating Metrics & Building Composite Dashboards
+                    
+                    🧠 Advanced PromQL
+                    
+                    <small>Navigate: [All Slides](../index.html)</small>
+                    
                     <aside class="notes">
-                        Welcome to Lab 6, where we'll explore the power of correlating metrics and building composite dashboards with PromQL!
-                        
-                        In our previous labs, we've covered how to monitor individual system resources like CPU, memory, network, and filesystems. But in real-world scenarios, these resources don't operate in isolation - they interact with and influence each other in complex ways.
-                        
-                        Today's lab is all about seeing the bigger picture by connecting these metrics together. We'll learn how to build dashboards that show relationships between different system resources, helping us understand system behavior more holistically.
-                        
-                        This skill is especially valuable for troubleshooting complex issues where the problem might not be immediately obvious from looking at a single metric. By correlating multiple metrics, patterns often emerge that point to the root cause of problems.
-                        
-                        Whether you're a developer, a system administrator, or a site reliability engineer, the techniques we'll cover today will enhance your ability to understand and diagnose system behavior.
+Welcome to Lab 6, where we'll explore the power of correlating metrics and building composite dashboards with PromQL!
+
+In our previous labs, we've covered how to monitor individual system resources like CPU, memory, network, and filesystems. But in real-world scenarios, these resources don't operate in isolation - they interact with and influence each other in complex ways.
+
+Today's lab is all about seeing the bigger picture by connecting these metrics together. We'll learn how to build dashboards that show relationships between different system resources, helping us understand system behavior more holistically.
+
+This skill is especially valuable for troubleshooting complex issues where the problem might not be immediately obvious from looking at a single metric. By correlating multiple metrics, patterns often emerge that point to the root cause of problems.
+
+Whether you're a developer, a system administrator, or a site reliability engineer, the techniques we'll cover today will enhance your ability to understand and diagnose system behavior.
                     </aside>
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## Objectives
+                    
+                    * Correlate CPU, memory, and network metrics in a single dashboard
+                    * Use PromQL to build composite queries
+                    * Practice troubleshooting with multi-metric panels
+                    
+                    <aside class="notes">
+Our objectives for this lab focus on three key areas:
+
+First, we'll learn how to correlate CPU, memory, and network metrics in a single dashboard. This is about bringing together different dimensions of system performance to see the relationships between them. When a system experiences issues, it rarely affects just one resource in isolation.
+
+Second, we'll practice using PromQL to build composite queries. These are queries that combine multiple metrics or use boolean logic to create more sophisticated monitoring expressions. These queries can provide insights that simpler, single-metric queries might miss.
+
+Finally, we'll practice troubleshooting with multi-metric panels. This is a practical skill that simulates real-world scenarios where you need to diagnose problems by examining the relationships between different system resources.
+
+By the end of this lab, you'll have a better understanding of how to build more holistic monitoring dashboards that reveal the connections between different system components, and you'll be better equipped to diagnose complex performance issues.
+                    </aside>
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## Why Correlate Metrics?
+                    
+                    * Systems are interconnected - resources affect each other
+                    * Single metrics can be misleading
+                    * Correlation helps identify root causes
+                    * Provides context for troubleshooting
+                    * Reveals patterns not visible in isolated metrics
+                    
+                    <aside class="notes">
+Before we dive into the technical details, let's discuss why correlating metrics is so important in modern monitoring.
+
+First and foremost, systems are interconnected - resources affect each other in complex ways. For example, a memory-intensive application might cause high CPU usage as the system struggles with memory management. Looking at CPU usage alone might lead you down the wrong troubleshooting path.
+
+This leads to our second point: single metrics can be misleading. A spike in CPU usage might look alarming on its own, but when correlated with an expected batch job or backup process, it might be completely normal.
+
+Correlation helps identify root causes of problems. For instance, if you see high disk I/O followed by increased memory usage and then CPU spikes, you might be observing a cascade effect starting with a disk-bound operation that's affecting the entire system.
+
+This correlation provides essential context for troubleshooting. Instead of just knowing that something is wrong, you gain insights into why it's happening and how different parts of the system are responding.
+
+Finally, correlation reveals patterns that aren't visible when looking at isolated metrics. Periodic spikes across multiple resources might indicate a scheduled job, while gradually increasing utilization across all resources might suggest a memory leak or resource exhaustion issue.
+
+In essence, metric correlation transforms monitoring from simply collecting data to actually understanding system behavior.
+                    </aside>
+                </textarea>
+            </section>
+
+                <section data-markdown>
+                    <textarea data-template>
+                        ## CPU Usage Query
+                        
+                        ```promql
+                        # CPU usage %
+                        100 * (1 - (avg by (instance) (rate(node_cpu_seconds_total{instance="localhost:9100",mode="idle"}[5m])) / 
+                        count by (instance) (node_cpu_seconds_total{instance="localhost:9100",mode="idle"})))
+                        ```
+                        
+                        * Calculates percentage of CPU used across all cores
+                        * Finds average idle rate then subtracts from 100%
+                        * Higher values indicate higher utilization
+                        
+                        <aside class="notes">
+Let's start by reviewing the query for CPU usage, which we'll use as one component of our correlated dashboard.
+
+This query calculates the percentage of CPU used across all cores in the system. We've seen similar queries in previous labs, so this should be familiar to you.
+
+The inner part of the query uses rate(node_cpu_seconds_total{mode="idle"}[5m]) to calculate how quickly each CPU core is accumulating idle time. We then take the average across all cores with avg by (instance) and divide by the count of CPU cores to get the average idle percentage.
+
+To convert this to CPU usage percentage (rather than idle percentage), we subtract from 100% using the formula 100 * (1 - idle_percentage).
+
+The result is a metric that shows the overall CPU utilization as a percentage, where higher values indicate higher utilization. This gives us a good baseline to compare against other system resources.
+
+When building a composite dashboard, this CPU usage metric will be one of our key indicators. By comparing it with memory and network metrics, we can start to see patterns in how different resources interact during various system activities.
+                        </aside>
+                    </textarea>
                 </section>
 
-                <section>
-                    <h2>Objectives</h2>
-                    <ul>
-                        <li>Correlate CPU, memory, and network metrics in a single dashboard</li>
-                        <li>Use PromQL to build composite queries</li>
-                        <li>Practice troubleshooting with multi-metric panels</li>
-                    </ul>
-                    <aside class="notes">
-                        Our objectives for this lab focus on three key areas:
+                <section data-markdown>
+                    <textarea data-template>
+                        ## Memory Usage Query
                         
-                        First, we'll learn how to correlate CPU, memory, and network metrics in a single dashboard. This is about bringing together different dimensions of system performance to see the relationships between them. When a system experiences issues, it rarely affects just one resource in isolation.
+                        ```promql
+                        # Memory usage %
+                        100 * (1 - (node_memory_MemAvailable_bytes{instance="localhost:9100"} / 
+                        node_memory_MemTotal_bytes{instance="localhost:9100"}))
+                        ```
                         
-                        Second, we'll practice using PromQL to build composite queries. These are queries that combine multiple metrics or use boolean logic to create more sophisticated monitoring expressions. These queries can provide insights that simpler, single-metric queries might miss.
+                        * Shows percentage of memory currently in use
+                        * Uses available memory rather than free memory
+                        * Accounts for page cache and reclaimable memory
                         
-                        Finally, we'll practice troubleshooting with multi-metric panels. This is a practical skill that simulates real-world scenarios where you need to diagnose problems by examining the relationships between different system resources.
-                        
-                        By the end of this lab, you'll have a better understanding of how to build more holistic monitoring dashboards that reveal the connections between different system components, and you'll be better equipped to diagnose complex performance issues.
-                    </aside>
+                        <aside class="notes">
+Now let's look at our memory usage query, which will be another key component of our correlated dashboard.
+
+This query calculates the percentage of memory currently in use on the system. The formula is similar to our CPU query in that it converts from available memory to used memory percentage.
+
+It's important to note that we're using node_memory_MemAvailable_bytes rather than node_memory_MemFree_bytes. This is a crucial distinction in Linux memory monitoring. Available memory is a more useful metric because it accounts for page cache and other reclaimable memory that the operating system can free up if needed.
+
+The calculation is straightforward: we divide the available memory by the total memory to get the percentage of memory that's available, subtract from 1 to get the percentage that's in use, and multiply by 100 to express it as a percentage.
+
+When we add this to our dashboard alongside CPU metrics, we can start to see interesting correlations. For example, we might notice that memory usage increases steadily over time while CPU usage remains stable, which could indicate a memory leak. Or we might see that both CPU and memory spike together during periods of high activity, which is often expected behavior for many applications.
+                        </aside>
+                    </textarea>
                 </section>
 
-                <section>
-                    <h2>Why Correlate Metrics?</h2>
-                    <ul>
-                        <li>Systems are interconnected - resources affect each other</li>
-                        <li>Single metrics can be misleading</li>
-                        <li>Correlation helps identify root causes</li>
-                        <li>Provides context for troubleshooting</li>
-                        <li>Reveals patterns not visible in isolated metrics</li>
-                    </ul>
-                    <aside class="notes">
-                        Before we dive into the technical details, let's discuss why correlating metrics is so important in modern monitoring.
+                <section data-markdown class="dense-content">
+                    <textarea data-template>
+                        ## Network Usage Query
                         
-                        First and foremost, systems are interconnected - resources affect each other in complex ways. For example, a memory-intensive application might cause high CPU usage as the system struggles with memory management. Looking at CPU usage alone might lead you down the wrong troubleshooting path.
+                        ```promql
+                        # Network receive rate (bytes/sec)
+                        sum by (instance) (rate(node_network_receive_bytes_total{instance="localhost:9100",device!="lo"}[5m]))
+                        ```
                         
-                        This leads to our second point: single metrics can be misleading. A spike in CPU usage might look alarming on its own, but when correlated with an expected batch job or backup process, it might be completely normal.
+                        * Measures total bytes per second being received
+                        * Aggregates across all non-loopback interfaces
+                        * Similar query can be used for transmit (outgoing) traffic
                         
-                        Correlation helps identify root causes of problems. For instance, if you see high disk I/O followed by increased memory usage and then CPU spikes, you might be observing a cascade effect starting with a disk-bound operation that's affecting the entire system.
-                        
-                        This correlation provides essential context for troubleshooting. Instead of just knowing that something is wrong, you gain insights into why it's happening and how different parts of the system are responding.
-                        
-                        Finally, correlation reveals patterns that aren't visible when looking at isolated metrics. Periodic spikes across multiple resources might indicate a scheduled job, while gradually increasing utilization across all resources might suggest a memory leak or resource exhaustion issue.
-                        
-                        In essence, metric correlation transforms monitoring from simply collecting data to actually understanding system behavior.
-                    </aside>
+                        <aside class="notes">
+The third component of our correlated dashboard is network usage, which we measure with this query.
+
+This query calculates the rate at which data is being received across all network interfaces on the system, excluding the loopback interface. We use rate(node_network_receive_bytes_total[5m]) to calculate the per-second rate of incoming network traffic, and we aggregate across all interfaces with sum by (instance).
+
+We exclude the loopback interface with device!="lo" because loopback traffic is internal to the machine and doesn't represent actual network activity with external systems.
+
+The result is expressed in bytes per second, showing how much data the system is receiving from the network. A similar query can be used for outgoing (transmit) traffic by replacing receive with transmit in the metric name.
+
+When correlated with CPU and memory metrics, network activity can reveal important patterns. For example, a spike in network traffic followed by increased CPU usage might indicate that the system is processing a large amount of incoming data. Alternatively, high CPU usage with minimal network activity might suggest that the system is performing computation-intensive tasks that don't involve much network communication.
+
+These kinds of correlations can be invaluable when troubleshooting performance issues or understanding the behavior of complex systems.
+                        </aside>
+                    </textarea>
                 </section>
 
-                <section>
-                    <h2>CPU Usage Query</h2>
-                    <pre><code data-trim data-noescape class="promql">
-# CPU usage %
-100 * (1 - (avg by (instance) (rate(node_cpu_seconds_total{instance="localhost:9100",mode="idle"}[5m])) / 
-count by (instance) (node_cpu_seconds_total{instance="localhost:9100",mode="idle"})))
-                    </code></pre>
-                    <ul>
-                        <li>Calculates percentage of CPU used across all cores</li>
-                        <li>Finds average idle rate then subtracts from 100%</li>
-                        <li>Higher values indicate higher utilization</li>
-                    </ul>
-                    <aside class="notes">
-                        Let's start by reviewing the query for CPU usage, which we'll use as one component of our correlated dashboard.
+                <section data-markdown>
+                    <textarea data-template>
+                        ## Building a Composite Dashboard
                         
-                        This query calculates the percentage of CPU used across all cores in the system. We've seen similar queries in previous labs, so this should be familiar to you.
-                        
-                        The inner part of the query uses rate(node_cpu_seconds_total{mode="idle"}[5m]) to calculate how quickly each CPU core is accumulating idle time. We then take the average across all cores with avg by (instance) and divide by the count of CPU cores to get the average idle percentage.
-                        
-                        To convert this to CPU usage percentage (rather than idle percentage), we subtract from 100% using the formula 100 * (1 - idle_percentage).
-                        
-                        The result is a metric that shows the overall CPU utilization as a percentage, where higher values indicate higher utilization. This gives us a good baseline to compare against other system resources.
-                        
-                        When building a composite dashboard, this CPU usage metric will be one of our key indicators. By comparing it with memory and network metrics, we can start to see patterns in how different resources interact during various system activities.
-                    </aside>
-                </section>
-
-                <section>
-                    <h2>Memory Usage Query</h2>
-                    <pre><code data-trim data-noescape class="promql">
-# Memory usage %
-100 * (1 - (node_memory_MemAvailable_bytes{instance="localhost:9100"} / 
-node_memory_MemTotal_bytes{instance="localhost:9100"}))
-                    </code></pre>
-                    <ul>
-                        <li>Shows percentage of memory currently in use</li>
-                        <li>Uses available memory rather than free memory</li>
-                        <li>Accounts for page cache and reclaimable memory</li>
-                    </ul>
-                    <aside class="notes">
-                        Now let's look at our memory usage query, which will be another key component of our correlated dashboard.
-                        
-                        This query calculates the percentage of memory currently in use on the system. The formula is similar to our CPU query in that it converts from available memory to used memory percentage.
-                        
-                        It's important to note that we're using node_memory_MemAvailable_bytes rather than node_memory_MemFree_bytes. This is a crucial distinction in Linux memory monitoring. Available memory is a more useful metric because it accounts for page cache and other reclaimable memory that the operating system can free up if needed.
-                        
-                        The calculation is straightforward: we divide the available memory by the total memory to get the percentage of memory that's available, subtract from 1 to get the percentage that's in use, and multiply by 100 to express it as a percentage.
-                        
-                        When we add this to our dashboard alongside CPU metrics, we can start to see interesting correlations. For example, we might notice that memory usage increases steadily over time while CPU usage remains stable, which could indicate a memory leak. Or we might see that both CPU and memory spike together during periods of high activity, which is often expected behavior for many applications.
-                    </aside>
-                </section>
-
-                <section class="dense-content">
-                    <h2>Network Usage Query</h2>
-                    <pre><code data-trim data-noescape class="promql">
-# Network receive rate (bytes/sec)
-sum by (instance) (rate(node_network_receive_bytes_total{instance="localhost:9100",device!="lo"}[5m]))
-                    </code></pre>
-                    <ul>
-                        <li>Measures total bytes per second being received</li>
-                        <li>Aggregates across all non-loopback interfaces</li>
-                        <li>Similar query can be used for transmit (outgoing) traffic</li>
-                    </ul>
-                    <aside class="notes">
-                        The third component of our correlated dashboard is network usage, which we measure with this query.
-                        
-                        This query calculates the rate at which data is being received across all network interfaces on the system, excluding the loopback interface. We use rate(node_network_receive_bytes_total[5m]) to calculate the per-second rate of incoming network traffic, and we aggregate across all interfaces with sum by (instance).
-                        
-                        We exclude the loopback interface with device!="lo" because loopback traffic is internal to the machine and doesn't represent actual network activity with external systems.
-                        
-                        The result is expressed in bytes per second, showing how much data the system is receiving from the network. A similar query can be used for outgoing (transmit) traffic by replacing receive with transmit in the metric name.
-                        
-                        When correlated with CPU and memory metrics, network activity can reveal important patterns. For example, a spike in network traffic followed by increased CPU usage might indicate that the system is processing a large amount of incoming data. Alternatively, high CPU usage with minimal network activity might suggest that the system is performing computation-intensive tasks that don't involve much network communication.
-                        
-                        These kinds of correlations can be invaluable when troubleshooting performance issues or understanding the behavior of complex systems.
-                    </aside>
-                </section>
-
-                <section>
-                    <h2>Building a Composite Dashboard</h2>
-                    <div class="two-column">
+                        <div class="two-column">
                         <div class="left">
-                            <h3>Best Practices</h3>
-                            <ul>
-                                <li>Consistent time ranges</li>
-                                <li>Aligned time axes</li>
-                                <li>Shared color scheme</li>
-                                <li>Similar scales where possible</li>
-                                <li>Clear labels and units</li>
-                            </ul>
+                        
+                        ### Best Practices
+                        
+                        * Consistent time ranges
+                        * Aligned time axes
+                        * Shared color scheme
+                        * Similar scales where possible
+                        * Clear labels and units
+                        
                         </div>
                         <div class="right">
-                            <h3>Dashboard Layout</h3>
-                            <ul>
-                                <li>Most important metrics on top</li>
-                                <li>Group related metrics</li>
-                                <li>Consider resolution (detail)</li>
-                                <li>Include both overview and detail panels</li>
-                            </ul>
+                        
+                        ### Dashboard Layout
+                        
+                        * Most important metrics on top
+                        * Group related metrics
+                        * Consider resolution (detail)
+                        * Include both overview and detail panels
+                        
                         </div>
-                    </div>
-                    <aside class="notes">
-                        Now that we have our core metrics defined, let's discuss how to build an effective composite dashboard that makes correlation easy and intuitive.
+                        </div>
                         
-                        On the left side, we have best practices for visual consistency. These are crucial for making correlations obvious:
-                        
-                        Consistent time ranges ensure you're comparing the same time periods across all metrics. Grafana makes this easy with its time range selector, but be mindful when creating custom panels.
-                        
-                        Aligned time axes mean that timestamps line up vertically across panels, making it easy to spot cause-and-effect relationships. In Grafana, this is usually handled automatically when panels share the same time range.
-                        
-                        A shared color scheme helps create visual consistency - for example, using red consistently for CPU, blue for memory, and green for network makes patterns easier to spot at a glance.
-                        
-                        Using similar scales where possible (like percentages for both CPU and memory) makes comparison more intuitive. When metrics have different units, consider whether they can be normalized to a common scale.
-                        
-                        Clear labels and units are essential for understanding what you're looking at. Always include units like percentage, bytes per second, or operations per second.
-                        
-                        On the right side, we have recommendations for dashboard layout:
-                        
-                        Put the most important metrics at the top where they're immediately visible. These are usually the high-level indicators that give you an overview of system health.
-                        
-                        Group related metrics together - for example, keep all CPU metrics in one row and memory metrics in another, or group metrics by application component.
-                        
-                        Consider the appropriate resolution for each panel. Some metrics benefit from high detail, while others are more useful as aggregated overviews.
-                        
-                        Include both overview panels that show the big picture and detail panels that allow drilling down into specific issues. This supports both at-a-glance monitoring and deep troubleshooting.
-                        
-                        Following these practices will make your dashboards not just visually appealing, but functionally effective for spotting correlations and troubleshooting issues.
-                    </aside>
+                        <aside class="notes">
+Now that we have our core metrics defined, let's discuss how to build an effective composite dashboard that makes correlation easy and intuitive.
+
+On the left side, we have best practices for visual consistency. These are crucial for making correlations obvious:
+
+Consistent time ranges ensure you're comparing the same time periods across all metrics. Grafana makes this easy with its time range selector, but be mindful when creating custom panels.
+
+Aligned time axes mean that timestamps line up vertically across panels, making it easy to spot cause-and-effect relationships. In Grafana, this is usually handled automatically when panels share the same time range.
+
+A shared color scheme helps create visual consistency - for example, using red consistently for CPU, blue for memory, and green for network makes patterns easier to spot at a glance.
+
+Using similar scales where possible (like percentages for both CPU and memory) makes comparison more intuitive. When metrics have different units, consider whether they can be normalized to a common scale.
+
+Clear labels and units are essential for understanding what you're looking at. Always include units like percentage, bytes per second, or operations per second.
+
+On the right side, we have recommendations for dashboard layout:
+
+Put the most important metrics at the top where they're immediately visible. These are usually the high-level indicators that give you an overview of system health.
+
+Group related metrics together - for example, keep all CPU metrics in one row and memory metrics in another, or group metrics by application component.
+
+Consider the appropriate resolution for each panel. Some metrics benefit from high detail, while others are more useful as aggregated overviews.
+
+Include both overview panels that show the big picture and detail panels that allow drilling down into specific issues. This supports both at-a-glance monitoring and deep troubleshooting.
+
+Following these practices will make your dashboards not just visually appealing, but functionally effective for spotting correlations and troubleshooting issues.
+                        </aside>
+                    </textarea>
                 </section>
 
-                <section>
-                    <h2>Common Correlation Patterns</h2>
-                    <ul>
-                        <li><strong>CPU + Network</strong>: Network-intensive applications</li>
-                        <li><strong>CPU + Memory</strong>: Computation-heavy processing</li>
-                        <li><strong>Memory + Disk</strong>: Data processing, caching issues</li>
-                        <li><strong>All resources high</strong>: System overload, resource contention</li>
-                        <li><strong>One resource high, others low</strong>: Resource-specific bottleneck</li>
-                    </ul>
-                    <aside class="notes">
-                        When you start correlating metrics, you'll begin to recognize common patterns that can help quickly identify what's happening in your system. Let's look at some of these patterns:
+                <section data-markdown>
+                    <textarea data-template>
+                        ## Common Correlation Patterns
                         
-                        CPU and network activity often correlate in network-intensive applications. When you see both CPU and network usage rise and fall together, it typically indicates an application that's processing a significant amount of network traffic, such as a web server during high traffic periods, a proxy server, or a network monitoring tool.
+                        * **CPU + Network**: Network-intensive applications
+                        * **CPU + Memory**: Computation-heavy processing
+                        * **Memory + Disk**: Data processing, caching issues
+                        * **All resources high**: System overload, resource contention
+                        * **One resource high, others low**: Resource-specific bottleneck
                         
-                        CPU and memory correlation is common in computation-heavy processing. Applications that perform complex calculations, like data analysis, machine learning, or rendering tasks, will often show high CPU usage along with substantial memory consumption as they process large datasets in memory.
-                        
-                        Memory and disk correlation often points to data processing or caching issues. If memory usage rises while disk I/O increases, the system might be reading large amounts of data from disk into memory. Conversely, if memory decreases while disk I/O increases, the system might be swapping memory to disk, which is usually a performance concern.
-                        
-                        When all resources show high utilization simultaneously, it typically indicates system overload or resource contention. This pattern often appears during peak loads or when a system is undersized for its workload. It's a clear signal that scaling or optimization may be needed.
-                        
-                        Conversely, when one resource is high while others remain low, it suggests a resource-specific bottleneck. For example, high CPU with low memory and network might indicate a compute-bound task, while high disk I/O with low CPU could point to inefficient I/O operations or filesystem issues.
-                        
-                        Recognizing these patterns becomes second nature with experience and can dramatically speed up your troubleshooting process. Instead of investigating each metric in isolation, you can quickly form hypotheses based on the relationships between different resources.
-                    </aside>
+                        <aside class="notes">
+When you start correlating metrics, you'll begin to recognize common patterns that can help quickly identify what's happening in your system. Let's look at some of these patterns:
+
+CPU and network activity often correlate in network-intensive applications. When you see both CPU and network usage rise and fall together, it typically indicates an application that's processing a significant amount of network traffic, such as a web server during high traffic periods, a proxy server, or a network monitoring tool.
+
+CPU and memory correlation is common in computation-heavy processing. Applications that perform complex calculations, like data analysis, machine learning, or rendering tasks, will often show high CPU usage along with substantial memory consumption as they process large datasets in memory.
+
+Memory and disk correlation often points to data processing or caching issues. If memory usage rises while disk I/O increases, the system might be reading large amounts of data from disk into memory. Conversely, if memory decreases while disk I/O increases, the system might be swapping memory to disk, which is usually a performance concern.
+
+When all resources show high utilization simultaneously, it typically indicates system overload or resource contention. This pattern often appears during peak loads or when a system is undersized for its workload. It's a clear signal that scaling or optimization may be needed.
+
+Conversely, when one resource is high while others remain low, it suggests a resource-specific bottleneck. For example, high CPU with low memory and network might indicate a compute-bound task, while high disk I/O with low CPU could point to inefficient I/O operations or filesystem issues.
+
+Recognizing these patterns becomes second nature with experience and can dramatically speed up your troubleshooting process. Instead of investigating each metric in isolation, you can quickly form hypotheses based on the relationships between different resources.
+                        </aside>
+                    </textarea>
                 </section>
 
-                <section>
-                    <h2>Troubleshooting Scenarios</h2>
-                    <div class="two-column">
+                <section data-markdown>
+                    <textarea data-template>
+                        ## Troubleshooting Scenarios
+                        
+                        <div class="two-column">
                         <div class="left">
-                            <h3>CPU Spike</h3>
-                            <p>Check:</p>
-                            <ul>
-                                <li>Did memory increase too?</li>
-                                <li>Any network traffic correlation?</li>
-                                <li>Which CPU modes are affected?</li>
-                            </ul>
+                        
+                        ### CPU Spike
+                        
+                        * Did memory increase too?
+                        * Any network traffic correlation?
+                        * Which CPU modes are affected?
+                        
                         </div>
                         <div class="right">
-                            <h3>Memory Growth</h3>
-                            <p>Check:</p>
-                            <ul>
-                                <li>Is it steady or sudden?</li>
-                                <li>CPU usage pattern?</li>
-                                <li>Disk I/O changes?</li>
-                            </ul>
+                        
+                        ### Memory Growth
+                        
+                        * Is it steady or sudden?
+                        * CPU usage pattern?
+                        * Disk I/O changes?
+                        
                         </div>
-                    </div>
-                    <aside class="notes">
-                        Let's look at some specific troubleshooting scenarios and how correlation can guide your investigation.
+                        </div>
                         
-                        When you observe a CPU spike, don't just focus on the CPU metrics alone. Instead, check if memory usage increased at the same time. A concurrent increase in both CPU and memory might indicate an application that's processing a large batch of data or a potential memory leak that's causing excessive garbage collection.
-                        
-                        Also look for network traffic correlation. A CPU spike accompanied by increased network activity might suggest that the system is processing incoming requests or data. If there's no network correlation, the cause is likely internal to the system.
-                        
-                        Pay attention to which CPU modes are affected. High user mode suggests application workload, high system mode suggests kernel operations, and high iowait suggests disk bottlenecks.
-                        
-                        For memory growth scenarios, first determine if it's steady or sudden. A steady increase might indicate a memory leak, while a sudden jump could be a new process or increased workload.
-                        
-                        Check the CPU usage pattern alongside memory growth. If CPU usage is stable while memory grows, it might be a leak. If CPU increases with memory, it's likely legitimate workload.
-                        
-                        Look for changes in disk I/O. Increased disk activity with memory growth might indicate swap usage or an application that's reading large amounts of data into memory.
-                        
-                        These correlations are like detective work - each relationship provides a clue that helps narrow down the possible causes of a problem. With practice, you'll be able to quickly formulate and test hypotheses based on these patterns.
-                    </aside>
+                        <aside class="notes">
+Let's look at some specific troubleshooting scenarios and how correlation can guide your investigation.
+
+When you observe a CPU spike, don't just focus on the CPU metrics alone. Instead, check if memory usage increased at the same time. A concurrent increase in both CPU and memory might indicate an application that's processing a large batch of data or a potential memory leak that's causing excessive garbage collection.
+
+Also look for network traffic correlation. A CPU spike accompanied by increased network activity might suggest that the system is processing incoming requests or data. If there's no network correlation, the cause is likely internal to the system.
+
+Pay attention to which CPU modes are affected. High user mode suggests application workload, high system mode suggests kernel operations, and high iowait suggests disk bottlenecks.
+
+For memory growth scenarios, first determine if it's steady or sudden. A steady increase might indicate a memory leak, while a sudden jump could be a new process or increased workload.
+
+Check the CPU usage pattern alongside memory growth. If CPU usage is stable while memory grows, it might be a leak. If CPU increases with memory, it's likely legitimate workload.
+
+Look for changes in disk I/O. Increased disk activity with memory growth might indicate swap usage or an application that's reading large amounts of data into memory.
+
+These correlations are like detective work - each relationship provides a clue that helps narrow down the possible causes of a problem. With practice, you'll be able to quickly formulate and test hypotheses based on these patterns.
+                        </aside>
+                    </textarea>
                 </section>
 
-                <section>
-                    <h2>Simulating System Load</h2>
-                    <pre><code data-trim data-noescape class="bash">
-stress-ng --cpu 1 --cpu-load 80 --timeout 60s
-                    </code></pre>
-                    <ul>
-                        <li>Generates 80% load on a single CPU core</li>
-                        <li>Runs for 60 seconds</li>
-                        <li>Great for testing monitoring</li>
-                        <li>Can also test memory with <code>--vm 2 --vm-bytes 1G</code></li>
-                    </ul>
-                    <aside class="notes">
-                        To practice metric correlation, it's valuable to have a way to generate controlled system load. The stress-ng tool is perfect for this purpose.
+                <section data-markdown>
+                    <textarea data-template>
+                        ## Simulating System Load
                         
-                        The command shown here generates an 80% load on a single CPU core for 60 seconds. This creates a clear, predictable pattern in your CPU metrics that you can use to verify your monitoring setup and practice correlation techniques.
+                        ```bash
+                        stress-ng --cpu 1 --cpu-load 80 --timeout 60s
+                        ```
                         
-                        Why is this useful? When you're setting up monitoring for the first time or creating new dashboards, it's essential to verify that your queries are working correctly. By generating a known load pattern, you can confirm that your metrics are being collected and displayed as expected.
+                        * Generates 80% load on a single CPU core
+                        * Runs for 60 seconds
+                        * Great for testing monitoring
+                        * Can also test memory with `--vm 2 --vm-bytes 1G`
                         
-                        Stress-ng is incredibly versatile. While this example focuses on CPU, you can also simulate memory pressure with the --vm option. For example, adding --vm 2 --vm-bytes 1G would create two workers each allocating and touching 1GB of memory.
-                        
-                        You can even simulate I/O load with --io 2 or network activity with --sock 2. This allows you to create complex scenarios that exercise multiple system resources simultaneously, perfect for testing your correlation dashboards.
-                        
-                        I encourage you to experiment with different stress-ng parameters to see how they affect your metrics and to practice identifying the patterns we discussed earlier. This hands-on experience is invaluable for building your intuition about system behavior.
-                    </aside>
+                        <aside class="notes">
+To practice metric correlation, it's valuable to have a way to generate controlled system load. The stress-ng tool is perfect for this purpose.
+
+The command shown here generates an 80% load on a single CPU core for 60 seconds. This creates a clear, predictable pattern in your CPU metrics that you can use to verify your monitoring setup and practice correlation techniques.
+
+Why is this useful? When you're setting up monitoring for the first time or creating new dashboards, it's essential to verify that your queries are working correctly. By generating a known load pattern, you can confirm that your metrics are being collected and displayed as expected.
+
+Stress-ng is incredibly versatile. While this example focuses on CPU, you can also simulate memory pressure with the --vm option. For example, adding --vm 2 --vm-bytes 1G would create two workers each allocating and touching 1GB of memory.
+
+You can even simulate I/O load with --io 2 or network activity with --sock 2. This allows you to create complex scenarios that exercise multiple system resources simultaneously, perfect for testing your correlation dashboards.
+
+I encourage you to experiment with different stress-ng parameters to see how they affect your metrics and to practice identifying the patterns we discussed earlier. This hands-on experience is invaluable for building your intuition about system behavior.
+                        </aside>
+                    </textarea>
                 </section>
 
-                <section>
-                    <h2>Challenge: CPU + Memory Alert</h2>
-                    <p>Can you write a PromQL query that returns a warning if both CPU and memory usage are above 80%?</p>
-                    <aside class="notes">
-                        Now it's time for a challenge that puts our metric correlation skills to practical use: creating a combined alert condition.
+                <section data-markdown>
+                    <textarea data-template>
+                        ## Challenge: CPU + Memory Alert
                         
-                        The task is to write a PromQL query that only returns data when both CPU and memory usage are above 80%. This is a common real-world requirement, as many performance issues only become problematic when multiple resources are constrained simultaneously.
+                        Can you write a PromQL query that returns a warning if both CPU and memory usage are above 80%?
                         
-                        Think about how you would approach this. You'll need to:
-                        1. Write a query that identifies when CPU usage is above 80%
-                        2. Write a query that identifies when memory usage is above 80%
-                        3. Combine these conditions with boolean logic
-                        
-                        This is where PromQL's boolean operators become particularly valuable. You can use them to create sophisticated alert conditions that reduce false positives and better reflect actual impact on your systems.
-                        
-                        Take a moment to consider how you would write this query. What operators would you use? How would you structure the conditions? In the next few slides, we'll walk through a step-by-step solution.
-                        
-                        Remember, the goal of this combined alert is to avoid alerting on isolated resource spikes (which might be perfectly normal) and instead focus on truly problematic situations where multiple resources are constrained at the same time.
-                    </aside>
+                        <aside class="notes">
+Now it's time for a challenge that puts our metric correlation skills to practical use: creating a combined alert condition.
+
+The task is to write a PromQL query that only returns data when both CPU and memory usage are above 80%. This is a common real-world requirement, as many performance issues only become problematic when multiple resources are constrained simultaneously.
+
+Think about how you would approach this. You'll need to:
+1. Write a query that identifies when CPU usage is above 80%
+2. Write a query that identifies when memory usage is above 80%
+3. Combine these conditions with boolean logic
+
+This is where PromQL's boolean operators become particularly valuable. You can use them to create sophisticated alert conditions that reduce false positives and better reflect actual impact on your systems.
+
+Take a moment to consider how you would write this query. What operators would you use? How would you structure the conditions? In the next few slides, we'll walk through a step-by-step solution.
+
+Remember, the goal of this combined alert is to avoid alerting on isolated resource spikes (which might be perfectly normal) and instead focus on truly problematic situations where multiple resources are constrained at the same time.
+                        </aside>
+                    </textarea>
                 </section>
 
                 <section data-markdown>
@@ -332,17 +369,17 @@ stress-ng --cpu 1 --cpu-load 80 --timeout 60s
                         Returns 1 (true) when CPU usage exceeds 80%
                         
                         <aside class="notes">
-                            Let's walk through the solution step by step, starting with the CPU condition.
-                            
-                            This query begins with our familiar CPU usage percentage calculation that we've used throughout these labs. It takes the rate of idle CPU time, averages it across all cores, divides by the count of cores to get the idle percentage, and then converts to usage percentage with the formula 100 * (1 - idle_percentage).
-                            
-                            The new element here is the comparison operator > 80 at the end. In PromQL, comparison operators transform a value query into a boolean condition. When the CPU usage exceeds 80%, this expression evaluates to 1 (true); otherwise, it evaluates to no data at all (effectively false).
-                            
-                            This behavior of returning no data when the condition is false is critical for alerting and visualization. It means that data points only appear when the condition is met, which is perfect for alert triggers and conditional visualizations.
-                            
-                            It's worth noting that you could use this query directly as an alert condition. However, we want to build a more sophisticated alert that considers multiple factors, so this is just our first building block.
-                            
-                            In the next slide, we'll look at the memory condition, and then we'll combine the two to create our composite alert.
+Let's walk through the solution step by step, starting with the CPU condition.
+
+This query begins with our familiar CPU usage percentage calculation that we've used throughout these labs. It takes the rate of idle CPU time, averages it across all cores, divides by the count of cores to get the idle percentage, and then converts to usage percentage with the formula 100 * (1 - idle_percentage).
+
+The new element here is the comparison operator > 80 at the end. In PromQL, comparison operators transform a value query into a boolean condition. When the CPU usage exceeds 80%, this expression evaluates to 1 (true); otherwise, it evaluates to no data at all (effectively false).
+
+This behavior of returning no data when the condition is false is critical for alerting and visualization. It means that data points only appear when the condition is met, which is perfect for alert triggers and conditional visualizations.
+
+It's worth noting that you could use this query directly as an alert condition. However, we want to build a more sophisticated alert that considers multiple factors, so this is just our first building block.
+
+In the next slide, we'll look at the memory condition, and then we'll combine the two to create our composite alert.
                         </aside>
                     </textarea>
                 </section>
@@ -359,17 +396,17 @@ stress-ng --cpu 1 --cpu-load 80 --timeout 60s
                         Returns 1 (true) when memory usage exceeds 80%
                         
                         <aside class="notes">
-                            Now for the second part of our solution: the memory condition.
-                            
-                            This query follows the same pattern as our CPU condition but focuses on memory usage instead. We calculate the percentage of memory in use with the formula 100 * (1 - (available_memory / total_memory)), then apply the same > 80 comparison operator.
-                            
-                            Again, this query will return 1 (true) when memory usage exceeds 80% and no data otherwise. This binary behavior is exactly what we need for building a composite alert condition.
-                            
-                            Notice the similarity in structure between the CPU and memory conditions. Both convert raw metrics to percentages and then apply a threshold. This consistent approach makes your monitoring more intuitive and easier to maintain. When possible, standardizing on common units (like percentages) across different resource types makes correlation much more straightforward.
-                            
-                            It's also worth noting that these individual conditions could be useful on their own. For example, you might want separate panels on your dashboard that highlight when CPU or memory individually cross certain thresholds, in addition to your combined alert.
-                            
-                            In the next slide, we'll bring these two conditions together to create our final composite alert.
+Now for the second part of our solution: the memory condition.
+
+This query follows the same pattern as our CPU condition but focuses on memory usage instead. We calculate the percentage of memory in use with the formula 100 * (1 - (available_memory / total_memory)), then apply the same > 80 comparison operator.
+
+Again, this query will return 1 (true) when memory usage exceeds 80% and no data otherwise. This binary behavior is exactly what we need for building a composite alert condition.
+
+Notice the similarity in structure between the CPU and memory conditions. Both convert raw metrics to percentages and then apply a threshold. This consistent approach makes your monitoring more intuitive and easier to maintain. When possible, standardizing on common units (like percentages) across different resource types makes correlation much more straightforward.
+
+It's also worth noting that these individual conditions could be useful on their own. For example, you might want separate panels on your dashboard that highlight when CPU or memory individually cross certain thresholds, in addition to your combined alert.
+
+In the next slide, we'll bring these two conditions together to create our final composite alert.
                         </aside>
                     </textarea>
                 </section>
@@ -391,84 +428,93 @@ stress-ng --cpu 1 --cpu-load 80 --timeout 60s
                         Reduces false positives from single-resource spikes
                         
                         <aside class="notes">
-                            Here's our final solution: a composite alert condition that combines our CPU and memory thresholds using the logical AND operator.
-                            
-                            The and operator in PromQL combines boolean conditions and returns data only when both operands evaluate to true. In our case, data will only be returned when both CPU usage and memory usage exceed 80%.
-                            
-                            This is a powerful pattern for reducing false positives in your alerting. Many systems will occasionally experience spikes in individual resources that don't actually impact service performance. For example, a brief CPU spike might be completely normal during a scheduled task, or memory usage might temporarily increase during data processing.
-                            
-                            By requiring multiple conditions to be true simultaneously, we filter out these benign single-resource spikes and focus on situations that are more likely to indicate real problems. When both CPU and memory are constrained at the same time, the system has less flexibility to manage the load, and performance issues are much more likely.
-                            
-                            This query can be used directly in a Prometheus alert rule or in a Grafana panel. In an alert context, you might also want to add a time component with for clauses to ensure the condition persists for a certain duration before alerting.
-                            
-                            You can extend this pattern to include additional resources or conditions. For example, you might add disk I/O or network conditions, or you might create more complex combinations using or operators for alternative conditions.
-                            
-                            This type of multi-resource alerting is a cornerstone of mature monitoring systems that focus on service impact rather than isolated resource metrics.
+Here's our final solution: a composite alert condition that combines our CPU and memory thresholds using the logical AND operator.
+
+The and operator in PromQL combines boolean conditions and returns data only when both operands evaluate to true. In our case, data will only be returned when both CPU usage and memory usage exceed 80%.
+
+This is a powerful pattern for reducing false positives in your alerting. Many systems will occasionally experience spikes in individual resources that don't actually impact service performance. For example, a brief CPU spike might be completely normal during a scheduled task, or memory usage might temporarily increase during data processing.
+
+By requiring multiple conditions to be true simultaneously, we filter out these benign single-resource spikes and focus on situations that are more likely to indicate real problems. When both CPU and memory are constrained at the same time, the system has less flexibility to manage the load, and performance issues are much more likely.
+
+This query can be used directly in a Prometheus alert rule or in a Grafana panel. In an alert context, you might also want to add a time component with for clauses to ensure the condition persists for a certain duration before alerting.
+
+You can extend this pattern to include additional resources or conditions. For example, you might add disk I/O or network conditions, or you might create more complex combinations using or operators for alternative conditions.
+
+This type of multi-resource alerting is a cornerstone of mature monitoring systems that focus on service impact rather than isolated resource metrics.
                         </aside>
                     </textarea>
                 </section>
 
-                <section>
-                    <h2>Advanced Dashboard Ideas</h2>
-                    <ul>
-                        <li><strong>Service Health Overview</strong>: Combine application and infrastructure metrics</li>
-                        <li><strong>Resource Saturation Panel</strong>: Show % utilization of all resources in one view</li>
-                        <li><strong>Cross-Service Dependencies</strong>: Correlate metrics across related services</li>
-                        <li><strong>Predictive Panels</strong>: Use <code>predict_linear</code> to forecast resource exhaustion</li>
-                    </ul>
-                    <aside class="notes">
-                        Now that we've covered the fundamentals of metric correlation, let's explore some advanced dashboard ideas that build on these concepts.
+                <section data-markdown>
+                    <textarea data-template>
+                        ## Advanced Dashboard Ideas
                         
-                        First, consider creating a Service Health Overview that combines both application-level and infrastructure metrics. This might include error rates, latency, and throughput from your application alongside CPU, memory, and network metrics from the underlying infrastructure. This type of dashboard provides a holistic view of service health and can quickly show whether application issues are related to infrastructure constraints.
+                        * **Service Health Overview**: Combine application and infrastructure metrics
+                        * **Resource Saturation Panel**: Show % utilization of all resources in one view
+                        * **Cross-Service Dependencies**: Correlate metrics across related services
+                        * **Predictive Panels**: Use `predict_linear` to forecast resource exhaustion
                         
-                        Resource Saturation Panels are another powerful tool. These panels show the percentage utilization of all critical resources (CPU, memory, disk, network) in a single view, often using similar scales and visualization types. This makes it immediately obvious which resource is closest to saturation and might become a bottleneck.
-                        
-                        For more complex systems, consider building dashboards that highlight Cross-Service Dependencies. These dashboards correlate metrics across related services in a service mesh or microservices architecture. For example, you might show how increased latency in a database service affects the performance of dependent API services.
-                        
-                        One of the most advanced applications is creating Predictive Panels using PromQL's predict_linear function. These panels forecast when resources might be exhausted based on current trends. For example, you could predict when disk space will run out or when memory usage will reach critical levels if current growth rates continue.
-                        
-                        These advanced dashboards take monitoring from reactive to proactive, helping you anticipate and prevent issues rather than just responding to them. They represent the evolution from simple metric collection to sophisticated observability that provides real business value.
-                    </aside>
+                        <aside class="notes">
+Now that we've covered the fundamentals of metric correlation, let's explore some advanced dashboard ideas that build on these concepts.
+
+First, consider creating a Service Health Overview that combines both application-level and infrastructure metrics. This might include error rates, latency, and throughput from your application alongside CPU, memory, and network metrics from the underlying infrastructure. This type of dashboard provides a holistic view of service health and can quickly show whether application issues are related to infrastructure constraints.
+
+Resource Saturation Panels are another powerful tool. These panels show the percentage utilization of all critical resources (CPU, memory, disk, network) in a single view, often using similar scales and visualization types. This makes it immediately obvious which resource is closest to saturation and might become a bottleneck.
+
+For more complex systems, consider building dashboards that highlight Cross-Service Dependencies. These dashboards correlate metrics across related services in a service mesh or microservices architecture. For example, you might show how increased latency in a database service affects the performance of dependent API services.
+
+One of the most advanced applications is creating Predictive Panels using PromQL's predict_linear function. These panels forecast when resources might be exhausted based on current trends. For example, you could predict when disk space will run out or when memory usage will reach critical levels if current growth rates continue.
+
+These advanced dashboards take monitoring from reactive to proactive, helping you anticipate and prevent issues rather than just responding to them. They represent the evolution from simple metric collection to sophisticated observability that provides real business value.
+                        </aside>
+                    </textarea>
                 </section>
 
-                <section>
-                    <h2>Key Takeaways</h2>
-                    <ul>
-                        <li>Correlation reveals insights hidden in individual metrics</li>
-                        <li>Composite dashboards provide context for troubleshooting</li>
-                        <li>Boolean operators enable complex alerting conditions</li>
-                        <li>System resources are interdependent - monitor them together</li>
-                    </ul>
-                    <aside class="notes">
-                        As we wrap up this lab on correlating metrics and building composite dashboards, let's summarize the key takeaways:
+                <section data-markdown>
+                    <textarea data-template>
+                        ## Key Takeaways
                         
-                        First and foremost, correlation reveals insights that are hidden when looking at individual metrics in isolation. By examining how different metrics relate to each other, you can identify patterns and causality that wouldn't be apparent otherwise. This is often the difference between knowing that something is wrong and understanding why it's wrong.
+                        * Correlation reveals insights hidden in individual metrics
+                        * Composite dashboards provide context for troubleshooting
+                        * Boolean operators enable complex alerting conditions
+                        * System resources are interdependent - monitor them together
                         
-                        Composite dashboards provide essential context for troubleshooting. When you can see CPU, memory, network, and other metrics side by side with aligned time scales, you can more quickly diagnose problems and understand system behavior. This context dramatically reduces mean time to resolution (MTTR) for incidents.
-                        
-                        Boolean operators in PromQL enable the creation of complex alerting conditions that reduce false positives and better reflect actual service impact. By alerting on combinations of conditions rather than isolated thresholds, you create a more mature and effective monitoring system that respects the on-call engineer's time and attention.
-                        
-                        Finally, remember that system resources are interdependent - they should be monitored together. Modern applications rarely stress just a single resource, and understanding the relationships between resources is crucial for effective capacity planning, performance optimization, and troubleshooting.
-                        
-                        These principles apply beyond just infrastructure monitoring. The same concepts of correlation and composite visualization can be applied to application metrics, business metrics, and even user experience data. The most valuable insights often come from connecting metrics across these different domains.
-                    </aside>
+                        <aside class="notes">
+As we wrap up this lab on correlating metrics and building composite dashboards, let's summarize the key takeaways:
+
+First and foremost, correlation reveals insights that are hidden when looking at individual metrics in isolation. By examining how different metrics relate to each other, you can identify patterns and causality that wouldn't be apparent otherwise. This is often the difference between knowing that something is wrong and understanding why it's wrong.
+
+Composite dashboards provide essential context for troubleshooting. When you can see CPU, memory, network, and other metrics side by side with aligned time scales, you can more quickly diagnose problems and understand system behavior. This context dramatically reduces mean time to resolution (MTTR) for incidents.
+
+Boolean operators in PromQL enable the creation of complex alerting conditions that reduce false positives and better reflect actual service impact. By alerting on combinations of conditions rather than isolated thresholds, you create a more mature and effective monitoring system that respects the on-call engineer's time and attention.
+
+Finally, remember that system resources are interdependent - they should be monitored together. Modern applications rarely stress just a single resource, and understanding the relationships between resources is crucial for effective capacity planning, performance optimization, and troubleshooting.
+
+These principles apply beyond just infrastructure monitoring. The same concepts of correlation and composite visualization can be applied to application metrics, business metrics, and even user experience data. The most valuable insights often come from connecting metrics across these different domains.
+                        </aside>
+                    </textarea>
                 </section>
 
-                <section>
-                    <h1>🌟 Great job!</h1>
-                    <p>Continue to Lab 7: Recording Rules and Alerting</p>
-                    <p><small>Navigate: <a href="../index.html">All Slides</a> | <a href="../07_Recording_Rules_Alerting/index.html">Next Lab</a></small></p>
-                    <aside class="notes">
-                        Congratulations on completing Lab 6! You've now learned how to correlate metrics and build composite dashboards that provide deeper insights into system behavior.
+                <section data-markdown>
+                    <textarea data-template>
+                        # 🌟 Great job!
                         
-                        The skills you've acquired in this lab will serve you well as you continue to develop your monitoring capabilities. Correlation is a fundamental technique in modern observability, helping you move from simple data collection to meaningful insights that drive action.
+                        Continue to Lab 7: Recording Rules and Alerting
                         
-                        In our next lab, we'll build on these concepts and explore Recording Rules and Alerting in Prometheus. You'll learn how to precompute complex queries for better performance and how to set up alerts that notify you when important conditions are met.
+                        <small>Navigate: [All Slides](../index.html) | [Next Lab](../07_Recording_Rules_Alerting/index.html)</small>
                         
-                        Recording rules are particularly valuable for the types of composite queries we've been exploring in this lab, as they allow you to calculate these complex expressions once and then reuse them efficiently.
-                        
-                        Thank you for your attention and participation! Take a moment to reflect on how you might apply these correlation techniques to your own monitoring challenges, and I look forward to continuing our PromQL journey in the next lab.
-                    </aside>
+                        <aside class="notes">
+Congratulations on completing Lab 6! You've now learned how to correlate metrics and build composite dashboards that provide deeper insights into system behavior.
+
+The skills you've acquired in this lab will serve you well as you continue to develop your monitoring capabilities. Correlation is a fundamental technique in modern observability, helping you move from simple data collection to meaningful insights that drive action.
+
+In our next lab, we'll build on these concepts and explore Recording Rules and Alerting in Prometheus. You'll learn how to precompute complex queries for better performance and how to set up alerts that notify you when important conditions are met.
+
+Recording rules are particularly valuable for the types of composite queries we've been exploring in this lab, as they allow you to calculate these complex expressions once and then reuse them efficiently.
+
+Thank you for your attention and participation! Take a moment to reflect on how you might apply these correlation techniques to your own monitoring challenges, and I look forward to continuing our PromQL journey in the next lab.
+                        </aside>
+                    </textarea>
                 </section>
             </div>
 		</div>

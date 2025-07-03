@@ -11,7 +11,7 @@
     margin: 0 auto;
     box-shadow: none;
     width: 95%; /* Make pre elements wider to accommodate code */
-    max-width: 1000px; /* Increased maximum width */
+    max-width: 950px; /* Increased maximum width */
 }
 .reveal pre code {
     padding: 25px;
@@ -20,7 +20,7 @@
     font-size: 1.5em; /* Further increased for better visibility on large displays */
     border-radius: 8px; /* Add rounded corners to code blocks */
     width: 100%; /* Ensure code blocks use full width */
-    max-width: 1000px; /* Increased maximum width for wider code blocks */
+    max-width: 950px; /* Increased maximum width for wider code blocks */
     margin: 0 auto; /* Center the code block */
 }
 .two-column {
@@ -40,13 +40,13 @@
     font-size: 0.9em; /* Substantially increased */
 }
 .reveal h1 {
-    font-size: 3.0em; /* Enlarged for impact */
+    font-size: 2.7em; /* Enlarged for impact */
 }
 .reveal h2 {
-    font-size: 2.4em; /* Enlarged for better visibility */
+    font-size: 2.0em; /* Enlarged for better visibility */
 }
 .reveal h3 {
-    font-size: 1.8em; /* Enlarged for better visibility */
+    font-size: 1.5em; /* Enlarged for better visibility */
 }
 .reveal ul, .reveal ol {
     display: block;
