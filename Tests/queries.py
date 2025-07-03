@@ -44,8 +44,13 @@ lab0_queries = [
         "expected_type": "vector"
     },
     {
-        "name": "Count cores",
-        "query": "count without(cpu, mode) (node_cpu_seconds_total{instance=\"$INSTANCE\"})",
+        "name": "Count cores (Option 1)",
+        "query": "count by(instance) (node_cpu_seconds_total{instance=\"$INSTANCE\",mode=\"idle\"})",
+        "expected_type": "vector"
+    },
+    {
+        "name": "Count cores (Option 2)",
+        "query": "count without(mode) (node_cpu_seconds_total{instance=\"$INSTANCE\",mode=\"idle\"})",
         "expected_type": "vector"
     }
 ]

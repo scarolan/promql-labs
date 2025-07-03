@@ -1,5 +1,5 @@
-Query Test Results - 07/02/2025 15:12:51
-Found 53 queries to test.
+Query Test Results - 07/03/2025 19:26:40
+Found 54 queries to test.
 Basic metric query - PASS
 Query: node_memory_MemTotal_bytes
 
@@ -24,8 +24,11 @@ Query: sum(node_cpu_seconds_total{instance="localhost:9100",mode="system"})
 Average function - PASS
 Query: avg(node_cpu_seconds_total{instance="localhost:9100",mode="system"})
 
-Count cores - PASS
-Query: count without(cpu, mode) (node_cpu_seconds_total{instance="localhost:9100"})
+Count cores (Option 1) - PASS
+Query: count by(instance) (node_cpu_seconds_total{instance="localhost:9100",mode="idle"})
+
+Count cores (Option 2) - PASS
+Query: count without(mode) (node_cpu_seconds_total{instance="localhost:9100",mode="idle"})
 
 Raw CPU metric - PASS
 Query: node_cpu_seconds_total
@@ -111,22 +114,22 @@ Query: label_replace(node_filesystem_size_bytes{instance="localhost:9100",mountp
 Label join function - PASS
 Query: label_join(node_filesystem_size_bytes{instance="localhost:9100",mountpoint="/"}, "instance_path", "-", "instance", "mountpoint")
 
-Historical comparison with offset - PASS
+Historical comparison with offset - NO DATA
 Query: sum(rate(node_cpu_seconds_total{instance="localhost:9100",mode!="idle"}[5m])) and sum(rate(node_cpu_seconds_total{instance="localhost:9100",mode!="idle"}[5m] offset 1h))
 
-Historical difference calculation - PASS
+Historical difference calculation - NO DATA
 Query: sum(rate(node_cpu_seconds_total{instance="localhost:9100",mode!="idle"}[5m])) - sum(rate(node_cpu_seconds_total{instance="localhost:9100",mode!="idle"}[5m] offset 1h))
 
 Top K resources - PASS
 Query: topk(3, sum by (mode) (rate(node_cpu_seconds_total{instance="localhost:9100"}[5m])))
 
-Subquery for trend analysis - PASS
+Subquery for trend analysis - NO DATA
 Query: max_over_time(rate(node_cpu_seconds_total{instance="localhost:9100",mode="user"}[5m])[30m:5m])
 
 Detecting missing data - NO DATA
 Query: absent(node_cpu_seconds_total{instance="localhost:9100"})
 
-Memory usage change with offset - PASS
+Memory usage change with offset - NO DATA
 Query: (100 * (1 - (node_memory_MemAvailable_bytes{instance="localhost:9100"} / node_memory_MemTotal_bytes{instance="localhost:9100"})) - 100 * (1 - (node_memory_MemAvailable_bytes{instance="localhost:9100"} offset 1h / node_memory_MemTotal_bytes{instance="localhost:9100"} offset 1h))) / (100 * (1 - (node_memory_MemAvailable_bytes{instance="localhost:9100"} offset 1h / node_memory_MemTotal_bytes{instance="localhost:9100"} offset 1h))) * 100
 
 Histogram bucket exploration - PASS
@@ -160,7 +163,7 @@ CPU usage synthetic histogram - PASS
 Query: sum(count_values("le", floor(clamp_max(100 * (1 - (avg by (instance) (rate(node_cpu_seconds_total{instance="localhost:9100",mode="idle"}[5m])) / count by (instance) (node_cpu_seconds_total{instance="localhost:9100",mode="idle"}))), 100) / 5) * 5)) by (le)
 
 ===== Test Summary =====
-Total queries: 53
-Passed: 53
+Total queries: 54
+Passed: 54
 Failed: 0
 Success rate: 100%

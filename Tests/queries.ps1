@@ -44,8 +44,13 @@ $lab0_queries = @(
         ExpectedType = "vector"
     },
     @{
-        Name = "Count cores"
-        Query = "count without(cpu, mode) (node_cpu_seconds_total{instance=`"$instanceName`"})"
+        Name = "Count cores (Option 1)"
+        Query = "count by(instance) (node_cpu_seconds_total{instance=`"$instanceName`",mode=`"idle`"})"
+        ExpectedType = "vector"
+    },
+    @{
+        Name = "Count cores (Option 2)"
+        Query = "count without(mode) (node_cpu_seconds_total{instance=`"$instanceName`",mode=`"idle`"})"
         ExpectedType = "vector"
     }
 )
