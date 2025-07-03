@@ -19,7 +19,7 @@
                     
                     PromQL Labs
                     
-                    <aside class="notes">
+<aside class="notes">
 Welcome to Lab 3 of our PromQL series! Today we're moving beyond CPU metrics to explore two other critical system resources: memory and filesystem usage.
 
 While CPU metrics tell us about processing capacity, memory and filesystem metrics help us understand resource constraints that can affect application performance in different ways.
@@ -27,7 +27,7 @@ While CPU metrics tell us about processing capacity, memory and filesystem metri
 In this lab, we'll learn how to query memory and disk metrics, calculate meaningful usage percentages, and visualize these in ways that make monitoring intuitive.
 
 Understanding these metrics is crucial for effective capacity planning, troubleshooting performance issues, and setting up meaningful alerts for your systems.
-                    </aside>
+</aside>
                 </textarea>
             </section>
 
@@ -39,7 +39,7 @@ Understanding these metrics is crucial for effective capacity planning, troubles
                     * Calculate memory usage percentage
                     * Visualize memory and disk usage in Grafana
                     
-                    <aside class="notes">
+<aside class="notes">
 Our objectives for this session are straightforward and practical:
 
 First, we'll learn how to query and interpret memory and filesystem metrics in Prometheus. These metrics are different from the CPU counters we worked with previously - they're primarily gauge metrics that show a point-in-time value rather than an ever-increasing counter.
@@ -49,7 +49,7 @@ Next, we'll calculate memory usage percentage using PromQL. This is a common pat
 Finally, we'll look at how to effectively visualize memory and disk usage in Grafana. We'll explore visualization types that are particularly well-suited for these metrics, such as gauges that give you an immediate visual indicator of resource usage levels.
 
 By the end of this session, you'll be able to set up comprehensive monitoring for memory and disk resources in your infrastructure.
-                    </aside>
+</aside>
                 </textarea>
             </section>
 
@@ -69,7 +69,7 @@ By the end of this session, you'll be able to set up comprehensive monitoring fo
                     * Measured in bytes
                     * MemAvailable is what applications can use
                     
-                    <aside class="notes">
+<aside class="notes">
 Let's start with the basics of memory metrics in Prometheus.
 
 The two most fundamental memory metrics are MemTotal and MemAvailable. MemTotal shows the total physical memory on your system, while MemAvailable shows how much memory can be allocated to new applications right now.
@@ -81,7 +81,7 @@ Both metrics are measured in bytes, which is the standard unit for memory in Pro
 It's important to understand that MemAvailable is not the same as "free" memory. It includes memory that is currently used for caching but can be reclaimed if needed by applications. This makes it a much better indicator of actual memory pressure than simply looking at unused memory.
 
 In modern Linux systems, MemAvailable is calculated by the kernel to give a realistic picture of how much memory is truly available for new allocations, taking into account page cache, reclaimable slab memory, and other factors.
-                    </aside>
+</aside>
                 </textarea>
             </section>
 
@@ -96,9 +96,9 @@ In modern Linux systems, MemAvailable is calculated by the kernel to give a real
                     * **Cached**: Page cache (file contents)
                     * **SwapTotal/SwapFree**: Virtual memory on disk
                     
-                    <aside class="notes">
-Srent memory categories helps you diagnose memory-related performance issues more effectively. For example, if you see high memory usage but most of it is cached, that's usually not a problem. But if you see high memory usage and increasing swap activity, that indicates true memory pressure.
-                    </aside>
+<aside class="notes">
+Different memory categories helps you diagnose memory-related performance issues more effectively. For example, if you see high memory usage but most of it is cached, that's usually not a problem. But if you see high memory usage and increasing swap activity, that indicates true memory pressure.
+</aside>
                 </textarea>
             </section>
 
@@ -116,7 +116,7 @@ Srent memory categories helps you diagnose memory-related performance issues mor
                     * Result: Percentage of memory currently in use
                     * Better than `MemFree` because it accounts for cache
                     
-                    <aside class="notes">
+<aside class="notes">
 Now let's look at how to calculate memory usage as a percentage, which is more intuitive than raw byte values.
 
 The formula follows a common pattern we'll use throughout this lab: we take the fraction of memory that's available (available divided by total), subtract it from 1 to get the fraction that's used, and multiply by 100 to convert to a percentage.
@@ -126,7 +126,7 @@ The result gives us the percentage of memory currently in use, which is much eas
 This formula is better than using MemFree because it accounts for cached memory. If we only considered completely free memory, we might think the system is running out of memory when in fact there's plenty of reclaimable memory available in the cache.
 
 This is the formula I recommend using for monitoring and alerting on memory usage. You might set alerts at different thresholds - perhaps a warning alert at 80% and a critical alert at 90% - but the exact thresholds will depend on your specific applications and their memory usage patterns.
-                    </aside>
+</aside>
                 </textarea>
             </section>
 
@@ -144,7 +144,7 @@ This is the formula I recommend using for monitoring and alerting on memory usag
                     * **Set thresholds based on application needs**
                       * Different applications have different memory patterns
                     
-                    <aside class="notes">
+<aside class="notes">
 Let's discuss some best practices for monitoring memory usage that I've learned from experience.
 
 First, always use MemAvailable instead of MemFree for calculating memory usage. This is crucial because Linux uses available memory for caching to improve performance. Using MemFree would make it appear that you're constantly low on memory when in fact much of that "used" memory can be reclaimed instantly if needed.
@@ -156,7 +156,7 @@ Third, set your memory usage thresholds based on the specific needs of your appl
 Another practice I recommend is monitoring memory usage trends over time, not just current values. A steady increase in memory usage might indicate a memory leak that will eventually cause problems, even if current usage is within acceptable limits.
 
 Finally, remember that memory issues can manifest in different ways - high memory usage, increased swap activity, or even increased system CPU time as the kernel spends more time managing memory. Monitoring all these aspects gives you a more complete picture of memory health.
-                    </aside>
+</aside>
                 </textarea>
             </section>
 
@@ -175,7 +175,7 @@ Finally, remember that memory issues can manifest in different ways - high memor
                     * Filters exclude temporary filesystems
                     * Both are gauge metrics
                     
-                    <aside class="notes">
+<aside class="notes">
 Now let's turn our attention to filesystem metrics in Prometheus.
 
 The two most fundamental filesystem metrics are node_filesystem_size_bytes, which shows the total size of each filesystem, and node_filesystem_free_bytes, which shows how much free space is available on each filesystem.
@@ -187,7 +187,7 @@ Like memory metrics, filesystem metrics are gauge metrics that represent point-i
 One thing to be aware of with filesystem metrics is that they come with several labels that identify the specific filesystem. The most important ones are "mountpoint", which tells you where the filesystem is mounted (like "/" for the root filesystem), and "fstype", which tells you what kind of filesystem it is (like "ext4", "xfs", etc.).
 
 These labels are crucial for filtering and targeting specific filesystems in your monitoring and alerts. For instance, you might want different alerts for your root filesystem versus your data storage filesystems.
-                    </aside>
+</aside>
                 </textarea>
             </section>
 
@@ -205,7 +205,7 @@ These labels are crucial for filtering and targeting specific filesystems in you
                     * Filter by `mountpoint="/"` for root filesystem
                     * Critical metric for capacity planning
                     
-                    <aside class="notes">
+<aside class="notes">
 Just as with memory, we typically want to calculate disk usage as a percentage rather than working with raw byte values.
 
 The formula follows the same pattern we used for memory: we take the fraction of disk that's free (free bytes divided by total size), subtract it from 1 to get the fraction that's used, and multiply by 100 to get a percentage.
@@ -217,7 +217,7 @@ Disk usage percentage is a critical metric for capacity planning. Running out of
 When monitoring disk usage, it's common to set alerts at higher thresholds than for memory - perhaps warning at 85% and critical at 90% or 95%. This gives you time to respond before the disk completely fills up.
 
 Remember that different filesystems may need different thresholds. For example, a filesystem dedicated to logs might normally run at higher utilization and need a higher threshold, while your root filesystem might need more free space to function properly.
-                    </aside>
+</aside>
                 </textarea>
             </section>
 
@@ -235,7 +235,7 @@ Remember that different filesystems may need different thresholds. For example, 
                     * **Watch for growth trends**
                       * Use `predict_linear()` for capacity planning
                     
-                    <aside class="notes">
+<aside class="notes">
 Let's discuss some best practices for filesystem monitoring that I've found valuable in production environments.
 
 First, make sure you monitor all important mount points, not just the root filesystem. This includes dedicated partitions for data, logs, backups, and any other critical storage. Each of these might have different growth patterns and importance.
@@ -247,7 +247,7 @@ Third, and perhaps most importantly, watch for growth trends over time. A filesy
 With predict_linear(), you can forecast when a filesystem will run out of space based on recent growth trends. For example, you might create an alert that fires if a filesystem is predicted to fill up within the next 7 days, giving you time to address the issue before it becomes critical.
 
 Finally, remember that filesystem monitoring isn't just about capacity - it's also about performance. High I/O wait times can indicate disk performance issues that might require different solutions than just adding more capacity.
-                    </aside>
+</aside>
                 </textarea>
             </section>
 
@@ -262,7 +262,7 @@ Finally, remember that filesystem monitoring isn't just about capacity - it's al
                       * Yellow: Warning (70-85%)
                       * Red: Critical (85-100%)
                     
-                    <aside class="notes">
+<aside class="notes">
 When it comes to visualizing memory and disk usage in Grafana, gauge visualizations are particularly effective.
 
 Gauges provide an at-a-glance status that's immediately understandable, even to non-technical users. You can see in an instant whether a system is in a healthy state or approaching capacity limits.
@@ -274,7 +274,7 @@ One of the most powerful features of Grafana gauges is the ability to set color 
 When creating gauges, make sure to set appropriate minimum and maximum values - usually 0 and 100 for percentages. You might also want to adjust the thresholds based on the specific metric and your operational requirements.
 
 While gauges are great for current status, remember to pair them with time series graphs that show historical trends. The gauge tells you the current state, while the graph shows how you got there and where you might be heading.
-                    </aside>
+</aside>
                 </textarea>
             </section>
 
@@ -288,7 +288,7 @@ While gauges are great for current status, remember to pair them with time serie
                     * Top processes by memory (requires process exporter)
                     * Can combine with CPU metrics from earlier labs
                     
-                    <aside class="notes">
+<aside class="notes">
 Let's talk about how you might build a complete resource monitoring dashboard in Grafana using what we've learned so far.
 
 A well-designed dashboard typically includes both gauges and graphs for each key metric. For memory, you might have a gauge showing current usage percentage alongside a time series graph showing usage over the past 24 hours or week.
@@ -302,7 +302,7 @@ For more detailed analysis, you can add panels showing the top processes by memo
 Finally, consider combining these memory and filesystem metrics with the CPU metrics we explored in earlier labs. The combination gives you a complete picture of system resource usage, helping you identify whether performance issues are CPU-bound, memory-bound, or I/O-bound.
 
 The best dashboards tell a story - they don't just show numbers, but help you understand what's happening on your systems at a glance.
-                    </aside>
+</aside>
                 </textarea>
             </section>
 
@@ -313,7 +313,7 @@ The best dashboards tell a story - they don't just show numbers, but help you un
                     * [Continue to Lab 4: Network, Load, and Advanced Aggregations](../04_Network_Load/index.html)
                     * [Return to Slides Index](../index.html)
                     
-                    <aside class="notes">
+<aside class="notes">
 Congratulations! You've completed Lab 3 and now have a solid understanding of how to monitor memory and filesystem usage with Prometheus and Grafana.
 
 We've learned how to query memory and filesystem metrics, calculate usage percentages, and visualize these metrics effectively. These skills are directly applicable to real-world monitoring scenarios.
@@ -325,7 +325,7 @@ If you want to review the overall curriculum, you can return to the Slides Index
 Remember that effective resource monitoring is about more than just collecting metrics - it's about transforming those metrics into actionable insights that help you maintain healthy systems and quickly identify problems when they arise.
 
 Any questions before we wrap up this session?
-                    </aside>
+</aside>
                 </textarea>
             </section>
         </div>
