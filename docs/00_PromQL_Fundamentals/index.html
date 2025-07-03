@@ -285,7 +285,7 @@ These aggregation functions are the building blocks for more complex queries and
                     
                     ```promql
                     # Count CPU cores (simpler approach)
-                    count without(cpu, mode) (node_cpu_seconds_total{instance="localhost:9100"})
+                    count without(mode) (node_cpu_seconds_total{instance="localhost:9100",mode="idle"})
                     ```
                     
                     * `without` preserves all labels except those specified
@@ -314,26 +314,23 @@ This is one of those tricks that, once you know it, you'll use all the time in y
                     
                     ```promql
                     # Count CPU cores (full explanation)
-                    count(node_cpu_seconds_total{instance="localhost:9100",mode="idle"}) / 
-                    count without(mode) (node_cpu_seconds_total{instance="localhost:9100",mode="idle"})
+                    count by(instance) (node_cpu_seconds_total{instance="localhost:9100",mode="idle"})
                     ```
                     
-                    * More complex approach showing division of aggregations
-                    * Divides total series count by modes to get core count
-                    * Demonstrates nested expressions
+                    * Using `by` to group metrics by instance
+                    * Filters on "idle" mode to avoid counting each mode
+                    * Simple, direct approach that works on all systems
                     
 <aside class="notes">
-Here's an alternative solution to the CPU core counting problem. It's more complex but helps explain the underlying data structure.
+Here's an alternative solution to the CPU core counting problem. It's more direct and intuitive, especially for beginners.
 
-This approach works by understanding that for each CPU core, Prometheus collects metrics for multiple modes (idle, user, system, etc.). 
+This approach uses the "by" clause with the count function to group by instance, while filtering for only the "idle" mode metrics. Since each CPU core reports an idle mode metric, this gives us exactly one entry per CPU core.
 
-The numerator counts all the series - that's one series per CPU core per mode. The denominator counts the series but eliminates the mode distinction, leaving one entry per CPU core.
+The advantage of this approach is its simplicity and clarity. It directly answers the question "how many CPU cores are there?" without requiring complex mathematical operations.
 
-By dividing these two counts, we get the number of modes per core, which is equal to the number of CPU cores.
+This is the kind of query you'll likely use in production dashboards and alerting rules where simplicity and reliability are important.
 
-This solution demonstrates how to combine multiple aggregation operations and divide their results - a powerful technique in more complex PromQL scenarios.
-
-While the previous solution is simpler and probably what you'd use in practice, understanding this approach gives you deeper insight into how Prometheus stores and processes metrics.
+Both this approach and the previous one illustrate how you can use PromQL's aggregation operators to extract meaningful information from your metrics beyond just their raw values.
 </aside>
                 </textarea>
             </section>

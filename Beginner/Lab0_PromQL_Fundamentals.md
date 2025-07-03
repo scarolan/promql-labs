@@ -64,19 +64,19 @@
 
 To count the number of CPU cores, you have two options:
 
-**Option 1 (Full Explanation):**
+**Option 1 (Simple and Direct):**
 ```
-count(node_cpu_seconds_total{instance="localhost:9100",mode="idle"}) / count without(mode) (node_cpu_seconds_total{instance="localhost:9100",mode="idle"})
-```
-
-This approach divides the total number of time series (one per core per mode) by the number of modes to get the core count.
-
-**Option 2 (Simpler Approach):**
-```
-count without(cpu, mode) (node_cpu_seconds_total{instance="localhost:9100"})
+count by(instance) (node_cpu_seconds_total{instance="localhost:9100",mode="idle"})
 ```
 
-This directly counts the CPU cores by using the `count without` aggregator to remove the CPU and mode labels, effectively grouping by just the instance.
+This approach counts the number of CPU cores by grouping by instance and filtering for the idle mode.
+
+**Option 2 (Alternative Approach):**
+```
+count without(mode) (node_cpu_seconds_total{instance="localhost:9100",mode="idle"})
+```
+
+This counts the CPU cores by preserving all labels except the mode label, while still filtering for just the idle mode.
 
 **Helpful Operators for Future Reference:**
 
