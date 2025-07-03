@@ -1,0 +1,49 @@
+/* Common styles for all PromQL Labs slide decks */
+.reveal {
+    font-size: 0.9em;
+}
+.reveal pre {
+    margin: 0;
+    box-shadow: none;
+}
+.reveal pre code {
+    padding: 20px;
+    max-height: 400px;
+    line-height: 1.2;
+    font-size: 0.85em;
+}
+.two-column {
+    display: flex;
+    justify-content: space-between;
+}
+.two-column .left {
+    width: 48%;
+}
+.two-column .right {
+    width: 48%;
+}
+.reveal .smaller-text {
+    font-size: 0.75em;
+}
+.reveal .smallest-text {
+    font-size: 0.55em;
+}
+.reveal h1 {
+    font-size: 2.2em;
+}
+.reveal h2 {
+    font-size: 1.7em;
+}
+.reveal h3 {
+    font-size: 1.3em;
+}
+.reveal ul, .reveal ol {
+    display: block;
+    line-height: 1.4;
+}
+
+/* Image styling */
+.reveal img.border {
+    border: 1px solid #fff;
+    box-shadow: 0 0 10px rgba(0,0,0,0.5);
+}
