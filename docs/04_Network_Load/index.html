@@ -399,8 +399,8 @@ Now that we have the CPU core count, we can use it in our comparison with the lo
                     
                     ```promql
                     # Compare 1-minute load average to core count
-                    node_load1{instance="localhost:9100"} > count without(cpu, mode) (
-                      node_cpu_seconds_total{instance="localhost:9100"}
+                    node_load1{instance="localhost:9100"} > count by(instance) (
+                      node_cpu_seconds_total{instance="localhost:9100",mode="idle"}
                     )
                     ```
                     
@@ -428,8 +428,8 @@ This direct comparison approach is clean and intuitive, but there's another appr
                     
                     ```promql
                     # Calculate ratio of load to core count
-                    node_load1{instance="localhost:9100"} / count without(cpu, mode) (
-                      node_cpu_seconds_total{instance="localhost:9100"}
+                    node_load1{instance="localhost:9100"} / count by(instance) (
+                      node_cpu_seconds_total{instance="localhost:9100",mode="idle"}
                     )
                     ```
                     

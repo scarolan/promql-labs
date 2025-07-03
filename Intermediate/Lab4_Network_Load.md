@@ -52,7 +52,12 @@ To create an alert for high load average (when load1 exceeds the CPU core count)
 
 1. **First, we need to know the number of CPU cores:**
    ```
-   count without(cpu, mode) (node_cpu_seconds_total{instance="localhost:9100"})
+   count by(instance) (node_cpu_seconds_total{instance="localhost:9100",mode="idle"})
+   ```
+   
+   Or alternatively:
+   ```
+   count without(mode) (node_cpu_seconds_total{instance="localhost:9100",mode="idle"})
    ```
 
 2. **Create a Grafana alert based on this query:**
