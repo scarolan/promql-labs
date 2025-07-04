@@ -1,3 +1,5 @@
+[![PromQL Tests](https://github.com/scarolan/promql-labs/actions/workflows/promql-tests.yml/badge.svg)](https://github.com/scarolan/promql-labs/actions/workflows/promql-tests.yml)
+
 # PromQL Labs
 
 A comprehensive set of hands-on lab exercises for learning Prometheus Query Language (PromQL) with Node Exporter metrics.
