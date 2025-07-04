@@ -417,19 +417,13 @@ After testing, remember to stop your test load generator to return your system t
 
                 <section data-markdown>
                     <textarea data-template>
-                        ## Challenge: Memory Usage Rules
+                        ## Challenge: Memory Usage Rule
                         
                         Create a recording rule for memory usage percentage that follows Prometheus naming conventions
                         
-                        ### Solution:
-                        
-                        ```yaml
-                        groups:
-                          - name: memory_rules
-                            rules:
-                              - record: instance:node_memory_usage:percent
-                                expr: 100 * (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes))
-                        ```
+                        * What metrics are available for memory in Prometheus?
+                        * How do we calculate memory usage percentage?
+                        * What's an appropriate name following conventions?
                         
 <aside class="notes">
 Now let's tackle a challenge that tests your understanding of recording rules and Prometheus naming conventions. The task is to create a recording rule for memory usage percentage.
@@ -441,7 +435,30 @@ When presenting this challenge to students, encourage them to think about:
 
 Give students a few minutes to work on their solution. They should be able to look at the node exporter metrics in the Prometheus UI to find the available memory metrics.
 
-The solution is shown on the slide. Let's break it down:
+This challenge helps reinforce both the technical aspects of writing recording rules and the importance of following naming conventions. It's a practical exercise that mimics a real-world task they're likely to encounter when setting up Prometheus monitoring.
+</aside>
+                    </textarea>
+                </section>
+
+                <section data-markdown>
+                    <textarea data-template>
+                        ## Solution: Memory Usage Rule
+                        
+                        ```yaml
+                        groups:
+                          - name: memory_rules
+                            rules:
+                              - record: instance:node_memory_usage:percent
+                                expr: 100 * (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes))
+                        ```
+                        
+                        * Group name organizes related rules
+                        * Name follows the convention: 
+                          * `instance:` prefix for instance-level data
+                          * `:percent` suffix indicates the unit
+                        
+<aside class="notes">
+Here's the solution to our memory usage recording rule challenge. Let's break it down:
 
 We've created a group called "memory_rules" to organize our memory-related recording rules.
 
@@ -466,6 +483,31 @@ Point out to students that this is similar to how we calculated CPU usage, but w
                     <textarea data-template>
                         ## Challenge: Memory Alert Rule
                         
+                        Create an alert rule that uses our memory usage recording rule
+                        
+                        * What threshold would be appropriate?
+                        * How long should the condition persist?
+                        * What information should be in the annotations?
+                        
+<aside class="notes">
+Building on our previous challenge, let's create an alert rule that uses our memory usage recording rule. This is an excellent opportunity for students to apply what they've learned about alert rule structure.
+
+When presenting this challenge, ask students to consider:
+1. What threshold would be appropriate for a memory usage alert?
+2. How long should the condition persist before alerting?
+3. What information would be helpful in the alert annotations?
+
+Give students a few minutes to work on this challenge. This exercise helps reinforce the practical aspects of creating alerts and encourages them to think about alert design principles like thresholds and durations.
+
+Unlike CPU alerts where brief spikes might be normal, memory usage that stays high often indicates a problem like a memory leak. This context can help guide their decisions about appropriate thresholds and durations.
+</aside>
+                    </textarea>
+                </section>
+
+                <section data-markdown>
+                    <textarea data-template>
+                        ## Solution: Memory Alert Rule
+                        
                         ```yaml
                         groups:
                           - name: memory_alerts
@@ -481,13 +523,6 @@ Point out to students that this is similar to how we calculated CPU usage, but w
                         ```
                         
 <aside class="notes">
-Building on our previous challenge, let's create an alert rule that uses our memory usage recording rule. This is an excellent opportunity for students to apply what they've learned about alert rule structure.
-
-When presenting this challenge, ask students to consider:
-1. What threshold would be appropriate for a memory usage alert?
-2. How long should the condition persist before alerting?
-3. What information would be helpful in the alert annotations?
-
 The solution shown demonstrates a well-structured memory usage alert:
 
 We've created a group called "memory_alerts" to organize memory-related alerts.
