@@ -55,7 +55,7 @@
     6. Reload Prometheus configuration:
 
       ```
-      curl -X POST http://localhost:9090/-/reload
+      sudo systemctl restart prometheus
       ```
       
     7. Verify your rule is loaded by visiting Prometheus UI and clicking on "Rules" in the top menu.
@@ -64,7 +64,9 @@
    ```
    # Complex query - calculate in real time
    100 * (1 - (avg by (instance) (rate(node_cpu_seconds_total{instance="localhost:9100",mode="idle"}[5m]))))
+   ```
    
+   ```
    # With a recording rule (faster) - assuming rule is set up
    instance:node_cpu_usage:percent{instance="localhost:9100"}
    ```
@@ -103,7 +105,7 @@
       
    4. Reload Prometheus configuration:
       ```
-      curl -X POST http://localhost:9090/-/reload
+      sudo systemctl restart prometheus
       ```
       
    5. View your alert rules in the Prometheus UI:
@@ -157,7 +159,7 @@ groups:
     rules:
       - alert: HighMemoryUsage
         expr: instance:node_memory_usage:percent > 90
-        for: 5m
+        for: 1m
         labels:
           severity: warning
         annotations:
@@ -175,8 +177,10 @@ groups:
    
    - Reload Prometheus configuration:
      ```
-     curl -X POST http://localhost:9090/-/reload
+     sudo systemctl restart prometheus
      ```
+     
+     Note: Some configurations may support using `curl -X POST http://localhost:9090/-/reload` if Prometheus was started with the `--web.enable-lifecycle` flag, but a restart is more reliable.
    
    4. **Verify your rules are working:**
    
