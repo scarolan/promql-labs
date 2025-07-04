@@ -62,9 +62,9 @@ To write a PromQL query that returns a warning when both CPU and memory usage ex
    (100 * (1 - (node_memory_MemAvailable_bytes{instance="localhost:9100"} / node_memory_MemTotal_bytes{instance="localhost:9100"})) > bool 80)
    ```
 
-   **Step 3: Combine both conditions with the `and` operator:**
+   **Step 3: Combine both conditions with the `and on(instance)` operator:**
    ```
-   (100 * (1 - (avg by (instance) (rate(node_cpu_seconds_total{instance="localhost:9100",mode="idle"}[5m])) / count by (instance) (node_cpu_seconds_total{instance="localhost:9100",mode="idle"}))) > bool 80) and (100 * (1 - (node_memory_MemAvailable_bytes{instance="localhost:9100"} / node_memory_MemTotal_bytes{instance="localhost:9100"})) > bool 80)
+   (100 * (1 - (avg by (instance) (rate(node_cpu_seconds_total{instance="localhost:9100",mode="idle"}[5m])) / count by (instance) (node_cpu_seconds_total{instance="localhost:9100",mode="idle"}))) > bool 80) and on(instance) (100 * (1 - (node_memory_MemAvailable_bytes{instance="localhost:9100"} / node_memory_MemTotal_bytes{instance="localhost:9100"})) > bool 80)
    ```
 
 2. **Use this query in Grafana or Prometheus:**
