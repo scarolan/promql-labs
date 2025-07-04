@@ -1,7 +1,7 @@
 # 🔍 Lab 8: Advanced PromQL Operations
 
 ## Objectives
-- Learn how to use label manip5. **Detecting Missing Data:**
+- Learn how to use label manipulation
    ```promql
    # Check if metrics are missing
    absent(node_cpu_seconds_total{instance="localhost:9100"})
