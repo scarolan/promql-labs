@@ -3,6 +3,14 @@
     font-size: 1.8em; /* Dramatically increased for better visibility on 1920x1080 */
 }
 
+/* Fix width for code blocks */
+.reveal .slides {
+    max-width: 100% !important;
+    width: 100% !important;
+    padding-left: 2em;
+    padding-right: 2em;
+}
+
 /* Enhanced animations and transitions */
 .reveal .slides section {
     transition: transform 0.8s ease, opacity 0.8s ease;
