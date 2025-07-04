@@ -1,23 +1,7 @@
 # 🔍 Lab 8: Advanced PromQL Operations
 
 ## Objectives
-- Learn how to use label manipulation
-   ```promql
-   # Check if metrics are missing
-   absent(node_cpu_seconds_total{instance="localhost:9100"})
-   ```
-   
-   > **Explanation:** The `absent` function returns 1 if the metric doesn't exist, and nothing if it does exist. This is useful for alerting on missing metrics, which could indicate a scrape failure or service outage.
-   >
-   > **Testing Tip:** To see this function in action, you can query for a non-existent metric:
-   > ```promql
-   > absent(non_existent_metric{instance="localhost:9100"})
-   > ```
-   > This should return a value of 1, confirming that the metric is indeed missing.
-
-## Challenge
-- Create a query that compares current memory usage with memory usage from 5 minutes ago and calculates the percentage change.
-- Bonus: Try to adjust your solution using a 1-minute offset for an even more responsive result.
+- Learn how to use label manipulation functions
 - Understand the offset modifier for historical comparisons
 - Master subqueries for complex time-based analysis
 - Use topk and bottomk functions for value ranking
