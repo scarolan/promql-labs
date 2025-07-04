@@ -48,7 +48,7 @@ To combine `increase` and `max_over_time` to highlight extreme CPU spikes, follo
    max_over_time(
      (increase(node_cpu_seconds_total{instance="localhost:9100",mode="user"}[1m]) 
      / 
-     scalar(count(node_cpu_seconds_total{instance="localhost:9100",cpu="0"})))
+     scalar(count(node_cpu_seconds_total{instance="localhost:9100",mode="user"})))
    [30m:1m]) * 100
    ```
    
