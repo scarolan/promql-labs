@@ -47,7 +47,7 @@ This query:
 - Effectively identifies the most intense 1-minute CPU burst in the last half hour
 
 2. **For a percentage-based anomaly detection, try this more advanced query:**
-   ```
+```
 max_over_time(
   (
     avg by (instance) (
