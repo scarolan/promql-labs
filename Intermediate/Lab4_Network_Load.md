@@ -7,33 +7,33 @@
 
 ## Instructions
 1. **Query network receive and transmit rates:**
-   ```
+   ```promql
    rate(node_network_receive_bytes_total{instance="localhost:9100",device!="lo"}[5m])
    ```
-   ```
+   ```promql
    rate(node_network_transmit_bytes_total{instance="localhost:9100",device!="lo"}[5m])
    ```
    What do you notice about the traffic patterns?
    
    > **Explanation:** These queries measure the bytes per second flowing in (receive) and out (transmit) of your network interfaces. The `device!="lo"` filter excludes the loopback interface, focusing on real network traffic. The `rate()` function converts the ever-increasing byte counters into a readable bytes-per-second gauge.
 2. **Query system load averages:**
-   ```
+   ```promql
    node_load1{instance="localhost:9100"}
    ```
-   ```
+   ```promql
    node_load5{instance="localhost:9100"}
    ```
-   ```
+   ```promql
    node_load15{instance="localhost:9100"}
    ```
    How do these values compare to your CPU core count?
    
    > **Explanation:** Load averages represent the number of processes waiting for or using CPU resources, averaged over 1, 5, and 15 minutes. A healthy system typically has load averages lower than its CPU core count. Values consistently higher than the core count indicate potential CPU contention.
 3. **Aggregate network traffic across all interfaces:**
-   ```
+   ```promql
    sum by (instance) (rate(node_network_receive_bytes_total{instance="localhost:9100",device!="lo"}[5m]))
    ```
-   ```
+   ```promql
    sum by (instance) (rate(node_network_transmit_bytes_total{instance="localhost:9100",device!="lo"}[5m]))
    ```
    
@@ -51,23 +51,23 @@
 To create an alert for high load average (when load1 exceeds the CPU core count):
 
 1. **First, we need to know the number of CPU cores:**
-   ```
+   ```promql
    count by(instance) (node_cpu_seconds_total{instance="localhost:9100",mode="idle"})
    ```
    
    Or alternatively:
-   ```
+   ```promql
    count without(mode) (node_cpu_seconds_total{instance="localhost:9100",mode="idle"})
    ```
 
 2. **Create a Grafana alert based on this query:**
-   ```
+   ```promql
    # This compares 1-minute load average to the core count
    node_load1{instance="localhost:9100"} > on(instance) count by(instance) (node_cpu_seconds_total{instance="localhost:9100",mode="idle"})
    ```
 
 3. **Alternative approach using a ratio:**
-   ```
+   ```promql
    # This gives a ratio of load to core count (values > 1 indicate overload)
    node_load1{instance="localhost:9100"} / on(instance) count by(instance) (node_cpu_seconds_total{instance="localhost:9100",mode="idle"})
    ```

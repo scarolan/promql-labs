@@ -61,12 +61,12 @@
     7. Verify your rule is loaded by visiting Prometheus UI and clicking on "Rules" in the top menu.
    
 2. **Test the performance difference:**
-   ```
+   ```promql
    # Complex query - calculate in real time
    100 * (1 - (avg by (instance) (rate(node_cpu_seconds_total{instance="localhost:9100",mode="idle"}[5m]))))
    ```
    
-   ```
+   ```promql
    # With a recording rule (faster) - assuming rule is set up
    instance:node_cpu_usage:percent{instance="localhost:9100"}
    ```

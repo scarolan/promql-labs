@@ -7,20 +7,20 @@
 
 ## Instructions
 1. **Start with your filtered query from Lab 1:**
-   ```
+   ```promql
    node_cpu_seconds_total{instance="localhost:9100"}
    ```
    
    > **Explanation:** This query selects the CPU metrics for all cores and all modes from your local system, providing the raw counter values that continuously increase over time.
 2. **Wrap it with `rate()` to get per-second usage:**
-   ```
+   ```promql
    rate(node_cpu_seconds_total{instance="localhost:9100"}[5m])
    ```
    What does this show compared to the raw counter?
    
    > **Explanation:** The `rate()` function calculates the per-second increase of the counter over the specified time window (5 minutes). The result shows the fraction of each CPU core spent in each mode per second (a value between 0 and 1). This essentially converts the ever-increasing counter into a percentage of CPU usage.
 3. **Sum by mode to see total usage per mode:**
-   ```
+   ```promql
    sum by (mode) (rate(node_cpu_seconds_total{instance="localhost:9100"}[5m]))
    ```
    Which mode uses the most CPU?
@@ -40,12 +40,12 @@
 To filter out the `idle` mode and focus on active CPU usage, follow these steps:
 
 1. **Start with the summed rate query from step 3:**
-   ```
+   ```promql
    sum by (mode) (rate(node_cpu_seconds_total{instance="localhost:9100"}[5m]))
    ```
 
 2. **Add a filter to exclude the idle mode:**
-   ```
+   ```promql
    sum by (mode) (rate(node_cpu_seconds_total{instance="localhost:9100",mode!="idle"}[5m]))
    ```
 

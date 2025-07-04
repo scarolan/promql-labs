@@ -10,7 +10,7 @@
 ## Instructions
 
 1. **Explore Histogram Metrics:**
-   ```
+   ```promql
    # Examine the structure of a histogram metric
    prometheus_http_request_duration_seconds_bucket
    ```
@@ -19,13 +19,13 @@
    >
    > To understand the structure better, you can also examine the bucket counts and their boundaries:
    > 
-   > ```
+   > ```promql
    > # Filter to see specific buckets
    > prometheus_http_request_duration_seconds_bucket{handler="/api/v1/query"}
    > ```
 
 2. **Calculate Percentile Latencies:**
-   ```
+   ```promql
    # Calculate 95th percentile latency
    histogram_quantile(0.95, sum(rate(prometheus_http_request_duration_seconds_bucket[5m])) by (le))
    ```
@@ -43,7 +43,7 @@
    > - 0.99: 99th percentile
 
 3. **Analyze Latency by Handler:**
-   ```
+   ```promql
    # Calculate median (50th percentile) latency by handler
    histogram_quantile(0.5, sum by (handler, le) (rate(prometheus_http_request_duration_seconds_bucket[5m])))
    ```
@@ -51,7 +51,7 @@
    > **Explanation:** This query calculates the median latency for each handler separately by keeping the `handler` label during aggregation. This allows you to compare performance across different endpoints or services.
 
 4. **Calculate Error Budget with Histograms:**
-   ```
+   ```promql
    # Percentage of requests under 500ms (0.5s) SLO threshold
    (sum(rate(prometheus_http_request_duration_seconds_bucket{le="0.5"}[5m])) / sum(rate(prometheus_http_request_duration_seconds_count[5m]))) * 100
    ```
@@ -60,7 +60,7 @@
    >
    > You can also calculate the error rate (requests exceeding the SLO threshold):
    >
-   > ```
+   > ```promql
    > # Percentage of requests exceeding 500ms SLO threshold
    > (1 - sum(rate(prometheus_http_request_duration_seconds_bucket{le="0.5"}[5m])) / sum(rate(prometheus_http_request_duration_seconds_count[5m]))) * 100
    > ```
@@ -71,20 +71,20 @@
    > - **Error Budget**: Allowable amount of non-compliance (e.g., 1% of requests can exceed 500ms)
 
 5. **Working with Gauge Metrics:**
-   ```
+   ```promql
    # Calculate rate of change for a gauge metric
-   deriv(node_memory_Active_bytes{instance="localhost:9100"}[1h])
+   deriv(node_memory_Active_bytes{instance="localhost:9100"}[5m])
    ```
    
-   > **Explanation:** The `deriv` function calculates the per-second derivative of a gauge metric, showing how quickly a gauge value is changing. This is useful for understanding trends in resource usage and predicting future needs.
+   > **Explanation:** The `deriv` function calculates the per-second derivative of a gauge metric, showing how quickly a gauge value is changing. Using a 5-minute window provides quick feedback in a lab setting while still being useful for understanding trends in resource usage.
    >
    > **Note:** While not a histogram function, `deriv` is important when analyzing the rate of change for metrics that aren't counters. Unlike counters which can use `rate()`, gauges need `deriv()` to find their rate of change.
    > 
    > **Predict future values** with linear prediction based on recent trends:
    >
-   > ```
-   > # Predict memory usage 1 hour in the future
-   > predict_linear(node_memory_Active_bytes{instance="localhost:9100"}[1h], 3600)
+   > ```promql
+   > # Predict memory usage 5 minutes in the future
+   > predict_linear(node_memory_Active_bytes{instance="localhost:9100"}[5m], 300)
    > ```
 
 ## Challenge
@@ -98,7 +98,7 @@ Creating a heatmap of CPU usage quantiles involves synthetic bucketing since CPU
 
 1. **Create synthetic buckets from CPU usage:**
 
-   ```
+   ```promql
    # Create CPU usage buckets using floor function for 5% increments
    floor(
      clamp_max(
@@ -116,7 +116,7 @@ Creating a heatmap of CPU usage quantiles involves synthetic bucketing since CPU
 
 2. **For a proper heatmap in Grafana:**
 
-   ```
+   ```promql
    # Create a histogram from CPU usage data for heatmap visualization
    sum(count_values("le", floor(clamp_max(100 * (1 - (avg by (instance) (rate(node_cpu_seconds_total{instance="localhost:9100",mode="idle"}[5m])) / count by (instance) (node_cpu_seconds_total{instance="localhost:9100",mode="idle"}))), 100) / 5) * 5)) by (le)
    ```

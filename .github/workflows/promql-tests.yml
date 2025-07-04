@@ -32,10 +32,35 @@ jobs:
           tar xvfz prometheus-2.47.1.linux-amd64.tar.gz
           cd prometheus-2.47.1.linux-amd64/
           
-          # Create minimal Prometheus config
+          # Create recording rules directory
+          mkdir -p rules
+          
+          # Create CPU recording rules
+          cat > rules/cpu_rules.yml <<EOF
+          groups:
+            - name: cpu_rules
+              rules:
+                - record: instance:node_cpu_usage:percent
+                  expr: 100 * (1 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) / count by (instance) (node_cpu_seconds_total{mode="idle"})))
+          EOF
+          
+          # Create memory recording rules
+          cat > rules/memory_rules.yml <<EOF
+          groups:
+            - name: memory_usage
+              rules:
+                - record: memory_usage_percent
+                  expr: 100 * (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes))
+          EOF
+          
+          # Create minimal Prometheus config with rules
           cat > prometheus.yml <<EOF
           global:
             scrape_interval: 15s
+          
+          rule_files:
+            - "rules/cpu_rules.yml"
+            - "rules/memory_rules.yml"
           
           scrape_configs:
             - job_name: 'prometheus'
@@ -131,9 +156,21 @@ jobs:
           echo "Waiting 30 seconds for metrics to be collected..."
           sleep 30
       
+      - name: Check query coverage
+        run: |
+          cd Tests
+          echo "Checking that all PromQL queries in labs have tests..."
+          python check_query_coverage.py
+          if [ $? -ne 0 ]; then
+            echo "❌ Some PromQL queries in labs don't have tests"
+            exit 1
+          fi
+          echo "✅ All PromQL queries in labs have tests"
+      
       - name: Run PromQL tests
         run: |
           cd Tests
+          echo "Running PromQL query tests..."
           python test_queries.py
           
           # Check if any tests failed

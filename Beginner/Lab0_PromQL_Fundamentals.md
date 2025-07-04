@@ -8,43 +8,43 @@
 ## Instructions
 1. **Open Prometheus UI** (not Grafana) and navigate to the Graph section.
 2. **Explore simple metric queries:**
-   ```
+   ```promql
    # Return all metrics for node_memory_MemTotal_bytes
    node_memory_MemTotal_bytes
    ```
    
-   ```
+   ```promql
    # Filter by instance
    node_memory_MemTotal_bytes{instance="localhost:9100"}
    ```
    
-   ```
+   ```promql
    # Use regular expressions for label matching
    node_memory_MemTotal_bytes{instance=~"local.*"}
    ```
    
    > **Explanation:** These queries show how to query a metric by name and filter results using labels. The first returns all instances of the metric, the second filters to a specific instance, and the third uses a regex pattern to match multiple instances.
 3. **Try basic operators:**
-   ```
+   ```promql
    # Division - Calculate memory used as fraction of total
    (node_memory_MemTotal_bytes{instance="localhost:9100"} - node_memory_MemAvailable_bytes{instance="localhost:9100"}) / node_memory_MemTotal_bytes{instance="localhost:9100"}
    ```
    
-   ```
+   ```promql
    # Multiplication - Convert to percentage
    100 * ((node_memory_MemTotal_bytes{instance="localhost:9100"} - node_memory_MemAvailable_bytes{instance="localhost:9100"}) / node_memory_MemTotal_bytes{instance="localhost:9100"})
    ```
    
    > **Explanation:** These queries demonstrate how PromQL allows you to perform calculations directly in your query. The first calculates memory usage as a fraction (0-1), while the second converts it to a percentage (0-100%).
 4. **Explore time ranges:**
-   ```
+   ```promql
    # Get data for the last 5 minutes
    node_cpu_seconds_total{instance="localhost:9100"}[5m]
    ```
    
    > **Note:** Range queries like this don't graph in the UI, but are used with functions. The square brackets `[5m]` change the query from an "instant vector" (single point in time) to a "range vector" (series of points over a time range). This is essential for functions like `rate()` that need to calculate changes over time.
 5. **Use basic functions:**
-   ```
+   ```promql
    # Get the sum of all CPU cores for system mode
    sum(node_cpu_seconds_total{instance="localhost:9100",mode="system"})
    ```

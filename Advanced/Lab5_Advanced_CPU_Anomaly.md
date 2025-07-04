@@ -7,13 +7,13 @@
 
 ## Instructions
 1. **Detect CPU saturation (high usage):**
-   ```
+   ```promql
    max_over_time((100 * (1 - (sum by (instance) (rate(node_cpu_seconds_total{instance="localhost:9100",mode="idle"}[5m])) / count by (instance) (node_cpu_seconds_total{instance="localhost:9100",mode="idle"}))))[30m:1m])
    ```
    
    > **Explanation:** This advanced query shows the highest CPU usage percentage observed in any 1-minute window over the last 30 minutes. It first calculates the average idle CPU rate across all cores, converts this to a usage percentage, then uses `max_over_time` with a subquery to find peak values. This is especially useful for detecting short-lived CPU spikes that might be missed by regular polling.
 2. **Find CPU spikes using `increase`:**
-   ```
+   ```promql
    increase(node_cpu_seconds_total{instance="localhost:9100",mode="user"}[10m])
    ```
    What does a sudden jump indicate?
@@ -34,7 +34,7 @@
 To combine `increase` and `max_over_time` to highlight extreme CPU spikes, follow these steps:
 
 1. **Create a query to find the maximum increase in user-mode CPU time in short intervals:**
-```
+```promql
 max_over_time(
 increase(node_cpu_seconds_total{instance="localhost:9100",mode="user"}[1m])
 [30m:1m]
@@ -47,7 +47,7 @@ This query:
 - Effectively identifies the most intense 1-minute CPU burst in the last half hour
 
 2. **For a percentage-based anomaly detection, try this more advanced query:**
-```
+```promql
 max_over_time(
   (
     avg by (instance) (

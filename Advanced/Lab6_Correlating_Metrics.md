@@ -7,17 +7,17 @@
 
 ## Instructions
 1. **Query CPU, memory, and network usage together:**
-   ```
+   ```promql
    # CPU usage %
    100 * (1 - (avg by (instance) (rate(node_cpu_seconds_total{instance="localhost:9100",mode="idle"}[5m])) / count by (instance) (node_cpu_seconds_total{instance="localhost:9100",mode="idle"})))
    ```
    
-   ```
+   ```promql
    # Memory usage %
    100 * (1 - (node_memory_MemAvailable_bytes{instance="localhost:9100"} / node_memory_MemTotal_bytes{instance="localhost:9100"}))
    ```
    
-   ```
+   ```promql
    # Network receive rate (bytes/sec)
    sum by (instance) (rate(node_network_receive_bytes_total{instance="localhost:9100",device!="lo"}[5m]))
    ```
@@ -53,17 +53,17 @@ To write a PromQL query that returns a warning when both CPU and memory usage ex
 1. **Build the query step by step:**
 
    **Step 1: Create the CPU usage threshold condition:**
-   ```
+   ```promql
    (100 * (1 - (avg by (instance) (rate(node_cpu_seconds_total{instance="localhost:9100",mode="idle"}[5m])) / count by (instance) (node_cpu_seconds_total{instance="localhost:9100",mode="idle"}))) > bool 80)
    ```
 
    **Step 2: Create the memory usage threshold condition:**
-   ```
+   ```promql
    (100 * (1 - (node_memory_MemAvailable_bytes{instance="localhost:9100"} / node_memory_MemTotal_bytes{instance="localhost:9100"})) > bool 80)
    ```
 
    **Step 3: Combine both conditions with the `and on(instance)` operator:**
-   ```
+   ```promql
    (100 * (1 - (avg by (instance) (rate(node_cpu_seconds_total{instance="localhost:9100",mode="idle"}[5m])) / count by (instance) (node_cpu_seconds_total{instance="localhost:9100",mode="idle"}))) > bool 80) and on(instance) (100 * (1 - (node_memory_MemAvailable_bytes{instance="localhost:9100"} / node_memory_MemTotal_bytes{instance="localhost:9100"})) > bool 80)
    ```
 

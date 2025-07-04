@@ -7,34 +7,34 @@
 
 ## Instructions
 1. **Query total and available memory:**
-   ```
+   ```promql
    node_memory_MemTotal_bytes{instance="localhost:9100"}
    ```
    
-   ```
+   ```promql
    node_memory_MemAvailable_bytes{instance="localhost:9100"}
    ```
    
    > **Explanation:** These metrics show the total physical memory on your system and how much is currently available for applications to use.
 2. **Calculate memory usage %:**
-   ```
+   ```promql
    100 * (1 - (node_memory_MemAvailable_bytes{instance="localhost:9100"} / node_memory_MemTotal_bytes{instance="localhost:9100"}))
    ```
    What does this value represent?
    
    > **Explanation:** This query calculates the percentage of memory currently in use. It first determines what fraction of memory is free (available/total), then subtracts from 1 to get the used fraction, and finally multiplies by 100 to express it as a percentage.
 3. **Query filesystem usage:**
-   ```
+   ```promql
    node_filesystem_size_bytes{instance="localhost:9100",fstype!="tmpfs",mountpoint!="/run"}
    ```
    
-   ```
+   ```promql
    node_filesystem_free_bytes{instance="localhost:9100",fstype!="tmpfs",mountpoint!="/run"}
    ```
    
    > **Explanation:** These queries show the total size and free space of your filesystems. The filters (`fstype!="tmpfs",mountpoint!="/run"`) exclude temporary filesystems which aren't relevant for monitoring persistent disk usage.
 4. **Calculate disk usage % for `/` mount:**
-   ```
+   ```promql
    100 * (1 - (node_filesystem_free_bytes{instance="localhost:9100",mountpoint="/"} / node_filesystem_size_bytes{instance="localhost:9100",mountpoint="/"}))
    ```
    
@@ -51,7 +51,7 @@ To create gauge visualizations for memory and disk usage in Grafana:
 1. **Create a memory usage gauge:**
    - Click "+ Add panel" in Grafana and select the "Gauge" visualization
    - Enter the memory usage query:
-     ```
+     ```promql
      100 * (1 - (node_memory_MemAvailable_bytes{instance="localhost:9100"} / node_memory_MemTotal_bytes{instance="localhost:9100"}))
      ```
    - Set threshold values:
@@ -63,7 +63,7 @@ To create gauge visualizations for memory and disk usage in Grafana:
 2. **Create a disk usage gauge:**
    - Create another gauge panel
    - Enter the disk usage query:
-     ```
+     ```promql
      100 * (1 - (node_filesystem_free_bytes{instance="localhost:9100",mountpoint="/"} / node_filesystem_size_bytes{instance="localhost:9100",mountpoint="/"}))
      ```
    - Set threshold values:
