@@ -20,8 +20,11 @@
     font-size: 1.5em; /* Further increased for better visibility on large displays */
     border-radius: 8px; /* Add rounded corners to code blocks */
     width: 100%; /* Ensure code blocks use full width */
-    max-width: 950px; /* Increased maximum width for wider code blocks */
+    max-width: 100%; /* Increased maximum width for wider code blocks */
     margin: 0 auto; /* Center the code block */
+    display: block;
+    overflow-x: auto;
+    white-space: pre; /* Prevent wrapping */
 }
 .two-column {
     display: flex;
