@@ -85,7 +85,7 @@
              severity: warning
            annotations:
              summary: "High CPU usage on {{ $labels.instance }}"
-             description: "CPU usage has exceeded 50% for 5 minutes on {{ $labels.instance }}"
+             description: "CPU usage has exceeded 50% for 1 minute on {{ $labels.instance }}"
    ```
    
    > **Explanation:** This alert rule configuration demonstrates Prometheus's alerting capabilities. The `expr` field contains the PromQL condition that triggers the alert. The `for` duration prevents flapping alerts by requiring the condition to be true for a specified period. The `labels` help categorize alerts (useful for routing), while `annotations` provide human-readable information with template variables like `{{ $labels.instance }}` that are replaced with actual values when the alert fires.
