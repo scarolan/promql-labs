@@ -46,7 +46,5 @@ Start with the Beginner labs and progress through to Advanced for a complete lea
 You can automatically test all PromQL queries against your Prometheus server:
 
 1. Update the URL in `Tests/config.json` with your Prometheus endpoint
-2. Run one of the test scripts:
-   - PowerShell: `.\Tests\test_queries.ps1`
-   - Python: `python Tests\test_queries.py`
+2. Run the python test script: `python Tests\test_queries.py`
 3. Check the results in `Tests\results.log`
