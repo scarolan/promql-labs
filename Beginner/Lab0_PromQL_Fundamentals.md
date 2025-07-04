@@ -73,10 +73,10 @@ This approach counts the number of CPU cores by grouping by instance and filteri
 
 **Option 2 (Alternative Approach):**
 ```
-count without(mode) (node_cpu_seconds_total{instance="localhost:9100",mode="idle"})
+count without(mode, cpu) (node_cpu_seconds_total{instance="localhost:9100",mode="idle"})
 ```
 
-This counts the CPU cores by preserving all labels except the mode label, while still filtering for just the idle mode.
+This counts the CPU cores by preserving all labels except the mode and cpu labels, while still filtering for just the idle mode.
 
 **Helpful Operators for Future Reference:**
 
