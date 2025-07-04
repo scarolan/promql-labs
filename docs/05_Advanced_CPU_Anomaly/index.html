@@ -310,23 +310,27 @@ max_over_time(
                     <h2>Solution: Percentage-Based Anomaly</h2>
                     <pre><code data-trim data-noescape class="promql">
 max_over_time(
-  (increase(node_cpu_seconds_total{instance="localhost:9100",mode="user"}[1m]) 
-  / 
-  scalar(count(node_cpu_seconds_total{instance="localhost:9100",cpu="0"})))
-[30m:1m]) * 100
+  (
+    avg by (instance) (
+      rate(node_cpu_seconds_total{instance="localhost:9100",mode="user"}[1m])
+    ) * 100
+  )[30m:1m]
+)
                     </code></pre>
-                    <p>Normalizes by number of CPU cores</p>
+                    <p>Calculates average across all CPU cores</p>
                     <p>Expresses result as a percentage of total capacity</p>
 <aside class="notes">
                         Our second solution is more advanced and provides a percentage-based view of CPU anomalies, which is often more intuitive and comparable across systems with different numbers of CPU cores.
                         
-                        This query builds on the previous one but adds normalization:
+                        This query builds on the previous one but approaches it differently:
                         
-                        First, we calculate the increase in user-mode CPU seconds over 1-minute periods as before.
+                        First, we calculate the rate of user-mode CPU usage over 1-minute periods.
                         
-                        Then, we divide by the number of CPU cores, which we obtain by counting the number of time series with cpu="0" (a trick to count the total number of cores). We use scalar() to ensure this is treated as a single value rather than a vector.
+                        Then, we use avg by (instance) to properly average the rate across all CPU cores, giving us the average CPU usage per core.
                         
-                        The subquery [30m:1m] and max_over_time() function work as before, finding the highest value over the 30-minute period.
+                        We multiply by 100 to express this as a percentage.
+                        
+                        The subquery [30m:1m] and max_over_time() function work as before, finding the highest percentage value over the 30-minute period.
                         
                         Finally, we multiply by 100 to express the result as a percentage of total CPU capacity.
                         
