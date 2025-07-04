@@ -190,11 +190,17 @@ This process makes it easy to add, modify, or remove recording rules as your mon
                         ## Performance Benefits
                         
                         ```promql
-                        # Complex query - calculate in real time
-                        100 * (1 - (avg by (instance) (rate(node_cpu_seconds_total{instance="localhost:9100",mode="idle"}[5m]))))
-                        
-                        # With recording rule (faster)
-                        instance:node_cpu_usage:percent{instance="localhost:9100"}
+# Complex query - calculate in real time
+100 * (1 - (
+    avg by (instance) (
+        rate(node_cpu_seconds_total{instance="localhost:9100",mode="idle"}[5m])
+    )
+))
+                                                ```
+
+                                                ```
+# With recording rule (faster)
+instance:node_cpu_usage:percent{instance="localhost:9100"}
                         ```
                         
                         * Recording rules are evaluated at regular intervals

@@ -159,15 +159,33 @@
     text-shadow: 0 0 10px rgba(66, 175, 250, 0.5);
 }
 
-/* Code block improvements */
+/* Code styling: no scrollbars, full-width wrap, consistent look */
 .reveal pre {
-    display: block;
-    position: relative;
-    overflow: auto;
-    overflow-y: auto; /* Allow scrolling for very tall code blocks if needed */
+    width: 100%;
+    max-width: 1100px;
+    margin: 1em auto;
+    padding: 1em 1.5em;              /* All padding here */
+    background: #2d2d2d;
+    border-radius: 8px;
+    box-shadow: none;
+    overflow: visible !important;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
 }
 
-.reveal code {
-    white-space: pre; /* Preserve spaces and line breaks */
-    tab-size: 2; /* Smaller tab size for better code display */
+.reveal pre::-webkit-scrollbar {
+    display: none;
+}
+
+.reveal pre code {
+    display: block;
+    width: 100%;
+    font-size: 1.4em;
+    line-height: 1.4;
+    white-space: pre-wrap;
+    word-break: break-word;
+    padding: 0;               
+    margin: 0;
+    background: none;              /* no background behind code */
+    border: none;
 }
