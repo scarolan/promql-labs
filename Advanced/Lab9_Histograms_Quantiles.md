@@ -99,21 +99,20 @@ Creating a heatmap of CPU usage quantiles involves synthetic bucketing since CPU
 1. **Create synthetic buckets from CPU usage:**
 
    ```
-   # Define CPU usage buckets with quantize function
-   quantize(
+   # Create CPU usage buckets using floor function for 5% increments
+   floor(
      clamp_max(
        100 * (1 - (avg by (instance) (rate(node_cpu_seconds_total{instance="localhost:9100",mode="idle"}[5m])) / 
        count by (instance) (node_cpu_seconds_total{instance="localhost:9100",mode="idle"}))),
        100
-     ),
-     5
-   ) by (instance)
+     ) / 5
+   ) * 5
    ```
 
    This query:
    - Calculates CPU usage as a percentage
    - Uses `clamp_max` to ensure no values exceed 100%
-   - Uses `quantize` to create synthetic buckets with 5% increments
+   - Uses `floor` and multiplication to create synthetic buckets with 5% increments (0, 5, 10, 15, etc.)
 
 2. **For a proper heatmap in Grafana:**
 
