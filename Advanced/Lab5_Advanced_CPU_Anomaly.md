@@ -54,10 +54,10 @@ To combine `increase` and `max_over_time` to highlight extreme CPU spikes, follo
    
 This query:
 
-    - Uses rate() to calculate per-second CPU usage over short 1-minute windows
-    - Aggregates usage across all CPU cores and normalizes by the number of cores
-    - Multiplies by 100 to express the result as a percentage of total CPU capacity
-    - Applies max_over_time() to surface the highest 1-minute usage within the past 30 minutes
+- Uses rate() to calculate per-second CPU usage over short 1-minute windows
+- Aggregates usage across all CPU cores and normalizes by the number of cores
+- Multiplies by 100 to express the result as a percentage of total CPU capacity
+- Applies max_over_time() to surface the highest 1-minute usage within the past 30 minutes
 
 These queries are particularly useful for identifying short-lived but intensive CPU bursts—such as application spikes or potential attacks—that may be missed in standard 5-minute rate calculations or longer aggregation windows.
 
