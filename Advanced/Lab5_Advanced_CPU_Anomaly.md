@@ -34,17 +34,17 @@
 To combine `increase` and `max_over_time` to highlight extreme CPU spikes, follow these steps:
 
 1. **Create a query to find the maximum increase in user-mode CPU time in short intervals:**
-   ```
-   max_over_time(
-   increase(node_cpu_seconds_total{instance="localhost:9100",mode="user"}[1m])
-   [30m:1m]
-   )
-   ```
+```
+max_over_time(
+increase(node_cpu_seconds_total{instance="localhost:9100",mode="user"}[1m])
+[30m:1m]
+)
+```
    
-   This query:
-   - Uses `increase` to measure the growth in user CPU time over 1-minute windows
-   - Uses `max_over_time` with a subquery `[30m:1m]` to find the highest 1-minute increase within a 30-minute period
-   - Effectively identifies the most intense 1-minute CPU burst in the last half hour
+This query:
+- Uses `increase` to measure the growth in user CPU time over 1-minute windows
+- Uses `max_over_time` with a subquery `[30m:1m]` to find the highest 1-minute increase within a 30-minute period
+- Effectively identifies the most intense 1-minute CPU burst in the last half hour
 
 2. **For a percentage-based anomaly detection, try this more advanced query:**
    ```
@@ -55,12 +55,12 @@ max_over_time(
     ) * 100
   )[30m:1m]
 )
-   ```
-   
-   This query:
-   - Calculates the average rate of CPU usage across all cores using `avg by (instance)`
-   - Multiplies by 100 to express as a percentage
-   - Uses `max_over_time` with a subquery to find the highest percentage in any 1-minute period over 30 minutes
+```
+
+This query:
+- Calculates the average rate of CPU usage across all cores using `avg by (instance)`
+- Multiplies by 100 to express as a percentage
+- Uses `max_over_time` with a subquery to find the highest percentage in any 1-minute period over 30 minutes
 
 These queries are particularly useful for identifying short-lived but intensive CPU bursts that might indicate application issues or attacks, even if they don't appear significant on regular 5-minute rate calculations.
 
