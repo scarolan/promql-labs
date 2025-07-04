@@ -80,15 +80,17 @@
        rules:
          - alert: HighCPUUsage
            expr: instance:node_cpu_usage:percent > 50
-           for: 5m
+           for: 1m
            labels:
              severity: warning
            annotations:
              summary: "High CPU usage on {{ $labels.instance }}"
-             description: "CPU usage has exceeded 80% for 5 minutes on {{ $labels.instance }}"
+             description: "CPU usage has exceeded 50% for 5 minutes on {{ $labels.instance }}"
    ```
    
    > **Explanation:** This alert rule configuration demonstrates Prometheus's alerting capabilities. The `expr` field contains the PromQL condition that triggers the alert. The `for` duration prevents flapping alerts by requiring the condition to be true for a specified period. The `labels` help categorize alerts (useful for routing), while `annotations` provide human-readable information with template variables like `{{ $labels.instance }}` that are replaced with actual values when the alert fires.
+
+   We are setting the duration very low (1 minute) to ensure we can test the alert quickly. In production, you would typically set this to a longer duration (e.g., 5 minutes) to avoid alert fatigue from brief spikes.
    
    **Setting Up Your First Alert Rule:**
    
@@ -114,7 +116,7 @@
    
    6. To test the alert, you can generate CPU load (if stress-ng is not installed, you may need to install it first with `sudo apt-get install stress-ng`):
       ```
-      stress-ng --cpu 1 --cpu-load 80 --timeout 300s
+      stress-ng --cpu 1 --cpu-load 50 --timeout 300s
       ```
       This will stress 4 CPU cores for 5 minutes, which should trigger the alert.
       
@@ -122,11 +124,11 @@
 
 4. **Test alert expressions in the Prometheus UI:**
    ```
-   # This would trigger your alert when CPU > 80%
-   instance:node_cpu_usage:percent{instance="localhost:9100"} > 80
+   # This would trigger your alert when CPU > 50%
+   instance:node_cpu_usage:percent{instance="localhost:9100"} > 50
    ```
    
-   > **Explanation:** This query uses the recording rule metric to check if CPU usage exceeds 80%. The alert expression will return no data when CPU usage is below 80% and will return data points when CPU usage exceeds 80%. The Prometheus alert manager uses the `for: 5m` clause in the alert rule to only trigger an alert if this condition persists for at least 5 minutes, reducing alert noise from brief spikes.
+   > **Explanation:** This query uses the recording rule metric to check if CPU usage exceeds 50%. The alert expression will return no data when CPU usage is below 50% and will return data points when CPU usage exceeds 50%. The Prometheus alert manager uses the `for: 5m` clause in the alert rule to only trigger an alert if this condition persists for at least 5 minutes, reducing alert noise from brief spikes.
 
 ## Challenge
 - Create a recording rule expression for memory usage percentage, following Prometheus naming conventions.
