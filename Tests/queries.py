@@ -193,7 +193,7 @@ lab6_queries = [
     },
     {
         "name": "High CPU and Memory alert",
-        "query": "(100 * (1 - (avg by (instance) (rate(node_cpu_seconds_total{instance=\"$INSTANCE\",mode=\"idle\"}[5m])) / count by (instance) (node_cpu_seconds_total{instance=\"$INSTANCE\",mode=\"idle\"}))) > 80) and (100 * (1 - (node_memory_MemAvailable_bytes{instance=\"$INSTANCE\"} / node_memory_MemTotal_bytes{instance=\"$INSTANCE\"})) > 80)",
+        "query": "(100 * (1 - (avg by (instance) (rate(node_cpu_seconds_total{instance=\"$INSTANCE\",mode=\"idle\"}[5m])) / count by (instance) (node_cpu_seconds_total{instance=\"$INSTANCE\",mode=\"idle\"}))) > bool 80) and on(instance) (100 * (1 - (node_memory_MemAvailable_bytes{instance=\"$INSTANCE\"} / node_memory_MemTotal_bytes{instance=\"$INSTANCE\"})) > bool 80)",
         "expected_type": "vector"
     }
 ]

@@ -194,7 +194,7 @@ $lab6_queries = @(
     },
     @{
         Name = "High CPU and Memory alert"
-        Query = "(100 * (1 - (avg by (instance) (rate(node_cpu_seconds_total{instance=`"$instanceName`",mode=`"idle`"}[5m])) / count by (instance) (node_cpu_seconds_total{instance=`"$instanceName`",mode=`"idle`"}))) > 80) and (100 * (1 - (node_memory_MemAvailable_bytes{instance=`"$instanceName`"} / node_memory_MemTotal_bytes{instance=`"$instanceName`"})) > 80)"
+        Query = "(100 * (1 - (avg by (instance) (rate(node_cpu_seconds_total{instance=`"$instanceName`",mode=`"idle`"}[5m])) / count by (instance) (node_cpu_seconds_total{instance=`"$instanceName`",mode=`"idle`"}))) > bool 80) and on(instance) (100 * (1 - (node_memory_MemAvailable_bytes{instance=`"$instanceName`"} / node_memory_MemTotal_bytes{instance=`"$instanceName`"})) > bool 80)"
         ExpectedType = "vector"
     }
 )
