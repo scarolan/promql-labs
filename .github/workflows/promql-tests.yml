@@ -1,0 +1,153 @@
+name: PromQL Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  test-promql-queries:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests
+      
+      - name: Download and setup Prometheus
+        run: |
+          # Download Prometheus
+          wget https://github.com/prometheus/prometheus/releases/download/v2.47.1/prometheus-2.47.1.linux-amd64.tar.gz
+          tar xvfz prometheus-2.47.1.linux-amd64.tar.gz
+          cd prometheus-2.47.1.linux-amd64/
+          
+          # Create minimal Prometheus config
+          cat > prometheus.yml <<EOF
+          global:
+            scrape_interval: 15s
+          
+          scrape_configs:
+            - job_name: 'prometheus'
+              static_configs:
+                - targets: ['localhost:9090']
+                
+            - job_name: 'node'
+              static_configs:
+                - targets: ['localhost:9100']
+                
+            - job_name: 'process'
+              static_configs:
+                - targets: ['localhost:9256']
+          EOF
+          
+          # Start Prometheus in background
+          ./prometheus --config.file=prometheus.yml &
+          echo "Waiting for Prometheus to start..."
+          sleep 5
+      
+      - name: Install Node Exporter
+        run: |
+          # Download Node Exporter
+          wget https://github.com/prometheus/node_exporter/releases/download/v1.6.1/node_exporter-1.6.1.linux-amd64.tar.gz
+          tar xvfz node_exporter-1.6.1.linux-amd64.tar.gz
+          cd node_exporter-1.6.1.linux-amd64/
+          
+          # Start Node Exporter in background
+          ./node_exporter &
+          echo "Waiting for Node Exporter to start..."
+          sleep 3
+      
+      - name: Install Process Exporter
+        run: |
+          # Download Process Exporter
+          wget https://github.com/ncabatoff/process-exporter/releases/download/v0.7.10/process-exporter-0.7.10.linux-amd64.tar.gz
+          tar xvfz process-exporter-0.7.10.linux-amd64.tar.gz
+          cd process-exporter-0.7.10.linux-amd64/
+          
+          # Create config file for Process Exporter
+          cat > process-exporter.yml <<EOF
+          process_names:
+            - name: "{{.Comm}}"
+              cmdline:
+                - '.+'
+          EOF
+          
+          # Start Process Exporter in background
+          ./process-exporter -config.path=process-exporter.yml &
+          echo "Waiting for Process Exporter to start..."
+          sleep 3
+      
+      - name: Verify services are running
+        run: |
+          # Check if Prometheus is running
+          if curl -s http://localhost:9090/-/healthy > /dev/null; then
+            echo "✅ Prometheus is running"
+          else
+            echo "❌ Prometheus is not running"
+            exit 1
+          fi
+          
+          # Check if Node Exporter is running
+          if curl -s http://localhost:9100/metrics > /dev/null; then
+            echo "✅ Node Exporter is running"
+          else
+            echo "❌ Node Exporter is not running"
+            exit 1
+          fi
+          
+          # Check if Process Exporter is running
+          if curl -s http://localhost:9256/metrics > /dev/null; then
+            echo "✅ Process Exporter is running"
+          else
+            echo "❌ Process Exporter is not running"
+            exit 1
+          fi
+      
+      - name: Update config.json with local Prometheus URL
+        run: |
+          cd Tests
+          # Update the config.json file to point to local Prometheus
+          cat > config.json <<EOF
+          {
+              "prometheus_url": "http://localhost:9090",
+              "instance_name": "localhost:9100"
+          }
+          EOF
+          cat config.json
+      
+      - name: Wait for metrics to be collected
+        run: |
+          echo "Waiting 30 seconds for metrics to be collected..."
+          sleep 30
+      
+      - name: Run PromQL tests
+        run: |
+          cd Tests
+          python test_queries.py
+          
+          # Check if any tests failed
+          if grep -q "Failed: 0" results.log; then
+            echo "✅ All tests passed!"
+            exit 0
+          else
+            echo "❌ Some tests failed"
+            exit 1
+          fi
+      
+      - name: Upload test results as artifact
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-results
+          path: Tests/results.log
