@@ -1,4 +1,4 @@
 {
-    "prometheus_url": "https://0f0bd346930f-10-244-6-96-9090.saci.r.killercoda.com/",
+    "prometheus_url": "https://bf881de4ffac-10-244-6-74-9090.saci.r.killercoda.com/",
     "instance_name": "localhost:9100"
 }

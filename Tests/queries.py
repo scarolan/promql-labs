@@ -71,6 +71,16 @@ lab1_queries = [
         "name": "Filtered by instance and mode",
         "query": "node_cpu_seconds_total{instance=\"$INSTANCE\", mode=\"user\"}",
         "expected_type": "vector"
+    },
+    {
+        "name": "Filtered by system mode",
+        "query": "node_cpu_seconds_total{instance=\"$INSTANCE\", mode=\"system\"}",
+        "expected_type": "vector"
+    },
+    {
+        "name": "Filtered by idle mode",
+        "query": "node_cpu_seconds_total{instance=\"$INSTANCE\", mode=\"idle\"}",
+        "expected_type": "vector"
     }
 ]
 
@@ -84,6 +94,11 @@ lab2_queries = [
     {
         "name": "Sum by mode",
         "query": "sum by (mode) (rate(node_cpu_seconds_total{instance=\"$INSTANCE\"}[5m]))",
+        "expected_type": "vector"
+    },
+    {
+        "name": "Sum by mode excluding idle",
+        "query": "sum by (mode) (rate(node_cpu_seconds_total{instance=\"$INSTANCE\",mode!=\"idle\"}[5m]))",
         "expected_type": "vector"
     }
 ]
@@ -158,18 +173,39 @@ lab4_queries = [
         "name": "Aggregated network transmit",
         "query": "sum by (instance) (rate(node_network_transmit_bytes_total{instance=\"$INSTANCE\",device!=\"lo\"}[5m]))",
         "expected_type": "vector"
+    },
+    {
+        "name": "Load compared to CPU cores",
+        "query": "node_load1{instance=\"$INSTANCE\"} > on(instance) count by(instance) (node_cpu_seconds_total{instance=\"$INSTANCE\",mode=\"idle\"})",
+        "expected_type": "vector"
+    },
+    {
+        "name": "Load divided by CPU cores",
+        "query": "node_load1{instance=\"$INSTANCE\"} / on(instance) count by(instance) (node_cpu_seconds_total{instance=\"$INSTANCE\",mode=\"idle\"})",
+        "expected_type": "vector"
     }
 ]
 
 # Lab 5 - Advanced CPU Anomaly Detection
 lab5_queries = [
-    {        "name": "CPU saturation detection",
+    {
+        "name": "CPU saturation detection",
         "query": "max_over_time((100 * (1 - (sum by (instance) (rate(node_cpu_seconds_total{instance=\"$INSTANCE\",mode=\"idle\"}[5m])) / count by (instance) (node_cpu_seconds_total{instance=\"$INSTANCE\",mode=\"idle\"}))))[30m:1m])",
         "expected_type": "vector"
     },
     {
         "name": "CPU spikes using increase",
         "query": "increase(node_cpu_seconds_total{instance=\"$INSTANCE\",mode=\"user\"}[10m])",
+        "expected_type": "vector"
+    },
+    {
+        "name": "Max increase over time",
+        "query": "max_over_time(increase(node_cpu_seconds_total{instance=\"$INSTANCE\",mode=\"user\"}[1m])[30m:1m])",
+        "expected_type": "vector"
+    },
+    {
+        "name": "User mode avg percentage over time",
+        "query": "max_over_time((avg by (instance) (rate(node_cpu_seconds_total{instance=\"$INSTANCE\",mode=\"user\"}[1m])) * 100)[30m:1m])",
         "expected_type": "vector"
     }
 ]
@@ -195,6 +231,16 @@ lab6_queries = [
         "name": "High CPU and Memory alert",
         "query": "(100 * (1 - (avg by (instance) (rate(node_cpu_seconds_total{instance=\"$INSTANCE\",mode=\"idle\"}[5m])) / count by (instance) (node_cpu_seconds_total{instance=\"$INSTANCE\",mode=\"idle\"}))) > bool 80) and on(instance) (100 * (1 - (node_memory_MemAvailable_bytes{instance=\"$INSTANCE\"} / node_memory_MemTotal_bytes{instance=\"$INSTANCE\"})) > bool 80)",
         "expected_type": "vector"
+    },
+    {
+        "name": "High CPU alert boolean",
+        "query": "(100 * (1 - (avg by (instance) (rate(node_cpu_seconds_total{instance=\"$INSTANCE\",mode=\"idle\"}[5m])) / count by (instance) (node_cpu_seconds_total{instance=\"$INSTANCE\",mode=\"idle\"}))) > bool 80)",
+        "expected_type": "vector"
+    },
+    {
+        "name": "High memory alert boolean",
+        "query": "(100 * (1 - (node_memory_MemAvailable_bytes{instance=\"$INSTANCE\"} / node_memory_MemTotal_bytes{instance=\"$INSTANCE\"})) > bool 80)",
+        "expected_type": "vector"
     }
 ]
 
@@ -208,6 +254,11 @@ lab7_queries = [
     {
         "name": "Alert expression simulation",
         "query": "100 * (1 - (avg by (instance) (rate(node_cpu_seconds_total{instance=\"$INSTANCE\",mode=\"idle\"}[5m])) / count by (instance) (node_cpu_seconds_total{instance=\"$INSTANCE\",mode=\"idle\"}))) > 80",
+        "expected_type": "vector"
+    },
+    {
+        "name": "CPU recording rule query",
+        "query": "instance:node_cpu_usage:percent{instance=\"$INSTANCE\"}",
         "expected_type": "vector"
     }
 ]
@@ -226,12 +277,12 @@ lab8_queries = [
     },
     {
         "name": "Historical comparison with offset",
-        "query": "sum(rate(node_cpu_seconds_total{instance=\"$INSTANCE\",mode!=\"idle\"}[5m])) and sum(rate(node_cpu_seconds_total{instance=\"$INSTANCE\",mode!=\"idle\"}[5m] offset 1h))",
+        "query": "sum(rate(node_cpu_seconds_total{instance=\"$INSTANCE\",mode!=\"idle\"}[5m])) and sum(rate(node_cpu_seconds_total{instance=\"$INSTANCE\",mode!=\"idle\"}[5m] offset 5m))",
         "expected_type": "vector"
     },
     {
         "name": "Historical difference calculation",
-        "query": "sum(rate(node_cpu_seconds_total{instance=\"$INSTANCE\",mode!=\"idle\"}[5m])) - sum(rate(node_cpu_seconds_total{instance=\"$INSTANCE\",mode!=\"idle\"}[5m] offset 1h))",
+        "query": "sum(rate(node_cpu_seconds_total{instance=\"$INSTANCE\",mode!=\"idle\"}[5m])) - sum(rate(node_cpu_seconds_total{instance=\"$INSTANCE\",mode!=\"idle\"}[5m] offset 5m))",
         "expected_type": "vector"
     },
     {
@@ -251,7 +302,22 @@ lab8_queries = [
     },
     {
         "name": "Memory usage change with offset",
-        "query": "(100 * (1 - (node_memory_MemAvailable_bytes{instance=\"$INSTANCE\"} / node_memory_MemTotal_bytes{instance=\"$INSTANCE\"})) - 100 * (1 - (node_memory_MemAvailable_bytes{instance=\"$INSTANCE\"} offset 1h / node_memory_MemTotal_bytes{instance=\"$INSTANCE\"} offset 1h))) / (100 * (1 - (node_memory_MemAvailable_bytes{instance=\"$INSTANCE\"} offset 1h / node_memory_MemTotal_bytes{instance=\"$INSTANCE\"} offset 1h))) * 100",
+        "query": "(100 * (1 - (node_memory_MemAvailable_bytes{instance=\"$INSTANCE\"} / node_memory_MemTotal_bytes{instance=\"$INSTANCE\"})) - 100 * (1 - (node_memory_MemAvailable_bytes{instance=\"$INSTANCE\"} offset 5m / node_memory_MemTotal_bytes{instance=\"$INSTANCE\"} offset 5m))) / (100 * (1 - (node_memory_MemAvailable_bytes{instance=\"$INSTANCE\"} offset 5m / node_memory_MemTotal_bytes{instance=\"$INSTANCE\"} offset 5m))) * 100",
+        "expected_type": "vector"
+    },
+    {
+        "name": "Memory usage with offset 5m",
+        "query": "100 * (1 - (node_memory_MemAvailable_bytes{instance=\"$INSTANCE\"} offset 5m / node_memory_MemTotal_bytes{instance=\"$INSTANCE\"} offset 5m))",
+        "expected_type": "vector"
+    },
+    {
+        "name": "Memory usage change with offset 1m",
+        "query": "((100 * (1 - (node_memory_MemAvailable_bytes{instance=\"$INSTANCE\"} / node_memory_MemTotal_bytes{instance=\"$INSTANCE\"}))) - (100 * (1 - (node_memory_MemAvailable_bytes{instance=\"$INSTANCE\"} offset 1m / node_memory_MemTotal_bytes{instance=\"$INSTANCE\"} offset 1m)))) / (100 * (1 - (node_memory_MemAvailable_bytes{instance=\"$INSTANCE\"} offset 1m / node_memory_MemTotal_bytes{instance=\"$INSTANCE\"} offset 1m))) * 100",
+        "expected_type": "vector"
+    },
+    {
+        "name": "Memory usage percent change",
+        "query": "(memory_usage_percent - memory_usage_percent offset 5m) / memory_usage_percent offset 5m * 100",
         "expected_type": "vector"
     }
 ]
@@ -295,17 +361,22 @@ lab9_queries = [
     },
     {
         "name": "Gauge derivative",
-        "query": "deriv(node_memory_Active_bytes{instance=\"$INSTANCE\"}[1h])",
+        "query": "deriv(node_memory_Active_bytes{instance=\"$INSTANCE\"}[5m])",
         "expected_type": "vector"
     },
     {
         "name": "Linear prediction",
-        "query": "predict_linear(node_memory_Active_bytes{instance=\"$INSTANCE\"}[1h], 3600)",
+        "query": "predict_linear(node_memory_Active_bytes{instance=\"$INSTANCE\"}[5m], 300)",
         "expected_type": "vector"
     },
     {
         "name": "CPU usage synthetic histogram",
         "query": "sum(count_values(\"le\", floor(clamp_max(100 * (1 - (avg by (instance) (rate(node_cpu_seconds_total{instance=\"$INSTANCE\",mode=\"idle\"}[5m])) / count by (instance) (node_cpu_seconds_total{instance=\"$INSTANCE\",mode=\"idle\"}))), 100) / 5) * 5)) by (le)",
+        "expected_type": "vector"
+    },
+    {
+        "name": "CPU usage bucketed into 5% ranges",
+        "query": "floor(clamp_max(100 * (1 - (avg by (instance) (rate(node_cpu_seconds_total{instance=\"$INSTANCE\",mode=\"idle\"}[5m])) / count by (instance) (node_cpu_seconds_total{instance=\"$INSTANCE\",mode=\"idle\"}))), 100) / 5) * 5",
         "expected_type": "vector"
     }
 ]
