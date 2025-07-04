@@ -46,18 +46,20 @@ To combine `increase` and `max_over_time` to highlight extreme CPU spikes, follo
 2. **For a percentage-based anomaly detection, try this more advanced query:**
    ```
    max_over_time(
-     (increase(node_cpu_seconds_total{instance="localhost:9100",mode="user"}[1m]) 
-     / 
-     scalar(count(node_cpu_seconds_total{instance="localhost:9100",mode="user"})))
-   [30m:1m]) * 100
+   100 * avg by (instance) (
+      rate(node_cpu_seconds_total{instance="localhost:9100", mode="user"}[1m])
+   )[30m:1m]
+   )
    ```
    
-   This query:
-   - Normalizes the increase by dividing by the number of CPU cores
-   - Multiplies by 100 to express as a percentage
-   - Shows the highest percentage of CPU capacity used in any 1-minute period
+This query:
 
-These queries are particularly useful for identifying short-lived but intensive CPU bursts that might indicate application issues or attacks, even if they don't appear significant on regular 5-minute rate calculations.
+    - Uses rate() to calculate per-second CPU usage over short 1-minute windows
+    - Aggregates usage across all CPU cores and normalizes by the number of cores
+    - Multiplies by 100 to express the result as a percentage of total CPU capacity
+    - Applies max_over_time() to surface the highest 1-minute usage within the past 30 minutes
+
+These queries are particularly useful for identifying short-lived but intensive CPU bursts—such as application spikes or potential attacks—that may be missed in standard 5-minute rate calculations or longer aggregation windows.
 
 </details>
 
