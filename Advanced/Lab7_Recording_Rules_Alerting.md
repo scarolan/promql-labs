@@ -79,7 +79,7 @@
      - name: example_alerts
        rules:
          - alert: HighCPUUsage
-           expr: instance:node_cpu_usage:percent > 80
+           expr: instance:node_cpu_usage:percent > 50
            for: 5m
            labels:
              severity: warning
@@ -96,9 +96,9 @@
       
    2. Copy and paste the YAML above into the file and save it.
    
-   3. The alert is configured to use the recording rule we created earlier (`instance:node_cpu_usage:percent > 80`). If you skipped creating the recording rule or if it's not working, modify the `expr` in your alert file to use the direct calculation instead:
+   3. The alert is configured to use the recording rule we created earlier (`instance:node_cpu_usage:percent > 50`). If you skipped creating the recording rule or if it's not working, modify the `expr` in your alert file to use the direct calculation instead:
       ```yaml
-      expr: 100 * (1 - (avg by (instance) (rate(node_cpu_seconds_total{instance="localhost:9100",mode="idle"}[5m])))) > 80
+      expr: 100 * (1 - (avg by (instance) (rate(node_cpu_seconds_total{instance="localhost:9100",mode="idle"}[5m])))) > 50
       ```
       
       Note: You may need to adjust the instance name in the query (e.g., "localhost:9100") to match your environment.
@@ -114,7 +114,7 @@
    
    6. To test the alert, you can generate CPU load (if stress-ng is not installed, you may need to install it first with `sudo apt-get install stress-ng`):
       ```
-      stress-ng --cpu 4 --timeout 300s
+      stress-ng --cpu 1 --cpu-load 80 --timeout 300s
       ```
       This will stress 4 CPU cores for 5 minutes, which should trigger the alert.
       
