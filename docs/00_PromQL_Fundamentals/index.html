@@ -281,39 +281,10 @@ These aggregation functions are the building blocks for more complex queries and
 
             <section data-markdown>
                 <textarea data-template>
-                    ## Challenge Solution
-                    
-                    ```promql
-                    # Count CPU cores (simpler approach)
-                    count without(mode) (node_cpu_seconds_total{instance="localhost:9100",mode="idle"})
-                    ```
-                    
-                    * `without` preserves all labels except those specified
-                    * Alternatively, use `by` to specify which labels to keep
-                    * Great for counting distinct entities
-                    
-<aside class="notes">
-Now let's look at how to solve a common challenge - counting the number of CPU cores on a system.
-
-This solution uses the count() function, but with a special modifier: "without". The "without" clause tells Prometheus which labels to remove during aggregation, preserving all others.
-
-In this case, we're saying "count the metrics, but don't differentiate between different CPUs or modes." This effectively counts each unique CPU core once, regardless of the different mode metrics it reports.
-
-The opposite of "without" is "by", which lets you specify which labels to keep instead of which ones to remove. For example, "count by (instance)" would count separately for each instance.
-
-This pattern of using count with label preservation is perfect for counting distinct entities like CPU cores, disks, network interfaces, or any other hardware component that reports multiple metrics.
-
-This is one of those tricks that, once you know it, you'll use all the time in your Prometheus work.
-</aside>
-                </textarea>
-            </section>
-
-            <section data-markdown>
-                <textarea data-template>
                     ## Challenge Solution (Alternative)
                     
                     ```promql
-                    # Count CPU cores (full explanation)
+                    # Count CPU cores (simpler, direct)
                     count by(instance) (node_cpu_seconds_total{instance="localhost:9100",mode="idle"})
                     ```
                     
@@ -322,7 +293,7 @@ This is one of those tricks that, once you know it, you'll use all the time in y
                     * Simple, direct approach that works on all systems
                     
 <aside class="notes">
-Here's an alternative solution to the CPU core counting problem. It's more direct and intuitive, especially for beginners.
+Now let's look at how to solve a common challenge - counting the number of CPU cores on a system. It's direct and intuitive for beginners.
 
 This approach uses the "by" clause with the count function to group by instance, while filtering for only the "idle" mode metrics. Since each CPU core reports an idle mode metric, this gives us exactly one entry per CPU core.
 
@@ -330,7 +301,34 @@ The advantage of this approach is its simplicity and clarity. It directly answer
 
 This is the kind of query you'll likely use in production dashboards and alerting rules where simplicity and reliability are important.
 
-Both this approach and the previous one illustrate how you can use PromQL's aggregation operators to extract meaningful information from your metrics beyond just their raw values.
+Both this approach and the next one illustrate how you can use PromQL's aggregation operators to extract meaningful information from your metrics beyond just their raw values.
+</aside>
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## Challenge Solution
+                    
+                    ```promql
+                    # Count CPU cores (more resilient)
+                    count without(mode, cpu) (node_cpu_seconds_total{instance="localhost:9100",mode="idle"})
+                    ```
+                    
+                    * `without` preserves all labels except those specified
+                    * Alternatively, use `by` to specify which labels to keep
+                    * Great for counting distinct entities
+                    
+<aside class="notes">
+This solution also uses the count() function, but with a special modifier: "without". The "without" clause tells Prometheus which labels to remove during aggregation, preserving all others.
+
+In this case, we're saying "count the metrics, but don't differentiate between different CPUs or modes." This effectively counts each unique CPU core once, regardless of the different mode metrics it reports.
+
+The opposite of "without" is "by", which lets you specify which labels to keep instead of which ones to remove. For example, "count by (instance)" would count separately for each instance.
+
+This pattern of using count with label preservation is perfect for counting distinct entities like CPU cores, disks, network interfaces, or any other hardware component that reports multiple metrics.
+
+This is one of those tricks that, once you know it, you'll use all the time in your Prometheus work.
 </aside>
                 </textarea>
             </section>
