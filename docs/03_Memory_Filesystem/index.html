@@ -306,6 +306,72 @@ The best dashboards tell a story - they don't just show numbers, but help you un
                 </textarea>
             </section>
 
+            <section data-markdown class="dense-content">
+                <textarea data-template>
+                    ## Challenge: Visualize as Gauges
+
+                    ![Grafana Gauge](https://grafana.com/media/docs/grafana/panels-visualizations/screenshot-gauge-visualization-v11.4.png)
+                    
+                    * Try visualizing memory and disk usage as gauges in Grafana
+                    * Gauge visualization is perfect for percentage metrics
+                    * Set appropriate thresholds for warning and critical levels
+                       
+<aside class="notes">
+Now, let's apply what we've learned with a practical challenge.
+
+Your task is to create gauge visualizations for memory and disk usage in Grafana. Gauge visualizations are perfect for percentage metrics like these because they provide an instant visual indicator of resource utilization.
+
+To complete this challenge, you'll need to:
+1. Create a new Grafana panel with the gauge visualization
+2. Use the memory usage percentage query we just created
+3. Set appropriate thresholds - perhaps green for normal usage (0-70%), yellow for warning levels (70-85%), and red for critical levels (85-100%)
+4. Repeat the process for disk usage with similar thresholds
+
+Gauges are particularly effective for metrics with well-defined thresholds. They allow operators to quickly assess system health without needing to interpret line graphs. When a gauge is in the red zone, it immediately communicates that attention is needed.
+
+Give it a try, and we'll review a solution in a moment.
+</aside>
+                </textarea>
+            </section>
+
+            <section data-markdown class="dense-content">
+                <textarea data-template>
+                    ## Solution
+                    
+                    ```
+                    # Memory Usage Gauge Query:
+                    100 * (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes))
+                    ```
+
+                    ```
+                    # Disk Usage Gauge Query:
+                    100 * (1 - (
+                        node_filesystem_free_bytes{mountpoint="/"} / 
+                        node_filesystem_size_bytes{mountpoint="/"}
+                    ))
+                    ```
+                    
+                    * Set thresholds:
+                      * Green: 0-70%
+                      * Yellow: 70-85%
+                      * Red: 85-100%
+                    
+<aside class="notes">
+Here's how you would implement the solution to our gauge visualization challenge.
+
+For the memory usage gauge, you'd use the query we created earlier to calculate the percentage of memory used. The thresholds provide a clear visual indication: green means normal usage, yellow indicates you're getting close to capacity, and red means you're at risk of memory pressure issues.
+
+For the disk usage gauge, we follow a similar pattern, calculating the percentage of disk space used on the root filesystem. Again, we use color-coded thresholds to make the visualization immediately actionable.
+
+In a production environment, you might even connect these gauges to alerting rules. For example, you could set up an alert to trigger when memory usage exceeds 85% for more than 10 minutes.
+
+Arranging these gauges side by side on your dashboard gives you an at-a-glance overview of your system's resource usage. This is especially valuable for operators who need to quickly assess system health across many servers.
+
+Remember, effective monitoring isn't just about collecting data - it's about presenting it in a way that enables quick, informed decisions. Gauge visualizations are one powerful tool in that toolkit.
+</aside>
+                </textarea>
+            </section>
+
             <section data-markdown>
                 <textarea data-template>
                     ## Continue Learning
@@ -328,26 +394,32 @@ Any questions before we wrap up this session?
 </aside>
                 </textarea>
             </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    # 🌟 Great job!
+
+                    <small>Navigate: [All Slides](../index.html) | [Next Lab](../04_Network_Load/index.html)</small>
+                    
+<aside class="notes">
+Great job completing Lab 3 on Memory and Filesystem Usage!
+
+You've now expanded your PromQL toolkit to include memory and filesystem metrics, which are essential components of system monitoring. You can calculate usage percentages for both memory and disk space, and you know how to visualize these effectively in Grafana.
+
+These skills build on what you learned in the previous CPU-focused labs, giving you a more comprehensive view of system resources. Memory, disk, and CPU metrics together provide a complete picture of system health and performance.
+
+In the next lab, we'll round out your core monitoring skills by exploring network metrics and system load. We'll also introduce some more advanced aggregation techniques that will help you handle metrics at scale.
+
+I encourage you to continue to Lab 4 to build on what you've learned. If you want to explore other topics first, you can always return to the Slides Index.
+
+Any questions before we move on?
+</aside>
+                </textarea>
+            </section>
         </div>
     </div>
     
-    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/dist/reveal.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/markdown/markdown.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/highlight/highlight.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/notes/notes.js"></script>
-    <script>
-        Reveal.initialize({
-            hash: true,
-            transition: 'none', // Disable slide animations
-            plugins: [RevealMarkdown, RevealHighlight, RevealNotes],
-            highlight: {
-                highlightOnLoad: true,
-                languages: ['promql']
-            }
-        });
-    </script>
-    
-    <!-- Grafana logo in the corner -->
-    <img src="../images/grafana_icon.svg" alt="Grafana" class="grafana-logo">
+    <!-- Include common scripts -->
+    <script src="../common-scripts.js"></script>
 </body>
 </html>

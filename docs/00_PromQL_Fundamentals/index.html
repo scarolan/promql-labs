@@ -281,7 +281,7 @@ These aggregation functions are the building blocks for more complex queries and
 
             <section data-markdown>
                 <textarea data-template>
-                    ## Challenge Solution (Simple)
+                    ## Solution (Simple)
                     
                     ```promql
                     # Count CPU cores (simpler, direct)
@@ -308,7 +308,7 @@ Both this approach and the next one illustrate how you can use PromQL's aggregat
 
             <section data-markdown>
                 <textarea data-template>
-                    ## Challenge Solution (Advanced)
+                    ## Solution (Advanced)
                     
                     ```promql
                     # Count CPU cores (more resilient)
@@ -391,23 +391,7 @@ Any questions before we wrap up this session?
         </div>
     </div>
     
-    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/dist/reveal.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/markdown/markdown.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/highlight/highlight.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/notes/notes.js"></script>
-    <script>
-        Reveal.initialize({
-            hash: true,
-            transition: 'none', // Disable slide animations
-            plugins: [RevealMarkdown, RevealHighlight, RevealNotes],
-            highlight: {
-                highlightOnLoad: true,
-                languages: ['promql']
-            }
-        });
-    </script>
-    
-    <!-- Grafana logo in the corner -->
-    <img src="../images/grafana_icon.svg" alt="Grafana" class="grafana-logo">
+    <!-- Include common scripts -->
+    <script src="../common-scripts.js"></script>
 </body>
 </html>

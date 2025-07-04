@@ -24,6 +24,17 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install requests
+          
+      - name: Check query coverage
+        run: |
+          cd Tests
+          echo "Checking that all PromQL queries in labs have tests..."
+          python check_query_coverage.py
+          if [ $? -ne 0 ]; then
+            echo "❌ Some PromQL queries in labs don't have tests"
+            exit 1
+          fi
+          echo "✅ All PromQL queries in labs have tests"
       
       - name: Download and setup Prometheus
         run: |
@@ -155,17 +166,6 @@ jobs:
         run: |
           echo "Waiting 30 seconds for metrics to be collected..."
           sleep 30
-      
-      - name: Check query coverage
-        run: |
-          cd Tests
-          echo "Checking that all PromQL queries in labs have tests..."
-          python check_query_coverage.py
-          if [ $? -ne 0 ]; then
-            echo "❌ Some PromQL queries in labs don't have tests"
-            exit 1
-          fi
-          echo "✅ All PromQL queries in labs have tests"
       
       - name: Run PromQL tests
         run: |
