@@ -134,22 +134,22 @@ This query:
 ### 3. Compare median and 95th percentile side by side:
 
 ```promql
-# Median and 95th percentile latencies as separate time series
-{
-  quantile="0.5",
-  value=histogram_quantile(0.5, sum by(le) (rate(prometheus_http_request_duration_seconds_bucket[5m])))
-} or
-{
-  quantile="0.95",
-  value=histogram_quantile(0.95, sum by(le) (rate(prometheus_http_request_duration_seconds_bucket[5m])))
-}
+# Median and 95th percentile latencies side-by-side
+label_replace(
+  histogram_quantile(0.5, sum by(le) (rate(prometheus_http_request_duration_seconds_bucket[5m]))), 
+  "quantile", "0.5", "", ""
+) or label_replace(
+  histogram_quantile(0.95, sum by(le) (rate(prometheus_http_request_duration_seconds_bucket[5m]))),
+  "quantile", "0.95", "", ""
+)
 ```
 
 This query:
-- Uses the `or` operator to combine two separate quantile calculations
-- Labels each with its respective quantile value (0.5 or 0.95)
-- Allows for side-by-side comparison between median and 95th percentile performance
-- Helps visualize the difference between typical and worst-case scenarios
+- Calculates both the median (0.5) and 95th percentile (0.95) latencies
+- Uses `label_replace` to add a "quantile" label to each result
+- Uses the `or` operator to combine the two time series
+- Allows for easy comparison between typical and worst-case performance
+- Helps visualize the difference between median and high percentile latencies
 
 This analysis helps you understand:
 - Which endpoints are consistently slow (high median latency)

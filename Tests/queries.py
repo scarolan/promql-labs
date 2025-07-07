@@ -381,7 +381,7 @@ lab9_queries = [
     },
     {
         "name": "Median and 95th percentile comparison",
-        "query": "{quantile=\"0.5\",value=histogram_quantile(0.5, sum by(le) (rate(prometheus_http_request_duration_seconds_bucket[5m])))} or {quantile=\"0.95\",value=histogram_quantile(0.95, sum by(le) (rate(prometheus_http_request_duration_seconds_bucket[5m])))}",
+        "query": "label_replace(histogram_quantile(0.5, sum by(le) (rate(prometheus_http_request_duration_seconds_bucket[5m]))), \"quantile\", \"0.5\", \"\", \"\") or label_replace(histogram_quantile(0.95, sum by(le) (rate(prometheus_http_request_duration_seconds_bucket[5m]))), \"quantile\", \"0.95\", \"\", \"\")",
         "expected_type": "vector"
     }
 ]
