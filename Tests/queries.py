@@ -370,13 +370,18 @@ lab9_queries = [
         "expected_type": "vector"
     },
     {
-        "name": "CPU usage synthetic histogram",
-        "query": "sum(count_values(\"le\", floor(clamp_max(100 * (1 - (avg by (instance) (rate(node_cpu_seconds_total{instance=\"$INSTANCE\",mode=\"idle\"}[5m])) / count by (instance) (node_cpu_seconds_total{instance=\"$INSTANCE\",mode=\"idle\"}))), 100) / 5) * 5)) by (le)",
+        "name": "90th percentile latency by handler",
+        "query": "histogram_quantile(0.90, sum by(handler, le) (rate(prometheus_http_request_duration_seconds_bucket[5m])))",
         "expected_type": "vector"
     },
     {
-        "name": "CPU usage bucketed into 5% ranges",
-        "query": "floor(clamp_max(100 * (1 - (avg by (instance) (rate(node_cpu_seconds_total{instance=\"$INSTANCE\",mode=\"idle\"}[5m])) / count by (instance) (node_cpu_seconds_total{instance=\"$INSTANCE\",mode=\"idle\"}))), 100) / 5) * 5",
+        "name": "Percentage of fast requests by handler",
+        "query": "(sum by (handler) (rate(prometheus_http_request_duration_seconds_bucket{le=\"0.1\"}[5m])) / sum by (handler) (rate(prometheus_http_request_duration_seconds_count[5m]))) * 100",
+        "expected_type": "vector"
+    },
+    {
+        "name": "Median and 95th percentile comparison",
+        "query": "{quantile=\"0.5\",value=histogram_quantile(0.5, sum by(le) (rate(prometheus_http_request_duration_seconds_bucket[5m])))} or {quantile=\"0.95\",value=histogram_quantile(0.95, sum by(le) (rate(prometheus_http_request_duration_seconds_bucket[5m])))}",
         "expected_type": "vector"
     }
 ]

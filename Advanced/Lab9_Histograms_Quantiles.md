@@ -88,56 +88,73 @@
    > ```
 
 ## Challenge
-- Create a heatmap-compatible query that shows the distribution of CPU usage over time using quantiles.
-- Bonus: Try visualizing your query in Grafana's heatmap panel if you have access to Grafana.
+
+Create queries to analyze the behavior of Prometheus's HTTP API using the histogram metrics from `prometheus_http_request_duration_seconds_bucket` that you've already explored.
+
+1. Compare the 90th percentile latency for different handlers to identify which endpoints are the slowest
+2. Find the percentage of requests that take less than 0.1s for each handler
+3. Create a query that shows both the median (50th) and 95th percentile latencies side by side
 
 <details>
 <summary>🧩 <b>Show Solution</b></summary>
 
-Creating a heatmap of CPU usage quantiles involves synthetic bucketing since CPU metrics aren't typically stored as histograms. Here's how to do it:
+### 1. Compare 90th percentile latency by handler:
 
-1. **Create synthetic buckets from CPU usage:**
+```promql
+# 90th percentile latency by handler
+histogram_quantile(0.90, 
+  sum by(handler, le) (
+    rate(prometheus_http_request_duration_seconds_bucket[5m])
+  )
+)
+```
 
-   ```promql
-   # Create CPU usage buckets using floor function for 5% increments
-   floor(
-     clamp_max(
-       100 * (1 - (avg by (instance) (rate(node_cpu_seconds_total{instance="localhost:9100",mode="idle"}[5m])) / 
-       count by (instance) (node_cpu_seconds_total{instance="localhost:9100",mode="idle"}))),
-       100
-     ) / 5
-   ) * 5
-   ```
+This query:
+- Groups by handler and bucket boundary (`le`)
+- Calculates the rate of requests in each bucket
+- Uses histogram_quantile to compute the 90th percentile for each handler
+- Allows you to easily compare performance across different endpoints
 
-   This query:
-   - Calculates CPU usage as a percentage
-   - Uses `clamp_max` to ensure no values exceed 100%
-   - Uses `floor` and multiplication to create synthetic buckets with 5% increments (0, 5, 10, 15, etc.)
+### 2. Percentage of fast requests (<0.1s) by handler:
 
-2. **For a proper heatmap in Grafana:**
+```promql
+# Percentage of requests under 0.1s by handler
+(
+  sum by (handler) (rate(prometheus_http_request_duration_seconds_bucket{le="0.1"}[5m])) /
+  sum by (handler) (rate(prometheus_http_request_duration_seconds_count[5m]))
+) * 100
+```
 
-   ```promql
-   # Create a histogram from CPU usage data for heatmap visualization
-   sum(count_values("le", floor(clamp_max(100 * (1 - (avg by (instance) (rate(node_cpu_seconds_total{instance="localhost:9100",mode="idle"}[5m])) / count by (instance) (node_cpu_seconds_total{instance="localhost:9100",mode="idle"}))), 100) / 5) * 5)) by (le)
-   ```
+This query:
+- Calculates what percentage of requests complete within 0.1 seconds for each handler
+- Divides the count of requests in buckets under 0.1s by the total count
+- Multiplies by 100 to get a percentage
+- Helps identify which endpoints consistently provide fast responses
 
-   This query:
-   - Creates CPU usage buckets with 5% granularity (0-5%, 5-10%, etc.)
-   - Groups the values using `count_values` with the bucket upper bound as the label
-   - Aggregates the counts by bucket, creating a histogram-like structure
-   
-   **Understanding the Components:**
-   - `clamp_max(..., 100)`: Ensures values don't exceed 100%
-   - `floor(.../ 5) * 5`: Rounds down to nearest 5% increment
-   - `count_values("le", ...)`: Groups by bucket boundary and counts occurrences
-   - `sum(...) by (le)`: Aggregates the counts per bucket
+### 3. Compare median and 95th percentile side by side:
 
-3. **In Grafana:**
-   - Use this query with a heatmap visualization
-   - Set "Format as" to "Time series buckets"
-   - Set the bucket bounds from the query metric labels
+```promql
+# Median and 95th percentile latencies as separate time series
+{
+  quantile="0.5",
+  value=histogram_quantile(0.5, sum by(le) (rate(prometheus_http_request_duration_seconds_bucket[5m])))
+} or
+{
+  quantile="0.95",
+  value=histogram_quantile(0.95, sum by(le) (rate(prometheus_http_request_duration_seconds_bucket[5m])))
+}
+```
 
-This approach creates a heatmap showing the distribution of CPU usage over time, with color intensity indicating frequency of observations in each range.
+This query:
+- Uses the `or` operator to combine two separate quantile calculations
+- Labels each with its respective quantile value (0.5 or 0.95)
+- Allows for side-by-side comparison between median and 95th percentile performance
+- Helps visualize the difference between typical and worst-case scenarios
+
+This analysis helps you understand:
+- Which endpoints are consistently slow (high median latency)
+- Which endpoints have inconsistent performance (large gap between median and 95th percentile)
+- Which endpoints meet your latency SLOs and which need optimization
 
 </details>
 
