@@ -129,17 +129,16 @@ Use `on()` when you know exactly which labels should match. Use `ignoring()` whe
                     
                     When left side has higher cardinality
                     
-                    **Example: Root filesystem usage with context**
+                    **Example: Network bandwidth per GB of system memory**
                     ```promql
-                    (node_filesystem_size_bytes{instance="localhost:9100",fstype="ext4",mountpoint="/"} - 
-                     node_filesystem_free_bytes{instance="localhost:9100",fstype="ext4",mountpoint="/"}) / 
-                    on(instance) group_left(mountpoint) 
-                    node_filesystem_size_bytes{instance="localhost:9100",fstype="ext4",mountpoint="/"} * 100
+                    rate(node_network_receive_bytes_total{instance="localhost:9100",device!~"lo|veth.*"}[5m]) / 
+                    on(instance) group_left(device) 
+                    (node_memory_MemTotal_bytes{instance="localhost:9100"} / 1024^3)
                     ```
                     
                     **Preserves labels from the left (many) side**
                     
-                    *Note: We filter to root filesystem to avoid many-to-many matching*
+                    *Shows network throughput context relative to available memory*
                     
 <aside class="notes">
 Many-to-one joins occur when the left side has multiple time series per instance, but the right side has only one.
@@ -150,18 +149,18 @@ The `group_left(mountpoint)` clause tells PromQL:
 <aside class="notes">
 Many-to-one joins occur when the left side has multiple time series per instance, but the right side has only one.
 
-In this example, we're calculating filesystem usage percentage. The left side has multiple filesystem entries per instance (one per mounted filesystem), while we want to preserve the filesystem-specific labels like `mountpoint`.
+This example shows network receive rate per GB of total system memory. The left side has multiple network interfaces per instance (eth0, docker0, etc.), while the right side has one memory total value per instance.
 
-The `group_left(mountpoint)` clause tells PromQL:
-1. This is a many-to-one join (many filesystems to one instance)
-2. Preserve the `mountpoint` label from the left side
+The `group_left(device)` clause tells PromQL:
+1. This is a many-to-one join (many network interfaces to one memory value)
+2. Preserve the `device` label from the left side
 3. The left side has higher cardinality
 
-We filter to the root filesystem (`mountpoint="/"`) to avoid many-to-many matching issues when multiple ext4 filesystems exist (like / and /boot in some environments).
+This type of analysis is useful for understanding network capacity relative to system resources. High values might indicate network-intensive workloads that could benefit from more memory for buffering, while low values suggest the network isn't fully utilizing available system capacity.
 
-Without `group_left`, this query would fail because PromQL wouldn't know how to handle the cardinality mismatch.
+We filter out loopback and virtual interfaces with `device!~"lo|veth.*"` to focus on physical network interfaces.
 
-The result preserves the granular filesystem information while allowing you to correlate with instance-level metadata. This pattern is common when you want to maintain detailed breakdowns while adding context from aggregated metrics.
+Without `group_left`, this query would fail because PromQL wouldn't know how to handle the cardinality mismatch between multiple network interfaces and single memory value.
 </aside>
                 </textarea>
             </section>

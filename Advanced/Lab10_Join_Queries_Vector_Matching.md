@@ -29,13 +29,13 @@
 
 ### Part 2: Many-to-One Joins with group_left
 
-3. **Join filesystem metrics with system info using `group_left`:**
+3. **Join network metrics with system memory using `group_left`:**
    ```promql
-   # Root filesystem usage percentage with instance metadata
-   (node_filesystem_size_bytes{instance="localhost:9100",fstype="ext4",mountpoint="/"} - node_filesystem_free_bytes{instance="localhost:9100",fstype="ext4",mountpoint="/"}) / on(instance) group_left(mountpoint) node_filesystem_size_bytes{instance="localhost:9100",fstype="ext4",mountpoint="/"} * 100
+   # Network bandwidth per GB of system memory
+   rate(node_network_receive_bytes_total{instance="localhost:9100",device!~"lo|veth.*"}[5m]) / on(instance) group_left(device) (node_memory_MemTotal_bytes{instance="localhost:9100"} / 1024^3)
    ```
    
-   > **Explanation:** `group_left(mountpoint)` allows a many-to-one join where the left side (filesystem used space) can have multiple entries per instance, while the right side provides the context. The `mountpoint` label is preserved from the left side. We filter to just the root filesystem (`mountpoint="/"`) to avoid many-to-many matching issues when multiple ext4 filesystems exist.
+   > **Explanation:** `group_left(device)` allows a many-to-one join where the left side (network interfaces) can have multiple entries per instance, while the right side provides the system memory context. The `device` label is preserved from the left side. This shows network throughput efficiency relative to available memory resources.
 
 4. **CPU usage per core with system metadata:**
    ```promql
