@@ -156,6 +156,8 @@ The `group_left()` clause tells PromQL:
 2. Preserve the `device` label from the left side
 3. The left side has higher cardinality
 
+**Note:** In our small lab environment, this example may seem contrived with limited network traffic and simple interface setup. However, this query pattern is extremely valuable in production environments with high network throughput, multiple physical interfaces, and varying memory configurations across different instance types.
+
 This type of analysis is useful for understanding network capacity relative to system resources. High values might indicate network-intensive workloads that could benefit from more memory for buffering, while low values suggest the network isn't fully utilizing available system capacity.
 
 We filter out loopback and virtual interfaces with `device!~"lo|veth.*"` to focus on physical network interfaces.
@@ -230,6 +232,8 @@ The query works by:
 2. Then dividing by memory utilization using another `on(instance)` join
 3. Both joins happen on the same label, creating a comprehensive efficiency metric
 
+**Lab Environment Note:** In our simple lab setup, these efficiency calculations may produce predictable results due to minimal system load. In production environments with varying workloads, diverse instance types, and fluctuating resource usage, these composite metrics become invaluable for identifying performance patterns and capacity planning opportunities.
+
 This pattern is powerful for creating custom business metrics that combine multiple infrastructure components. You can extend this concept to include network throughput, disk I/O, or any other metrics relevant to your specific use case.
 
 The key is ensuring all joins happen on consistent labels and understanding the relationships between your metrics.
@@ -265,6 +269,8 @@ This example identifies instances where BOTH conditions are true:
 The `and on(instance)` operator ensures both conditions must be true for the same instance. This creates a more specific alert that only triggers during genuine resource contention, reducing false positives from temporary spikes in individual resources.
 
 Without the join, you might get alerts when CPU is high but memory is fine, or when memory is high but CPU is idle. This boolean join creates a "resource exhaustion" alert that's much more actionable.
+
+**Important:** In our lab environment, these alerting conditions may not trigger due to low system activity. However, the query syntax and logic demonstrated here are exactly what you'd use in production environments where such conditions are more likely to occur under real workloads.
 
 This pattern is essential for:
 - Reducing alert fatigue by creating more specific conditions
@@ -386,6 +392,8 @@ The requirements break down the problem:
 4. Design the scoring so lower numbers indicate better efficiency
 
 The bonus challenge asks you to normalize by system capacity. This makes the score meaningful across different instance sizes - a small instance with 2 cores should be comparable to a large instance with 16 cores.
+
+**Lab Environment Reality:** Keep in mind that our lab environment has minimal activity, so your efficiency scores might not be very dramatic. The real value is in learning the query patterns and join techniques that will be powerful when applied to busy production systems with varying workloads and resource utilization.
 
 This exercise will require multiple joins with `on(instance)` clauses and careful consideration of how to combine different metric types into a meaningful composite score.
 
