@@ -1,4 +1,4 @@
-Query Test Results - 2025-07-04 15:20:55.285692
+Query Test Results - 2025-08-14 09:29:22.959605
 
 Basic metric query - PASS
 Query: node_memory_MemTotal_bytes
@@ -135,7 +135,7 @@ Query: 100 * (1 - (avg by (instance) (rate(node_cpu_seconds_total{instance="loca
 Alert expression simulation - PASS (ALERT NO DATA)
 Query: 100 * (1 - (avg by (instance) (rate(node_cpu_seconds_total{instance="localhost:9100",mode="idle"}[5m])) / count by (instance) (node_cpu_seconds_total{instance="localhost:9100",mode="idle"}))) > 80
 
-CPU recording rule query - PASS
+CPU recording rule query - NO DATA
 Query: instance:node_cpu_usage:percent{instance="localhost:9100"}
 
 Label replace function - PASS
@@ -198,14 +198,53 @@ Query: deriv(node_memory_Active_bytes{instance="localhost:9100"}[5m])
 Linear prediction - PASS
 Query: predict_linear(node_memory_Active_bytes{instance="localhost:9100"}[5m], 300)
 
-CPU usage synthetic histogram - PASS
-Query: sum(count_values("le", floor(clamp_max(100 * (1 - (avg by (instance) (rate(node_cpu_seconds_total{instance="localhost:9100",mode="idle"}[5m])) / count by (instance) (node_cpu_seconds_total{instance="localhost:9100",mode="idle"}))), 100) / 5) * 5)) by (le)
+90th percentile latency by handler - PASS
+Query: histogram_quantile(0.90, sum by(handler, le) (rate(prometheus_http_request_duration_seconds_bucket[5m])))
 
-CPU usage bucketed into 5% ranges - PASS
-Query: floor(clamp_max(100 * (1 - (avg by (instance) (rate(node_cpu_seconds_total{instance="localhost:9100",mode="idle"}[5m])) / count by (instance) (node_cpu_seconds_total{instance="localhost:9100",mode="idle"}))), 100) / 5) * 5
+Percentage of fast requests by handler - PASS
+Query: (sum by (handler) (rate(prometheus_http_request_duration_seconds_bucket{le="0.1"}[5m])) / sum by (handler) (rate(prometheus_http_request_duration_seconds_count[5m]))) * 100
+
+Median and 95th percentile comparison - PASS
+Query: label_replace(histogram_quantile(0.5, sum by(le) (rate(prometheus_http_request_duration_seconds_bucket[5m]))), "quantile", "0.5", "", "") or label_replace(histogram_quantile(0.95, sum by(le) (rate(prometheus_http_request_duration_seconds_bucket[5m]))), "quantile", "0.95", "", "")
+
+Load per CPU core (one-to-one join) - PASS
+Query: node_load1{instance="localhost:9100"} / on(instance) count by(instance) (node_cpu_seconds_total{instance="localhost:9100",mode="idle"})
+
+Memory total to available ratio (ignoring join) - PASS
+Query: node_memory_MemTotal_bytes{instance="localhost:9100"} / ignoring(job) node_memory_MemAvailable_bytes{instance="localhost:9100"}
+
+Filesystem usage percentage (group_left) - PASS
+Query: (node_filesystem_size_bytes{instance="localhost:9100",fstype="ext4",mountpoint="/"} - node_filesystem_free_bytes{instance="localhost:9100",fstype="ext4",mountpoint="/"}) / on(instance) group_left(mountpoint) node_filesystem_size_bytes{instance="localhost:9100",fstype="ext4",mountpoint="/"} * 100
+
+CPU usage per core (group_left) - NO DATA
+Query: rate(node_cpu_seconds_total{instance="localhost:9100",mode!="idle"}[5m]) / on(instance) group_left(cpu) (rate(node_cpu_seconds_total{instance="localhost:9100",mode!="idle"}[5m]) + rate(node_cpu_seconds_total{instance="localhost:9100",mode="idle"}[5m]))
+
+Memory total with filesystem context (group_right) - PASS
+Query: node_memory_MemTotal_bytes{instance="localhost:9100"} / on(instance) group_right(mountpoint,fstype) node_filesystem_size_bytes{instance="localhost:9100"}
+
+CPU and memory efficiency ratio - PASS
+Query: (node_load1{instance="localhost:9100"} / on(instance) count by(instance) (node_cpu_seconds_total{instance="localhost:9100",mode="idle"})) / on(instance) (node_memory_MemAvailable_bytes{instance="localhost:9100"} / node_memory_MemTotal_bytes{instance="localhost:9100"})
+
+Network throughput per CPU core - PASS
+Query: sum by(instance) (rate(node_network_transmit_bytes_total{instance="localhost:9100",device!="lo"}[5m])) / on(instance) count by(instance) (node_cpu_seconds_total{instance="localhost:9100",mode="idle"})
+
+Filesystem space as percentage of memory - PASS
+Query: (node_filesystem_free_bytes{instance="localhost:9100",mountpoint="/"} / on(instance) node_memory_MemTotal_bytes{instance="localhost:9100"}) * 100
+
+Boolean join - high load AND high memory - PASS (ALERT NO DATA)
+Query: (node_load1{instance="localhost:9100"} > on(instance) count by(instance) (node_cpu_seconds_total{instance="localhost:9100",mode="idle"})) and on(instance) ((node_memory_MemTotal_bytes{instance="localhost:9100"} - node_memory_MemAvailable_bytes{instance="localhost:9100"}) / node_memory_MemTotal_bytes{instance="localhost:9100"} > 0.8)
+
+Efficient aggregation before join - PASS
+Query: avg by(instance) (rate(node_cpu_seconds_total{instance="localhost:9100",mode!="idle"}[5m])) / on(instance) (node_memory_MemAvailable_bytes{instance="localhost:9100"} / node_memory_MemTotal_bytes{instance="localhost:9100"})
+
+Multi-metric efficiency score - NO DATA
+Query: ((100 * (1 - avg by(instance) (rate(node_cpu_seconds_total{instance="localhost:9100",mode="idle"}[5m])))) + (100 * (1 - (node_memory_MemAvailable_bytes{instance="localhost:9100"} / node_memory_MemTotal_bytes{instance="localhost:9100"}))) + (sum by(instance) (rate(node_network_transmit_bytes_total{instance="localhost:9100",device!="lo"}[5m])) / 1024 / 1024)) / on(instance) (count by(instance) (node_cpu_seconds_total{instance="localhost:9100",mode="idle"}) + (node_memory_MemTotal_bytes{instance="localhost:9100"} / 1024 / 1024 / 1024))
+
+Simple efficiency ratio - PASS
+Query: node_load1{instance="localhost:9100"} / on(instance) (node_memory_MemAvailable_bytes{instance="localhost:9100"} / 1024 / 1024 / 1024)
 
 ===== Test Summary =====
-Total queries: 68
-Passed: 68
+Total queries: 81
+Passed: 81
 Failed: 0
 Success rate: 100.0%

@@ -386,6 +386,70 @@ lab9_queries = [
     }
 ]
 
+# Lab 10 - Join Queries & Vector Matching
+lab10_queries = [
+    {
+        "name": "Load per CPU core (one-to-one join)",
+        "query": "node_load1{instance=\"$INSTANCE\"} / on(instance) count by(instance) (node_cpu_seconds_total{instance=\"$INSTANCE\",mode=\"idle\"})",
+        "expected_type": "vector"
+    },
+    {
+        "name": "Memory total to available ratio (ignoring join)",
+        "query": "node_memory_MemTotal_bytes{instance=\"$INSTANCE\"} / ignoring(job) node_memory_MemAvailable_bytes{instance=\"$INSTANCE\"}",
+        "expected_type": "vector"
+    },
+    {
+        "name": "Filesystem usage percentage (group_left)",
+        "query": "(node_filesystem_size_bytes{instance=\"$INSTANCE\",fstype=\"ext4\",mountpoint=\"/\"} - node_filesystem_free_bytes{instance=\"$INSTANCE\",fstype=\"ext4\",mountpoint=\"/\"}) / on(instance) group_left(mountpoint) node_filesystem_size_bytes{instance=\"$INSTANCE\",fstype=\"ext4\",mountpoint=\"/\"} * 100",
+        "expected_type": "vector"
+    },
+    {
+        "name": "CPU usage per core (group_left)",
+        "query": "rate(node_cpu_seconds_total{instance=\"$INSTANCE\",mode!=\"idle\"}[5m]) / on(instance) group_left(cpu) (rate(node_cpu_seconds_total{instance=\"$INSTANCE\",mode!=\"idle\"}[5m]) + rate(node_cpu_seconds_total{instance=\"$INSTANCE\",mode=\"idle\"}[5m]))",
+        "expected_type": "vector"
+    },
+    {
+        "name": "Memory total with filesystem context (group_right)",
+        "query": "node_memory_MemTotal_bytes{instance=\"$INSTANCE\"} / on(instance) group_right(mountpoint,fstype) node_filesystem_size_bytes{instance=\"$INSTANCE\"}",
+        "expected_type": "vector"
+    },
+    {
+        "name": "CPU and memory efficiency ratio",
+        "query": "(node_load1{instance=\"$INSTANCE\"} / on(instance) count by(instance) (node_cpu_seconds_total{instance=\"$INSTANCE\",mode=\"idle\"})) / on(instance) (node_memory_MemAvailable_bytes{instance=\"$INSTANCE\"} / node_memory_MemTotal_bytes{instance=\"$INSTANCE\"})",
+        "expected_type": "vector"
+    },
+    {
+        "name": "Network throughput per CPU core",
+        "query": "sum by(instance) (rate(node_network_transmit_bytes_total{instance=\"$INSTANCE\",device!=\"lo\"}[5m])) / on(instance) count by(instance) (node_cpu_seconds_total{instance=\"$INSTANCE\",mode=\"idle\"})",
+        "expected_type": "vector"
+    },
+    {
+        "name": "Filesystem space as percentage of memory",
+        "query": "(node_filesystem_free_bytes{instance=\"$INSTANCE\",mountpoint=\"/\"} / on(instance) node_memory_MemTotal_bytes{instance=\"$INSTANCE\"}) * 100",
+        "expected_type": "vector"
+    },
+    {
+        "name": "Boolean join - high load AND high memory",
+        "query": "(node_load1{instance=\"$INSTANCE\"} > on(instance) count by(instance) (node_cpu_seconds_total{instance=\"$INSTANCE\",mode=\"idle\"})) and on(instance) ((node_memory_MemTotal_bytes{instance=\"$INSTANCE\"} - node_memory_MemAvailable_bytes{instance=\"$INSTANCE\"}) / node_memory_MemTotal_bytes{instance=\"$INSTANCE\"} > 0.8)",
+        "expected_type": "vector"
+    },
+    {
+        "name": "Efficient aggregation before join",
+        "query": "avg by(instance) (rate(node_cpu_seconds_total{instance=\"$INSTANCE\",mode!=\"idle\"}[5m])) / on(instance) (node_memory_MemAvailable_bytes{instance=\"$INSTANCE\"} / node_memory_MemTotal_bytes{instance=\"$INSTANCE\"})",
+        "expected_type": "vector"
+    },
+    {
+        "name": "Multi-metric efficiency score",
+        "query": "((100 * (1 - avg by(instance) (rate(node_cpu_seconds_total{instance=\"$INSTANCE\",mode=\"idle\"}[5m])))) + (100 * (1 - (node_memory_MemAvailable_bytes{instance=\"$INSTANCE\"} / node_memory_MemTotal_bytes{instance=\"$INSTANCE\"}))) + (sum by(instance) (rate(node_network_transmit_bytes_total{instance=\"$INSTANCE\",device!=\"lo\"}[5m])) / 1024 / 1024)) / on(instance) (count by(instance) (node_cpu_seconds_total{instance=\"$INSTANCE\",mode=\"idle\"}) + (node_memory_MemTotal_bytes{instance=\"$INSTANCE\"} / 1024 / 1024 / 1024))",
+        "expected_type": "vector"
+    },
+    {
+        "name": "Simple efficiency ratio",
+        "query": "node_load1{instance=\"$INSTANCE\"} / on(instance) (node_memory_MemAvailable_bytes{instance=\"$INSTANCE\"} / 1024 / 1024 / 1024)",
+        "expected_type": "vector"
+    }
+]
+
 # All queries combined
 all_queries = (
     lab0_queries + 
@@ -397,5 +461,6 @@ all_queries = (
     lab6_queries +
     lab7_queries +
     lab8_queries +
-    lab9_queries
+    lab9_queries +
+    lab10_queries
 )
