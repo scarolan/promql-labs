@@ -399,8 +399,8 @@ lab10_queries = [
         "expected_type": "vector"
     },
     {
-        "name": "Filesystem usage percentage (group_left)",
-        "query": "(node_filesystem_size_bytes{instance=\"$INSTANCE\",fstype=\"ext4\",mountpoint=\"/\"} - node_filesystem_free_bytes{instance=\"$INSTANCE\",fstype=\"ext4\",mountpoint=\"/\"}) / on(instance) group_left(mountpoint) node_filesystem_size_bytes{instance=\"$INSTANCE\",fstype=\"ext4\",mountpoint=\"/\"} * 100",
+        "name": "Network bandwidth per GB memory (group_left)",
+        "query": "rate(node_network_receive_bytes_total{instance=\"$INSTANCE\",device!~\"lo|veth.*\"}[5m]) / on(instance) group_left() (node_memory_MemTotal_bytes{instance=\"$INSTANCE\"} / 1024^3)",
         "expected_type": "vector"
     },
     {
