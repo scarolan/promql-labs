@@ -1,4 +1,4 @@
-Query Test Results - 2025-08-14 09:29:22.959605
+Query Test Results - 2025-08-14 09:38:56.063464
 
 Basic metric query - PASS
 Query: node_memory_MemTotal_bytes
@@ -220,7 +220,7 @@ CPU usage per core (group_left) - NO DATA
 Query: rate(node_cpu_seconds_total{instance="localhost:9100",mode!="idle"}[5m]) / on(instance) group_left(cpu) (rate(node_cpu_seconds_total{instance="localhost:9100",mode!="idle"}[5m]) + rate(node_cpu_seconds_total{instance="localhost:9100",mode="idle"}[5m]))
 
 Memory total with filesystem context (group_right) - PASS
-Query: node_memory_MemTotal_bytes{instance="localhost:9100"} / on(instance) group_right(mountpoint,fstype) node_filesystem_size_bytes{instance="localhost:9100"}
+Query: node_memory_MemTotal_bytes{instance="localhost:9100"} / on(instance) group_right(mountpoint,fstype) node_filesystem_size_bytes{instance="localhost:9100",mountpoint="/"}
 
 CPU and memory efficiency ratio - PASS
 Query: (node_load1{instance="localhost:9100"} / on(instance) count by(instance) (node_cpu_seconds_total{instance="localhost:9100",mode="idle"})) / on(instance) (node_memory_MemAvailable_bytes{instance="localhost:9100"} / node_memory_MemTotal_bytes{instance="localhost:9100"})

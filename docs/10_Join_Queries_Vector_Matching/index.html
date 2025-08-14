@@ -1,0 +1,471 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Lab 10: Join Queries & Vector Matching</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/dist/reset.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/dist/reveal.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/dist/theme/night.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/highlight/monokai.css">
+    <link rel="stylesheet" href="../common.css">
+</head>
+<body>
+    <div class="reveal">
+        <div class="slides">
+            <section data-markdown>
+                <textarea data-template>
+                    # Lab 10: Join Queries & Vector Matching
+                    
+                    🔗 Advanced PromQL
+                    
+                    <small>Navigate: <a href="../index.html">All Slides</a></small>
+                    
+<aside class="notes">
+Welcome to Lab 10, where we'll master one of the most powerful and complex aspects of PromQL: join queries and vector matching.
+
+Vector matching allows us to combine multiple metrics in sophisticated ways, enabling complex analysis across different metric families. This is particularly important for understanding relationships between different system components and building comprehensive monitoring solutions.
+
+Join operations in PromQL are essential for correlating metrics, building composite dashboards, and performing advanced analysis that goes beyond single-metric queries. Today we'll explore different types of joins, learn about cardinality considerations, and build complex multi-metric queries.
+
+This knowledge is crucial for advanced monitoring scenarios where you need to understand how different system components interact and affect each other.
+</aside>
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## Objectives
+                    
+                    * Master PromQL join operations and vector matching
+                    * Learn different types of joins: one-to-one, one-to-many, many-to-one
+                    * Practice using `on()`, `ignoring()`, `group_left`, and `group_right`
+                    * Build complex queries that combine multiple metric families
+                    * Understand performance implications of join strategies
+                    
+<aside class="notes">
+Our objectives for this lab are comprehensive:
+
+First, we'll understand the fundamentals of vector matching in PromQL and when you need to use joins.
+
+Then we'll explore different types of joins - one-to-one matching for simple correlations, and one-to-many/many-to-one for more complex relationships.
+
+We'll practice the key PromQL operators: `on()` for specifying which labels to match, `ignoring()` for excluding labels from matching, and `group_left`/`group_right` for handling cardinality in complex joins.
+
+You'll learn to build sophisticated queries that combine CPU, memory, network, and filesystem metrics to create comprehensive system insights.
+
+Finally, we'll discuss performance considerations, as joins can be expensive operations that need careful planning in production environments.
+</aside>
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## Vector Matching Fundamentals
+                    
+                    When combining two vectors, PromQL needs to know how to match time series
+                    
+                    **Default matching:** All labels must be identical
+                    ```promql
+                    # This may not work as expected
+                    node_load1 / node_memory_MemTotal_bytes
+                    ```
+                    
+                    **Explicit matching:** Control which labels to consider
+                    ```promql
+                    # Match only on instance label
+                    node_load1 / on(instance) node_memory_MemTotal_bytes
+                    ```
+                    
+<aside class="notes">
+Let's start with the fundamentals. When you try to combine two vectors in PromQL, the system needs to determine which time series from the left side should be matched with which time series from the right side.
+
+By default, PromQL requires ALL labels to be identical for matching. This often doesn't work because different metric families may have different label sets.
+
+For example, `node_load1` might have labels like `{instance="localhost:9100", job="node"}`, while `node_memory_MemTotal_bytes` might have additional or different labels.
+
+The `on()` clause allows you to specify exactly which labels should be used for matching. In most cases, you'll match on the `instance` label since that identifies the specific machine or service.
+
+This explicit matching gives you precise control over how metrics are correlated, which is essential for building reliable monitoring queries.
+</aside>
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## One-to-One Matching
+                    
+                    Perfect for correlating metrics with same cardinality
+                    
+                    **Example: Load per CPU core**
+                    ```promql
+                    node_load1{instance="localhost:9100"} / on(instance) 
+                    count by(instance) (node_cpu_seconds_total{instance="localhost:9100",mode="idle"})
+                    ```
+                    
+                    **Using `ignoring()` instead of `on()`**
+                    ```promql
+                    node_memory_MemTotal_bytes{instance="localhost:9100"} / 
+                    ignoring(job) node_memory_MemAvailable_bytes{instance="localhost:9100"}
+                    ```
+                    
+<aside class="notes">
+One-to-one matching is the simplest type of join, where each time series on the left matches exactly one time series on the right.
+
+Our first example calculates load average per CPU core. We divide the 1-minute load average by the number of CPU cores. Both sides of this equation produce one value per instance, making it a perfect one-to-one match.
+
+The `count by(instance)` aggregation ensures we get exactly one value per instance representing the CPU core count.
+
+The second example shows the `ignoring()` clause, which is the opposite of `on()`. Instead of specifying which labels to match, you specify which labels to ignore during matching. This is useful when metrics have slight label differences that don't affect the join logic.
+
+Use `on()` when you know exactly which labels should match. Use `ignoring()` when it's easier to specify which labels should be excluded from matching.
+</aside>
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## Many-to-One with group_left
+                    
+                    When left side has higher cardinality
+                    
+                    **Example: Filesystem usage with context**
+                    ```promql
+                    (node_filesystem_size_bytes{instance="localhost:9100",fstype="ext4"} - 
+                     node_filesystem_free_bytes{instance="localhost:9100",fstype="ext4"}) / 
+                    on(instance) group_left(mountpoint) 
+                    node_filesystem_size_bytes{instance="localhost:9100",fstype="ext4"} * 100
+                    ```
+                    
+                    **Preserves labels from the left (many) side**
+                    
+<aside class="notes">
+Many-to-one joins occur when the left side has multiple time series per instance, but the right side has only one.
+
+In this example, we're calculating filesystem usage percentage. The left side has multiple filesystem entries per instance (one per mounted filesystem), while we want to preserve the filesystem-specific labels like `mountpoint`.
+
+The `group_left(mountpoint)` clause tells PromQL:
+1. This is a many-to-one join (many filesystems to one instance)
+2. Preserve the `mountpoint` label from the left side
+3. The left side has higher cardinality
+
+Without `group_left`, this query would fail because PromQL wouldn't know how to handle the cardinality mismatch.
+
+The result preserves the granular filesystem information while allowing you to correlate with instance-level metadata. This pattern is common when you want to maintain detailed breakdowns while adding context from aggregated metrics.
+</aside>
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## One-to-Many with group_right
+                    
+                    When right side has higher cardinality
+                    
+                    **Example: Memory total with filesystem context**
+                    ```promql
+                    node_memory_MemTotal_bytes{instance="localhost:9100"} / 
+                    on(instance) group_right(mountpoint,fstype) 
+                    node_filesystem_size_bytes{instance="localhost:9100"}
+                    ```
+                    
+                    **Preserves labels from the right (many) side**
+                    
+                    Use case: Adding instance-level context to detailed metrics
+                    
+<aside class="notes">
+One-to-many joins are the opposite scenario - when the right side has higher cardinality than the left.
+
+In this example, we have one memory total value per instance (left side), but multiple filesystem entries per instance (right side). We want to see how total system memory compares to individual filesystem sizes.
+
+The `group_right(mountpoint,fstype)` clause tells PromQL:
+1. This is a one-to-many join (one memory value to many filesystems)
+2. Preserve the `mountpoint` and `fstype` labels from the right side
+3. The right side has higher cardinality
+
+This pattern is useful for adding instance-level context to detailed metrics. For example, you might want to compare total available memory against individual filesystem sizes to understand capacity relationships.
+
+The result gives you the memory-to-filesystem ratio for each mounted filesystem, which can be valuable for capacity planning in containerized environments where memory and storage constraints interact.
+</aside>
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## Complex Multi-Metric Joins
+                    
+                    Combining multiple metrics for advanced analysis
+                    
+                    **System efficiency score**
+                    ```promql
+                    (node_load1{instance="localhost:9100"} / on(instance) 
+                     count by(instance) (node_cpu_seconds_total{instance="localhost:9100",mode="idle"})) 
+                    / on(instance) 
+                    (node_memory_MemAvailable_bytes{instance="localhost:9100"} / 
+                     node_memory_MemTotal_bytes{instance="localhost:9100"})
+                    ```
+                    
+                    **Chaining joins for comprehensive metrics**
+                    
+<aside class="notes">
+Complex multi-metric joins allow you to build sophisticated analysis by combining multiple metrics through chained operations.
+
+This example creates a system efficiency score by combining CPU load efficiency (load per core) with memory availability. The result gives you a single metric that represents overall system efficiency:
+
+- High values indicate the system is heavily loaded relative to available resources
+- Low values suggest the system has plenty of capacity
+- This metric helps identify bottlenecks across different resource types
+
+The query works by:
+1. First calculating load per CPU core using `on(instance)` join
+2. Then dividing by memory utilization using another `on(instance)` join
+3. Both joins happen on the same label, creating a comprehensive efficiency metric
+
+This pattern is powerful for creating custom business metrics that combine multiple infrastructure components. You can extend this concept to include network throughput, disk I/O, or any other metrics relevant to your specific use case.
+
+The key is ensuring all joins happen on consistent labels and understanding the relationships between your metrics.
+</aside>
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## Boolean Joins & Alerting
+                    
+                    Perfect for complex alerting conditions
+                    
+                    **High load AND high memory**
+                    ```promql
+                    (node_load1{instance="localhost:9100"} > on(instance) 
+                     count by(instance) (node_cpu_seconds_total{instance="localhost:9100",mode="idle"})) 
+                    and on(instance) 
+                    ((node_memory_MemTotal_bytes{instance="localhost:9100"} - 
+                      node_memory_MemAvailable_bytes{instance="localhost:9100"}) / 
+                     node_memory_MemTotal_bytes{instance="localhost:9100"} > 0.8)
+                    ```
+                    
+                    **Only triggers when BOTH conditions are true**
+                    
+<aside class="notes">
+Boolean joins are extremely powerful for creating sophisticated alerting conditions that require multiple criteria to be met simultaneously.
+
+This example identifies instances where BOTH conditions are true:
+1. Load average exceeds the number of CPU cores (indicating CPU pressure)
+2. Memory usage is above 80% (indicating memory pressure)
+
+The `and on(instance)` operator ensures both conditions must be true for the same instance. This creates a more specific alert that only triggers during genuine resource contention, reducing false positives from temporary spikes in individual resources.
+
+Without the join, you might get alerts when CPU is high but memory is fine, or when memory is high but CPU is idle. This boolean join creates a "resource exhaustion" alert that's much more actionable.
+
+This pattern is essential for:
+- Reducing alert fatigue by creating more specific conditions
+- Identifying genuine system stress rather than individual resource spikes
+- Building complex SLO violations that depend on multiple metrics
+- Creating business-logic alerts that consider multiple factors
+
+You can extend this to include network saturation, disk I/O pressure, or any combination of metrics relevant to your service health.
+</aside>
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## Performance Considerations
+                    
+                    **Aggregate first, then join**
+                    ```promql
+                    # Better: Aggregate first
+                    avg by(instance) (rate(node_cpu_seconds_total{mode!="idle"}[5m])) / 
+                    on(instance) (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)
+                    
+                    # Avoid: High cardinality joins
+                    rate(node_cpu_seconds_total{mode!="idle"}[5m]) / 
+                    on(instance) (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)
+                    ```
+                    
+                    **Tips for efficient joins:**
+                    * Use recording rules for expensive join operations
+                    * Match on stable, low-cardinality labels
+                    * Test query performance in production-like environments
+                    
+<aside class="notes">
+Performance is crucial when working with joins, especially in large-scale environments.
+
+The first example shows the preferred approach: aggregate CPU usage across all cores before joining with memory metrics. This reduces the number of time series involved in the join operation.
+
+The second example shows what to avoid: joining raw CPU metrics (which have one time series per CPU core) with memory metrics. This creates unnecessary computational overhead.
+
+Key performance tips:
+
+1. **Aggregate first:** Reduce cardinality before joining when possible
+2. **Use recording rules:** Pre-compute expensive joins for dashboards and alerts
+3. **Stable labels:** Match on labels that don't change frequently (like `instance`, not timestamps)
+4. **Test thoroughly:** Join performance can vary dramatically based on cardinality and label structure
+
+Recording rules are particularly important for complex joins used in dashboards. Instead of running expensive join operations every time someone views a dashboard, record the result and query the pre-computed metric.
+
+Monitor your query performance and consider the trade-offs between query flexibility and performance. Sometimes it's better to have multiple simpler queries than one complex join.
+
+Remember that joins can fail if label cardinality changes unexpectedly, so design your queries to be robust to changes in your infrastructure.
+</aside>
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## Best Practices
+                    
+                    ✅ **Do:**
+                    * Always specify matching strategy with `on()` or `ignoring()`
+                    * Aggregate before joining when possible
+                    * Use recording rules for expensive join operations
+                    * Test query performance in realistic environments
+                    
+                    ❌ **Don't:**
+                    * Join on high-cardinality labels
+                    * Use `group_left`/`group_right` unnecessarily  
+                    * Forget about cardinality mismatches
+                    * Join on volatile labels (timestamps, etc.)
+                    
+<aside class="notes">
+Let's wrap up with best practices for PromQL joins:
+
+**What to do:**
+- Always be explicit about matching strategy. Don't rely on default behavior
+- Aggregate metrics before joining to reduce computational overhead
+- Use recording rules for complex joins that are used frequently
+- Test performance with realistic data volumes and cardinality
+
+**What to avoid:**
+- Joining on labels with thousands of unique values (like user IDs or transaction IDs)
+- Using group_left/group_right when simple one-to-one matching would work
+- Ignoring cardinality mismatches that can cause query failures
+- Matching on labels that change frequently, which can cause inconsistent results
+
+The key to successful joins is understanding your data structure and the relationships between your metrics. Plan your label strategy with joins in mind, and always consider the performance implications of your queries.
+
+Joins are powerful tools that enable sophisticated monitoring and alerting, but they require careful consideration of cardinality, performance, and data relationships. Master these concepts and you'll be able to build comprehensive monitoring solutions that provide deep insights into your infrastructure.
+</aside>
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## Lab Exercise
+                    
+                    **🎯 Challenge:** Build a multi-metric efficiency score
+                    
+                    Combine CPU usage, memory usage, and network throughput to identify the most resource-efficient instances.
+                    
+                    **Requirements:**
+                    * Calculate CPU usage percentage
+                    * Calculate memory usage percentage  
+                    * Include network throughput (bytes/sec)
+                    * Return a score where lower numbers = better efficiency
+                    
+                    **Bonus:** Normalize by system capacity (CPU cores + memory)
+                    
+<aside class="notes">
+Now it's time for your hands-on exercise. This challenge will test everything you've learned about joins and vector matching.
+
+Your goal is to build a comprehensive efficiency metric that combines multiple resource types. This is a real-world scenario - you often need to understand overall system efficiency rather than looking at individual metrics in isolation.
+
+The requirements break down the problem:
+1. Calculate CPU usage as a percentage (not raw values)
+2. Calculate memory usage as a percentage for consistency
+3. Include network throughput to capture I/O efficiency
+4. Design the scoring so lower numbers indicate better efficiency
+
+The bonus challenge asks you to normalize by system capacity. This makes the score meaningful across different instance sizes - a small instance with 2 cores should be comparable to a large instance with 16 cores.
+
+This exercise will require multiple joins with `on(instance)` clauses and careful consideration of how to combine different metric types into a meaningful composite score.
+
+Take your time to work through this step by step. Start with individual components, then combine them using the join techniques you've learned. Consider the units of each metric and how they should be weighted in your final score.
+
+This type of composite metric is extremely valuable for capacity planning, resource optimization, and identifying underutilized infrastructure.
+</aside>
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## Summary
+                    
+                    🔗 **Vector Matching Mastered:**
+                    * One-to-one, one-to-many, many-to-one joins
+                    * `on()`, `ignoring()`, `group_left`, `group_right`
+                    * Boolean joins for complex alerting conditions
+                    * Performance optimization strategies
+                    
+                    **Next Steps:**
+                    * Apply these techniques to your own infrastructure
+                    * Create recording rules for expensive joins
+                    * Build comprehensive dashboards with correlated metrics
+                    * Design sophisticated alerting conditions
+                    
+<aside class="notes">
+Congratulations! You've mastered one of the most advanced aspects of PromQL. Vector matching and joins are complex topics that many Prometheus users struggle with, but you now have the knowledge to build sophisticated monitoring solutions.
+
+Let's recap what you've learned:
+- Different types of joins and when to use each one
+- The key operators for controlling vector matching behavior
+- How to create complex boolean conditions for alerting
+- Performance optimization strategies for production use
+
+Your next steps should focus on practical application:
+
+1. **Apply to your infrastructure:** Look for opportunities to correlate metrics in your existing monitoring setup
+2. **Create recording rules:** Identify expensive join operations that would benefit from pre-computation
+3. **Enhanced dashboards:** Build comprehensive dashboards that show relationships between different system components
+4. **Advanced alerting:** Design alerting rules that consider multiple metrics and reduce false positives
+
+These skills are particularly valuable for SRE work, where understanding system relationships is crucial for effective incident response and capacity planning.
+
+Remember to always consider performance implications and test your queries thoroughly in production-like environments. The power of joins comes with the responsibility to use them efficiently.
+
+You're now equipped with advanced PromQL skills that will serve you well in building robust, insightful monitoring solutions.
+</aside>
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    # Thank You! 
+                    
+                    🏆 **PromQL Journey Complete**
+                    
+                    From basic queries to advanced joins - you've mastered them all!
+                    
+                    <small>Ready for production? Check out [PromQL Best Practices](../README.md)</small>
+                    
+<aside class="notes">
+Congratulations on completing all 10 PromQL labs! You've taken a comprehensive journey from basic metric queries to advanced vector matching and joins.
+
+You started with simple metric selection and filtering, progressed through aggregations and functions, learned about rates and derivatives, explored advanced operations, and finally mastered the complex art of joining multiple metrics.
+
+These skills represent a complete foundation for professional-grade monitoring and observability. You can now:
+- Build effective dashboards that provide genuine insights
+- Create sophisticated alerting rules that reduce noise and improve reliability
+- Perform complex analysis that helps with capacity planning and optimization
+- Troubleshoot issues by correlating metrics across different system components
+
+The journey doesn't end here. PromQL and Prometheus continue to evolve, and your real learning will come from applying these techniques to your own infrastructure and challenges.
+
+Remember the best practices you've learned, especially around performance and cardinality. These will serve you well as you scale your monitoring solutions.
+
+Thank you for your dedication to learning these advanced concepts. You're now equipped to build world-class monitoring solutions with PromQL!
+
+Keep exploring, keep learning, and most importantly, keep building amazing things with your new PromQL mastery.
+</aside>
+                </textarea>
+            </section>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/dist/reveal.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/notes/notes.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/markdown/markdown.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/highlight/highlight.js"></script>
+    <script src="../common-scripts.js"></script>
+</body>
+</html>

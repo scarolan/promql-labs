@@ -23,6 +23,7 @@ This training consists of ten hands-on labs organized into three difficulty leve
 - **Lab 7:** [Recording Rules and Alerting](Advanced/Lab7_Recording_Rules_Alerting.md) - Operationalize monitoring
 - **Lab 8:** [Advanced PromQL Operations](Advanced/Lab8_Advanced_PromQL_Operations.md) - Master label manipulation, offset, subqueries, and ranking
 - **Lab 9:** [Histograms and Quantiles](Advanced/Lab9_Histograms_Quantiles.md) - Work with histogram metrics, percentiles, and SLOs
+- **Lab 10:** [Join Queries & Vector Matching](Advanced/Lab10_Join_Queries_Vector_Matching.md) - Master PromQL joins, vector matching, and complex multi-metric operations
 
 ## 🚀 Prerequisites
 

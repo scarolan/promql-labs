@@ -410,7 +410,7 @@ lab10_queries = [
     },
     {
         "name": "Memory total with filesystem context (group_right)",
-        "query": "node_memory_MemTotal_bytes{instance=\"$INSTANCE\"} / on(instance) group_right(mountpoint,fstype) node_filesystem_size_bytes{instance=\"$INSTANCE\"}",
+        "query": "node_memory_MemTotal_bytes{instance=\"$INSTANCE\"} / on(instance) group_right(mountpoint,fstype) node_filesystem_size_bytes{instance=\"$INSTANCE\",mountpoint=\"/\"}",
         "expected_type": "vector"
     },
     {

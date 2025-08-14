@@ -9,3 +9,4 @@ Welcome to the Advanced PromQL Labs! These exercises are designed to push your s
 - [Lab 7: Recording Rules and Alerting](Lab7_Recording_Rules_Alerting.md) - Create efficient recording rules and effective alerts
 - [Lab 8: Advanced PromQL Operations](Lab8_Advanced_PromQL_Operations.md) - Master label manipulation, offset for historical comparisons, subqueries, and top/bottom rankings
 - [Lab 9: Histograms and Quantiles](Lab9_Histograms_Quantiles.md) - Work with histogram metrics, percentiles, and Service Level Objectives (SLOs)
+- [Lab 10: Join Queries & Vector Matching](Lab10_Join_Queries_Vector_Matching.md) - Master PromQL joins, vector matching, one-to-many relationships, and complex multi-metric operations
