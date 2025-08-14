@@ -129,16 +129,24 @@ Use `on()` when you know exactly which labels should match. Use `ignoring()` whe
                     
                     When left side has higher cardinality
                     
-                    **Example: Filesystem usage with context**
+                    **Example: Root filesystem usage with context**
                     ```promql
-                    (node_filesystem_size_bytes{instance="localhost:9100",fstype="ext4"} - 
-                     node_filesystem_free_bytes{instance="localhost:9100",fstype="ext4"}) / 
+                    (node_filesystem_size_bytes{instance="localhost:9100",fstype="ext4",mountpoint="/"} - 
+                     node_filesystem_free_bytes{instance="localhost:9100",fstype="ext4",mountpoint="/"}) / 
                     on(instance) group_left(mountpoint) 
-                    node_filesystem_size_bytes{instance="localhost:9100",fstype="ext4"} * 100
+                    node_filesystem_size_bytes{instance="localhost:9100",fstype="ext4",mountpoint="/"} * 100
                     ```
                     
                     **Preserves labels from the left (many) side**
                     
+                    *Note: We filter to root filesystem to avoid many-to-many matching*
+                    
+<aside class="notes">
+Many-to-one joins occur when the left side has multiple time series per instance, but the right side has only one.
+
+In this example, we're calculating filesystem usage percentage. The left side has multiple filesystem entries per instance (one per mounted filesystem), while we want to preserve the filesystem-specific labels like `mountpoint`.
+
+The `group_left(mountpoint)` clause tells PromQL:
 <aside class="notes">
 Many-to-one joins occur when the left side has multiple time series per instance, but the right side has only one.
 
@@ -148,6 +156,8 @@ The `group_left(mountpoint)` clause tells PromQL:
 1. This is a many-to-one join (many filesystems to one instance)
 2. Preserve the `mountpoint` label from the left side
 3. The left side has higher cardinality
+
+We filter to the root filesystem (`mountpoint="/"`) to avoid many-to-many matching issues when multiple ext4 filesystems exist (like / and /boot in some environments).
 
 Without `group_left`, this query would fail because PromQL wouldn't know how to handle the cardinality mismatch.
 
