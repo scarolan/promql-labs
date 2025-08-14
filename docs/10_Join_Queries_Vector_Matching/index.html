@@ -132,7 +132,7 @@ Use `on()` when you know exactly which labels should match. Use `ignoring()` whe
                     **Example: Network bandwidth per GB of system memory**
                     ```promql
                     rate(node_network_receive_bytes_total{instance="localhost:9100",device!~"lo|veth.*"}[5m]) / 
-                    on(instance) group_left(device) 
+                    on(instance) group_left() 
                     (node_memory_MemTotal_bytes{instance="localhost:9100"} / 1024^3)
                     ```
                     
@@ -151,7 +151,7 @@ Many-to-one joins occur when the left side has multiple time series per instance
 
 This example shows network receive rate per GB of total system memory. The left side has multiple network interfaces per instance (eth0, docker0, etc.), while the right side has one memory total value per instance.
 
-The `group_left(device)` clause tells PromQL:
+The `group_left()` clause tells PromQL:
 1. This is a many-to-one join (many network interfaces to one memory value)
 2. Preserve the `device` label from the left side
 3. The left side has higher cardinality

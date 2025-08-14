@@ -1,4 +1,4 @@
-Query Test Results - 2025-08-14 10:15:10.132688
+Query Test Results - 2025-08-14 10:40:57.815520
 
 Basic metric query - PASS
 Query: node_memory_MemTotal_bytes
@@ -144,10 +144,10 @@ Query: label_replace(node_filesystem_size_bytes{instance="localhost:9100",mountp
 Label join function - PASS
 Query: label_join(node_filesystem_size_bytes{instance="localhost:9100",mountpoint="/"}, "instance_path", "-", "instance", "mountpoint")
 
-Historical comparison with offset - NO DATA
+Historical comparison with offset - PASS
 Query: sum(rate(node_cpu_seconds_total{instance="localhost:9100",mode!="idle"}[5m])) and sum(rate(node_cpu_seconds_total{instance="localhost:9100",mode!="idle"}[5m] offset 5m))
 
-Historical difference calculation - NO DATA
+Historical difference calculation - PASS
 Query: sum(rate(node_cpu_seconds_total{instance="localhost:9100",mode!="idle"}[5m])) - sum(rate(node_cpu_seconds_total{instance="localhost:9100",mode!="idle"}[5m] offset 5m))
 
 Top K resources - PASS
@@ -159,10 +159,10 @@ Query: max_over_time(rate(node_cpu_seconds_total{instance="localhost:9100",mode=
 Detecting missing data - NO DATA
 Query: absent(node_cpu_seconds_total{instance="localhost:9100"})
 
-Memory usage change with offset - NO DATA
+Memory usage change with offset - PASS
 Query: (100 * (1 - (node_memory_MemAvailable_bytes{instance="localhost:9100"} / node_memory_MemTotal_bytes{instance="localhost:9100"})) - 100 * (1 - (node_memory_MemAvailable_bytes{instance="localhost:9100"} offset 5m / node_memory_MemTotal_bytes{instance="localhost:9100"} offset 5m))) / (100 * (1 - (node_memory_MemAvailable_bytes{instance="localhost:9100"} offset 5m / node_memory_MemTotal_bytes{instance="localhost:9100"} offset 5m))) * 100
 
-Memory usage with offset 5m - NO DATA
+Memory usage with offset 5m - PASS
 Query: 100 * (1 - (node_memory_MemAvailable_bytes{instance="localhost:9100"} offset 5m / node_memory_MemTotal_bytes{instance="localhost:9100"} offset 5m))
 
 Memory usage change with offset 1m - PASS

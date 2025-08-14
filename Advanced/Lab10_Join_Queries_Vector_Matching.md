@@ -32,10 +32,10 @@
 3. **Join network metrics with system memory using `group_left`:**
    ```promql
    # Network bandwidth per GB of system memory
-   rate(node_network_receive_bytes_total{instance="localhost:9100",device!~"lo|veth.*"}[5m]) / on(instance) group_left(device) (node_memory_MemTotal_bytes{instance="localhost:9100"} / 1024^3)
+   rate(node_network_receive_bytes_total{instance="localhost:9100",device!~"lo|veth.*"}[5m]) / on(instance) group_left() (node_memory_MemTotal_bytes{instance="localhost:9100"} / 1024^3)
    ```
    
-   > **Explanation:** `group_left(device)` allows a many-to-one join where the left side (network interfaces) can have multiple entries per instance, while the right side provides the system memory context. The `device` label is preserved from the left side. This shows network throughput efficiency relative to available memory resources.
+   > **Explanation:** `group_left()` allows a many-to-one join where the left side (network interfaces) can have multiple entries per instance, while the right side provides the system memory context. The `device` label is preserved from the left side. This shows network throughput efficiency relative to available memory resources.
 
 4. **CPU usage per core with system metadata:**
    ```promql
