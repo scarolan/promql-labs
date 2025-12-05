@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lab 8b: Subqueries, TopK & Absent</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/theme/black.min.css">
+    <link rel="stylesheet" href="../common.css">
+</head>
+<body>
+    <div class="reveal">
+        <div class="slides">
+            <section data-markdown>
+                <textarea data-template>
+                    # 📊 Lab 8b: Subqueries, TopK & Absent
+                    
+                    Advanced time-series analysis and outlier detection
+                    
+<aside class="notes">
+Welcome to Lab 8b, where we'll explore three powerful PromQL features that enable sophisticated monitoring scenarios.
+
+Building on the label manipulation and offset techniques from Lab 8a, we'll now dive into:
+
+Subqueries - allowing you to apply functions to ranges of already-processed data, enabling complex time-series analysis.
+
+Ranking functions (topk/bottomk) - helping you identify the most significant outliers in your metrics.
+
+The absent function - detecting when expected metrics are missing, which is crucial for monitoring your monitoring.
+
+These techniques represent the transition from basic monitoring to sophisticated observability.
+</aside>
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## Lab Objectives
+                    
+                    By the end of this lab, you will be able to:
+                    
+                    * Write **subqueries** for complex time-based analysis
+                    * Use **topk()** and **bottomk()** to identify outliers
+                    * Detect missing metrics with **absent()**
+                    * Combine these techniques for sophisticated monitoring
+                    
+<aside class="notes">
+In this lab, we'll cover three advanced PromQL features:
+
+First, subqueries - one of the most powerful features in PromQL. Subqueries let you apply functions like avg_over_time to ranges of already-processed data, enabling analysis like "what was the average of the 5-minute rate over the past hour?"
+
+Second, the topk and bottomk ranking functions. These help you identify the most significant outliers in your metrics - whether that's the top CPU consumers, the slowest endpoints, or the instances with the most errors.
+
+Third, the absent function for detecting missing metrics. This is essential for "monitoring your monitoring" - ensuring that your instrumentation is working correctly and that expected metrics are being reported.
+
+Together, these techniques give you the tools to create context-aware monitoring that goes beyond simple thresholds.
+</aside>
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## Understanding Subqueries
+                    
+                    Apply functions over a range of instant vector results:
+                    
+                    ```promql
+                    # Syntax
+                    <instant_query>[<range>:<resolution>]
+                    ```
+                    
+                    * **instant_query**: Any query that returns an instant vector
+                    * **range**: How far back to look (e.g., 1h)
+                    * **resolution**: How often to sample (e.g., 5m)
+                    
+                    **Example:**
+                    ```promql
+                    # Average of 5-minute CPU rates over the past hour
+                    avg_over_time(
+                      sum(rate(node_cpu_seconds_total{mode!="idle"}[5m]))[1h:5m]
+                    )
+                    ```
+                    
+<aside class="notes">
+Subqueries are one of the most powerful features in PromQL. They allow you to take the result of any instant vector query and treat it as if it were a range vector - then apply range vector functions to it.
+
+The syntax adds a range and resolution to any instant query:
+- The range (like 1h) specifies how far back to look
+- The resolution (like 5m) specifies how often to sample the inner query
+
+In the example, we're calculating:
+1. The rate of non-idle CPU time over 5-minute windows
+2. Summing those rates to get total CPU utilization
+3. Then finding the average of those values over the past hour, sampled every 5 minutes
+
+This gives us a smoothed view of CPU utilization that's less susceptible to short-term spikes.
+
+Subqueries are particularly useful when you want to:
+- Calculate moving averages of already-aggregated data
+- Find the max or min of a rate over a longer period
+- Smooth out noisy metrics for alerting
+- Analyze patterns in derived metrics over time
+
+The resolution parameter is important for performance - sampling too frequently can create a lot of data points to process.
+</aside>
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## Subquery Examples
+                    
+                    **Moving average of request rate:**
+                    ```promql
+                    avg_over_time(
+                      rate(http_requests_total[5m])[1h:5m]
+                    )
+                    ```
+                    
+                    **Peak CPU usage over 24 hours:**
+                    ```promql
+                    max_over_time(
+                      sum(rate(node_cpu_seconds_total{mode!="idle"}[5m]))[24h:5m]
+                    )
+                    ```
+                    
+                    **Standard deviation of memory (volatility):**
+                    ```promql
+                    stddev_over_time(
+                      node_memory_MemAvailable_bytes[1h:5m]
+                    )
+                    ```
+                    
+<aside class="notes">
+Let's explore some practical subquery examples.
+
+The first example calculates a moving average of the request rate. This smooths out short-term fluctuations and gives you a cleaner view of your traffic trends. It's particularly useful for dashboards where you want to see the overall trend rather than moment-to-moment variations.
+
+The second example finds the peak CPU usage over the past 24 hours. This is valuable for capacity planning - it shows you the maximum load your system has experienced, which helps you understand headroom and plan for growth.
+
+The third example calculates the standard deviation of memory availability over the past hour. High standard deviation indicates volatile memory usage, which might suggest memory leaks, garbage collection issues, or bursty workloads.
+
+Some common functions used with subqueries:
+- avg_over_time: Smoothed averages
+- max_over_time / min_over_time: Peak/trough detection
+- stddev_over_time: Volatility measurement
+- quantile_over_time: Distribution analysis
+
+Remember that subqueries can be computationally expensive, especially with long ranges and short resolutions. Use them judiciously and consider recording rules for frequently-used subqueries.
+</aside>
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## Subqueries for Trend Analysis
+                    
+                    **Detect if current value exceeds recent average:**
+                    ```promql
+                    rate(http_requests_total[5m]) 
+                    > 
+                    1.5 * avg_over_time(rate(http_requests_total[5m])[1h:5m])
+                    ```
+                    
+                    **Compare current to historical baseline:**
+                    ```promql
+                    sum(rate(node_cpu_seconds_total{mode!="idle"}[5m]))
+                    / 
+                    avg_over_time(
+                      sum(rate(node_cpu_seconds_total{mode!="idle"}[5m]))[24h:1h]
+                    )
+                    ```
+                    
+                    Returns ratio: >1 means above average, <1 means below
+                    
+<aside class="notes">
+Subqueries are particularly powerful for trend analysis and anomaly detection.
+
+The first example creates a simple anomaly detector: it triggers when the current request rate exceeds 1.5 times the average rate over the past hour. This is more sophisticated than a static threshold because it automatically adapts to your normal traffic patterns.
+
+The second example calculates a ratio of current CPU usage to the 24-hour average. A value greater than 1 means you're above your typical usage; less than 1 means you're below.
+
+This ratio approach is powerful because:
+- It normalizes across different systems (a busy server and a quiet one both show meaningful ratios)
+- It automatically adjusts as your baseline changes
+- It's easy to set alerts on (e.g., alert when ratio > 2)
+
+You can extend these patterns to create sophisticated alerts that account for:
+- Time-of-day patterns (by using offset with subqueries)
+- Weekly cycles (comparing to 7-day averages)
+- Growth trends (using deriv or predict_linear)
+
+These context-aware approaches significantly reduce alert fatigue compared to static thresholds.
+</aside>
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## topk() and bottomk() Functions
+                    
+                    Identify the most significant outliers:
+                    
+                    ```promql
+                    # Top 5 CPU-consuming instances
+                    topk(5, 
+                      sum by (instance) (
+                        rate(node_cpu_seconds_total{mode!="idle"}[5m])
+                      )
+                    )
+                    
+                    # Bottom 3 available memory
+                    bottomk(3, node_memory_MemAvailable_bytes)
+                    ```
+                    
+                    * Returns k time series with highest/lowest values
+                    * Useful for dashboards and alerting on outliers
+                    
+<aside class="notes">
+The topk and bottomk functions help you focus on the most significant outliers in your metrics.
+
+topk returns the k time series with the highest values, while bottomk returns those with the lowest values.
+
+In the first example, we're finding the top 5 instances by CPU usage. This is perfect for a dashboard showing "busiest servers" or for alerting when specific instances are consuming more than their fair share of resources.
+
+In the second example, we're finding the 3 instances with the least available memory - these might be at risk of running out of memory and warrant attention.
+
+These functions are valuable because:
+- In large environments, you might have hundreds of instances - topk/bottomk helps focus attention
+- They make dashboards more actionable by highlighting what matters
+- They enable alerts like "notify me when any instance appears in the top 3 for errors"
+
+Note that topk and bottomk operate on the current instant value. If you want to find the top k based on an aggregate (like the average over time), combine them with subqueries.
+</aside>
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## topk/bottomk Examples
+                    
+                    **Top error-producing endpoints:**
+                    ```promql
+                    topk(10, 
+                      sum by (handler) (
+                        rate(http_requests_total{status=~"5.."}[5m])
+                      )
+                    )
+                    ```
+                    
+                    **Instances with highest disk usage:**
+                    ```promql
+                    topk(5, 
+                      1 - (
+                        node_filesystem_avail_bytes{mountpoint="/"}
+                        / node_filesystem_size_bytes{mountpoint="/"}
+                      )
+                    )
+                    ```
+                    
+                    **Slowest growing metrics (potential issues):**
+                    ```promql
+                    bottomk(5, 
+                      rate(process_cpu_seconds_total[5m])
+                    )
+                    ```
+                    
+<aside class="notes">
+Let's explore some more sophisticated examples of topk and bottomk.
+
+The first example finds the top 10 error-producing endpoints by looking at HTTP requests with 5xx status codes. This immediately shows you which parts of your application are experiencing the most problems.
+
+The second example calculates disk usage percentage (1 minus the ratio of available to total bytes) and shows the top 5 most-full filesystems. This is crucial for capacity monitoring and preventing disk-full incidents.
+
+The third example uses bottomk to find processes with the lowest CPU growth rate. In some contexts, this might indicate stalled or hung processes that should be using CPU but aren't.
+
+Some best practices for topk/bottomk:
+- Choose k values that are meaningful for your team (top 5 is usually enough for dashboards)
+- Combine with sum by or other aggregations to group before ranking
+- Consider using these in recording rules if you need the results frequently
+- Remember that the ranking is recalculated at each evaluation, so the "top 5" can change over time
+
+These functions are especially powerful when combined with Grafana's table panels to create "leaderboard" style dashboards.
+</aside>
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## The absent() Function
+                    
+                    Detect when expected metrics are missing:
+                    
+                    ```promql
+                    # Alert if node_exporter is not reporting
+                    absent(up{job="node-exporter"})
+                    
+                    # Returns 1 if no matching time series exists
+                    # Returns nothing if the metric exists
+                    ```
+                    
+                    Why it matters:
+                    * Detect failed exporters or scrapers
+                    * Identify configuration problems
+                    * "Monitor your monitoring"
+                    
+<aside class="notes">
+The absent function is crucial for what's often called "monitoring your monitoring" - ensuring that your metrics collection infrastructure is working correctly.
+
+absent takes a selector and returns 1 if no matching time series exist. If matching time series do exist, it returns nothing (an empty result).
+
+This might seem backwards at first - why would you want a function that returns something when data is missing? The answer is alerting. You want to be notified when expected metrics disappear, and alert rules fire when they have a result.
+
+Common use cases for absent include:
+
+Detecting failed exporters: If your node exporter stops running, the up metric will disappear. absent(up{job="node-exporter"}) will return 1, and you can alert on that.
+
+Identifying scrape failures: If Prometheus can't reach a target, the metrics will be absent. Using absent helps you detect this quickly.
+
+Configuration problems: If a new service is deployed but metrics aren't being collected, absent helps you catch this.
+
+The absent function is particularly valuable in dynamic environments where services come and go - it ensures you're alerted when expected services disappear entirely, not just when they're unhealthy.
+</aside>
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## absent() Examples
+                    
+                    **Check for missing job:**
+                    ```promql
+                    absent(sum by (instance) (up{job="api-server"}))
+                    ```
+                    
+                    **Critical business metric check:**
+                    ```promql
+                    absent(orders_processed_total)
+                    ```
+                    
+                    **Comprehensive health check:**
+                    ```promql
+                    up{job="node-exporter"} == 0 
+                    or 
+                    absent(up{job="node-exporter"})
+                    ```
+                    
+                    Combines "down" detection with "missing" detection
+                    
+<aside class="notes">
+Let's explore some more nuanced examples of how the absent function can be used in real-world monitoring scenarios.
+
+The first example checks if any instances are missing for a specific job. By aggregating with sum by (instance) first, we ensure we're checking at the instance level. If no instances of the api-server job are being monitored at all, this returns 1.
+
+The second example focuses on business metrics rather than infrastructure. If a critical business metric like orders_processed_total is missing entirely, it might indicate an instrumentation problem or a serious issue with the order processing system.
+
+The third example shows the most comprehensive approach: combining an "up == 0" check with an absent check. This catches both scenarios:
+1. The service is reporting but unhealthy (up == 0)
+2. The service isn't reporting any metrics at all (absent returns 1)
+
+This pattern is recommended for critical services because it covers all failure modes.
+
+Some advanced patterns with absent:
+- Use with aggregations to check for expected label values
+- Combine with time functions for staleness checks
+- Include in recording rules to create composite health metrics
+
+Remember: absent is about detecting the complete absence of expected metrics, not detecting unhealthy values - that's what other comparison operators are for.
+</aside>
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## Putting It All Together
+                    
+                    ```promql
+                    # Find instances with unusual CPU spikes
+                    topk(5,
+                      sum by (instance) (
+                        rate(node_cpu_seconds_total{mode!="idle"}[5m])
+                      ) 
+                      / 
+                      avg_over_time(
+                        sum by (instance) (
+                          rate(node_cpu_seconds_total{mode!="idle"}[5m])
+                        )[1h:5m]
+                      )
+                    )
+                    ```
+                    
+                    Combines:
+                    * **rate()** for CPU utilization
+                    * **Subquery** for historical baseline
+                    * **topk()** to find top offenders
+                    
+<aside class="notes">
+Let's look at a query that combines the techniques we've learned to solve a sophisticated monitoring challenge.
+
+This query identifies the top 5 instances that are experiencing the most unusual increase in CPU utilization compared to their recent history.
+
+Breaking it down:
+
+1. The inner rate calculates current CPU utilization per instance
+2. The subquery with avg_over_time calculates the average CPU utilization over the past hour
+3. The division creates a ratio: current / historical average
+4. The topk function returns the 5 instances with the highest ratios
+
+A ratio of 2.0 means "twice the normal CPU usage" - which is much more meaningful than an absolute percentage, because it accounts for each instance's normal behavior.
+
+This is an excellent example of context-aware monitoring:
+- An instance that normally runs at 10% but is now at 30% shows a ratio of 3.0
+- An instance that normally runs at 60% but is now at 75% shows a ratio of 1.25
+- The first instance is experiencing a more unusual situation, even though the second has higher absolute CPU
+
+This kind of analysis is only possible by combining subqueries with ranking functions.
+</aside>
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## 🧪 Hands-On Exercise
+                    
+                    Try these queries in the Prometheus UI:
+                    
+                    **1. Average CPU rate over the last 10 minutes:**
+                    ```promql
+                    avg_over_time(
+                      sum(rate(node_cpu_seconds_total{mode!="idle"}[1m]))[10m:1m]
+                    )
+                    ```
+                    
+                    **2. Top 3 CPU modes by usage:**
+                    ```promql
+                    topk(3, sum by (mode) (rate(node_cpu_seconds_total[5m])))
+                    ```
+                    
+                    **3. Check if node exporter is reporting:**
+                    ```promql
+                    absent(node_cpu_seconds_total{instance="localhost:9100"})
+                    ```
+                    
+<aside class="notes">
+Let's put these concepts into practice with some hands-on exercises.
+
+Exercise 1 demonstrates a subquery to calculate the average CPU rate over the last 10 minutes, sampled every minute. This gives you a smoothed view of CPU utilization that filters out momentary spikes.
+
+Exercise 2 uses topk to find the top 3 CPU modes by usage. This quickly tells you where CPU time is being spent - is it mostly user, system, iowait, or something else?
+
+Exercise 3 tests the absent function. Since node_cpu_seconds_total should exist, this query should return no results (empty). If you change the instance to something that doesn't exist, you'll see it return 1.
+
+As you experiment:
+- Try different subquery ranges and resolutions
+- Change the k value in topk to see more or fewer results
+- Test absent with metrics you know exist and ones that don't
+
+These techniques are essential for sophisticated monitoring and will serve you well as you build more complex queries.
+</aside>
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## Summary
+                    
+                    * **Subqueries** enable complex time-based analysis
+                      - Apply functions like avg_over_time to derived metrics
+                      - Create baselines and detect anomalies
+                    
+                    * **topk()/bottomk()** identify outliers
+                      - Focus dashboards on what matters most
+                      - Find top resource consumers or problem areas
+                    
+                    * **absent()** detects missing metrics
+                      - "Monitor your monitoring"
+                      - Catch failed exporters and scrape issues
+                    
+<aside class="notes">
+Let's summarize what we've learned in Lab 8b.
+
+Subqueries are one of the most powerful features in PromQL. They let you apply range vector functions to the results of any instant query, enabling sophisticated analysis like moving averages, peak detection, and baseline comparisons. Use them for trend analysis and anomaly detection, but be mindful of their computational cost.
+
+The topk and bottomk functions help you focus on what matters most. In environments with many instances, services, or endpoints, these functions cut through the noise to show you the most significant outliers. They're invaluable for dashboards and can also be used in alerts to notify you when specific items appear in the "top offenders" list.
+
+The absent function completes the picture by helping you detect when expected metrics are missing entirely. This is crucial for ensuring your monitoring infrastructure itself is healthy - you need to know when exporters fail, scrapes break, or configuration problems prevent metrics from being collected.
+
+Combined with the label manipulation and offset techniques from Lab 8a, you now have a comprehensive toolkit for advanced PromQL analysis. These techniques separate basic Prometheus users from experts and enable truly sophisticated monitoring solutions.
+</aside>
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    # 🌟 Great job!
+                    
+                    Continue to Lab 9: Histograms and Quantiles
+                    
+                    <small>Navigate: [All Slides](../index.html) | [Previous Lab](../08a_Label_Manipulation_Offset/index.html) | [Next Lab](../09_Histograms_Quantiles/index.html)</small>
+                    
+<aside class="notes">
+Congratulations on completing Lab 8b! Combined with Lab 8a, you've now mastered the advanced PromQL techniques that enable sophisticated monitoring:
+
+From Lab 8a:
+- Label manipulation for reshaping your metrics
+- Offset modifier for historical comparisons
+
+From Lab 8b:
+- Subqueries for complex time-based analysis
+- topk/bottomk for outlier identification
+- absent for detecting missing metrics
+
+These techniques represent the transition from basic monitoring to sophisticated observability. You can now create context-aware alerts, perform detailed system analysis, and extract meaningful insights that go far beyond simple thresholds.
+
+In Lab 9, we'll explore histograms and quantiles - essential for understanding distributions, particularly for latency and response time metrics. These concepts will complete your PromQL toolkit and allow you to implement service level objectives.
+
+Before moving on, try combining the techniques from both 8a and 8b in creative ways. The real power comes from composing these functions together.
+</aside>
+                </textarea>
+            </section>
+        </div>
+    </div>
+    <!-- Include common scripts -->
+    <script src="../common-scripts.js"></script>
+</body>
+</html>
