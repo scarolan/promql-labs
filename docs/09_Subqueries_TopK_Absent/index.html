@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lab 8b: Subqueries, TopK & Absent</title>
+    <title>Lab 9: Subqueries, TopK & Absent</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/theme/black.min.css">
     <link rel="stylesheet" href="../common.css">
@@ -13,14 +13,14 @@
         <div class="slides">
             <section data-markdown>
                 <textarea data-template>
-                    # 📊 Lab 8b: Subqueries, TopK & Absent
+                    # 📊 Lab 9: Subqueries, TopK & Absent
                     
                     Advanced time-series analysis and outlier detection
                     
 <aside class="notes">
-Welcome to Lab 8b, where we'll explore three powerful PromQL features that enable sophisticated monitoring scenarios.
+Welcome to Lab 9, where we'll explore three powerful PromQL features that enable sophisticated monitoring scenarios.
 
-Building on the label manipulation and offset techniques from Lab 8a, we'll now dive into:
+Building on the label manipulation and offset techniques from Lab 8, we'll now dive into:
 
 Subqueries - allowing you to apply functions to ranges of already-processed data, enabling complex time-series analysis.
 
@@ -477,7 +477,7 @@ These techniques are essential for sophisticated monitoring and will serve you w
                       - Catch failed exporters and scrape issues
                     
 <aside class="notes">
-Let's summarize what we've learned in Lab 8b.
+Let's summarize what we've learned in Lab 9.
 
 Subqueries are one of the most powerful features in PromQL. They let you apply range vector functions to the results of any instant query, enabling sophisticated analysis like moving averages, peak detection, and baseline comparisons. Use them for trend analysis and anomaly detection, but be mindful of their computational cost.
 
@@ -485,7 +485,7 @@ The topk and bottomk functions help you focus on what matters most. In environme
 
 The absent function completes the picture by helping you detect when expected metrics are missing entirely. This is crucial for ensuring your monitoring infrastructure itself is healthy - you need to know when exporters fail, scrapes break, or configuration problems prevent metrics from being collected.
 
-Combined with the label manipulation and offset techniques from Lab 8a, you now have a comprehensive toolkit for advanced PromQL analysis. These techniques separate basic Prometheus users from experts and enable truly sophisticated monitoring solutions.
+Combined with the label manipulation and offset techniques from Lab 8, you now have a comprehensive toolkit for advanced PromQL analysis. These techniques separate basic Prometheus users from experts and enable truly sophisticated monitoring solutions.
 </aside>
                 </textarea>
             </section>
@@ -494,27 +494,27 @@ Combined with the label manipulation and offset techniques from Lab 8a, you now 
                 <textarea data-template>
                     # 🌟 Great job!
                     
-                    Continue to Lab 9: Histograms and Quantiles
+                    Continue to Lab 10: Histograms and Quantiles
                     
-                    <small>Navigate: [All Slides](../index.html) | [Previous Lab](../08a_Label_Manipulation_Offset/index.html) | [Next Lab](../09_Histograms_Quantiles/index.html)</small>
+                    <small>Navigate: [All Slides](../index.html) | [Previous Lab](../08_Label_Manipulation_Offset/index.html) | [Next Lab](../10_Histograms_Quantiles/index.html)</small>
                     
 <aside class="notes">
-Congratulations on completing Lab 8b! Combined with Lab 8a, you've now mastered the advanced PromQL techniques that enable sophisticated monitoring:
+Congratulations on completing Lab 9! Combined with Lab 8, you've now mastered the advanced PromQL techniques that enable sophisticated monitoring:
 
-From Lab 8a:
+From Lab 8:
 - Label manipulation for reshaping your metrics
 - Offset modifier for historical comparisons
 
-From Lab 8b:
+From Lab 9:
 - Subqueries for complex time-based analysis
 - topk/bottomk for outlier identification
 - absent for detecting missing metrics
 
 These techniques represent the transition from basic monitoring to sophisticated observability. You can now create context-aware alerts, perform detailed system analysis, and extract meaningful insights that go far beyond simple thresholds.
 
-In Lab 9, we'll explore histograms and quantiles - essential for understanding distributions, particularly for latency and response time metrics. These concepts will complete your PromQL toolkit and allow you to implement service level objectives.
+In Lab 10, we'll explore histograms and quantiles - essential for understanding distributions, particularly for latency and response time metrics. These concepts will complete your PromQL toolkit and allow you to implement service level objectives.
 
-Before moving on, try combining the techniques from both 8a and 8b in creative ways. The real power comes from composing these functions together.
+Before moving on, try combining the techniques from Labs 8 and 9 in creative ways. The real power comes from composing these functions together.
 </aside>
                 </textarea>
             </section>
