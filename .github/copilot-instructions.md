@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-This is a comprehensive educational resource for learning Prometheus Query Language (PromQL) with Node Exporter metrics. The project contains **ten progressive labs** organized into three difficulty levels (Beginner, Intermediate, Advanced) designed for Killercoda workshop environments.
+This is a comprehensive educational resource for learning Prometheus Query Language (PromQL) with Node Exporter metrics. The project contains **twelve progressive labs** (0-11) organized into three difficulty levels (Beginner, Intermediate, Advanced) designed for Killercoda workshop environments.
 
 ## Repository Structure
 
@@ -10,8 +10,8 @@ This is a comprehensive educational resource for learning Prometheus Query Langu
 promql-labs/
 ├── Beginner/           # Labs 0-2: Fundamentals, CPU exploration, CPU rates
 ├── Intermediate/       # Labs 3-4: Memory/filesystem, network/load
-├── Advanced/           # Labs 5-10: Anomaly detection, correlation, rules, 
-│                       #            advanced operations, histograms, joins
+├── Advanced/           # Labs 5-11: Anomaly detection, correlation, rules, 
+│                       #            label manipulation, subqueries, histograms, joins
 ├── docs/               # Reveal.js slide decks for each lab
 │   ├── common.css      # Shared slide styling
 │   ├── common-scripts.js # Shared JavaScript
@@ -20,10 +20,37 @@ promql-labs/
 │   ├── queries.py      # ALL test queries must be defined here
 │   ├── test_queries.py # Main test runner
 │   ├── check_query_coverage.py # Ensures all lab queries have tests
-│   └── config.json     # Prometheus server configuration
+│   └── config.json     # Prometheus server configuration (USER MUST CONFIGURE)
 ├── Scripts/            # Helper scripts (install-rules.sh)
 └── .github/workflows/  # CI/CD for query testing
 ```
+
+## Python Environment
+
+**Always use a Python virtual environment for testing and CLI operations.**
+
+```bash
+# Create and activate venv (first time)
+python -m venv venv
+source venv/bin/activate  # Linux/Mac
+.\venv\Scripts\Activate   # Windows PowerShell
+
+# Install dependencies
+pip install requests
+```
+
+## Test Configuration
+
+Before running tests, the user **MUST** configure `Tests/config.json` with a working Prometheus URL:
+
+```json
+{
+    "prometheus_url": "http://localhost:9090/",
+    "instance_name": "localhost:9100"
+}
+```
+
+For Killercoda environments, use the provided external URL (e.g., `https://xxxxx-9090.saci.r.killercoda.com/`).
 
 ## Key Conventions
 
@@ -40,18 +67,81 @@ rate(node_cpu_seconds_total{instance="localhost:9100",mode="user"}[5m])
 
 ### Lab Markdown Structure
 Each lab follows this pattern:
-1. Title with emoji (e.g., `# 🔍 Lab 8: Advanced PromQL Operations`)
+1. Title with emoji (e.g., `# 🔍 Lab 8: Label Manipulation & Offset`)
 2. `## Objectives` section with bullet points
 3. `## Instructions` section with numbered steps and explanations
 4. `## Challenge` section with `<details>` spoiler for solutions
 5. Navigation link to next lab at the bottom
 
 ### Slide Decks (docs/)
-- Each lab has a corresponding `docs/XX_LabName/index.html`
-- Built with **Reveal.js 4.3.1**
+
+Each lab has a corresponding slide deck in `docs/XX_LabName/index.html`. Follow these conventions strictly:
+
+#### Framework & CDN
+- **Reveal.js 4.3.1** from jsdelivr CDN
+- **Theme**: `night` (dark background)
+- Include `../common.css` and `../common-scripts.js`
+
+```html
+<!-- Required CSS (in <head>) -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/dist/reset.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/dist/reveal.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/dist/theme/night.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/highlight/monokai.css">
+<link rel="stylesheet" href="../common.css">
+
+<!-- Required JS (before </body>) -->
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/markdown/markdown.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/highlight/highlight.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/notes/notes.js"></script>
+<script src="../common-scripts.js"></script>
+```
+
+#### Title Slide Format (CRITICAL)
+- **Title**: Use `# Lab X: Title` (h1 markdown, NOT `##`)
+- **Subtitle**: Emoji + category on separate line (e.g., `📊 Advanced PromQL`)
+- **NO ALL CAPS** - use title case only
+- **NO emoji in the title line** - emoji goes on subtitle line only
+
+```markdown
+# Lab 8: Label Manipulation & Offset
+
+📊 Advanced PromQL
+
+[All Slides](../index.html)
+```
+
+#### Slide Structure
+- Use `data-markdown` sections with `<textarea data-template>`
+- Separate slides with `---`
 - Include `<aside class="notes">` for speaker notes
-- Use `../common.css` and `../common-scripts.js` for consistency
-- Slides use `data-markdown` sections with `<textarea data-template>`
+- Navigation link at bottom of title slide: `[All Slides](../index.html)`
+
+#### Example Title Slide Section
+```html
+<section data-markdown>
+<textarea data-template>
+# Lab 8: Label Manipulation & Offset
+
+📊 Advanced PromQL
+
+[All Slides](../index.html)
+
+<aside class="notes">
+Speaker notes for this slide go here.
+</aside>
+</textarea>
+</section>
+```
+
+#### Consistency Checklist
+- [ ] Title uses `#` (h1), not `##`
+- [ ] No ALL CAPS anywhere
+- [ ] Emoji on subtitle line, not title line
+- [ ] Navigation link present
+- [ ] Speaker notes included
+- [ ] CDN links use jsdelivr (not cdnjs or unpkg)
 
 ### Testing Requirements - CRITICAL
 - **Every PromQL query** in any lab markdown file MUST have an associated test in `Tests/queries.py`
