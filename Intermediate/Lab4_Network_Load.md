@@ -37,7 +37,9 @@
    sum by (instance) (rate(node_network_transmit_bytes_total{instance="localhost:9100",device!="lo"}[5m]))
    ```
    
-   > **Explanation:** These queries sum up all network traffic across all interfaces (except loopback) on each server. The `sum by (instance)` aggregator combines the rates while preserving the instance label, giving you total network throughput per server rather than per individual interface. This is useful for overall traffic monitoring.
+   > **Explanation:** These queries sum up all network traffic across all interfaces (except loopback). The `sum by (instance)` aggregator combines the rates from multiple network interfaces (eth0, ens5, etc.) into a single total.
+   > 
+   > **Note:** Since we're filtering to a single instance (`localhost:9100`), the `by (instance)` part is redundant here. However, this pattern becomes essential when monitoring multiple servers—the `sum by (instance)` ensures you get separate totals per server rather than one giant sum across all servers.
 4. **(Optional) Build a dashboard panel with all these metrics.**
    
    > **Tip:** Combining network traffic and system load metrics in a single dashboard gives you a comprehensive view of system performance. Consider using different visualization types like graphs for network traffic and gauges for load averages.
@@ -85,4 +87,10 @@ This alert will trigger when the 1-minute load average exceeds your system's CPU
 
 ---
 
-## 🌟 Great job! You’re ready for the [Advanced Labs](../Advanced/README.md).
+## � Before You Continue...
+
+Take the [Intermediate Checkpoint Quiz](Quiz_Intermediate_Checkpoint.md) to test your understanding!
+
+---
+
+## �🌟 Great job! You're ready for the [Advanced Labs](../Advanced/README.md).

@@ -18,14 +18,14 @@
    ```
    
    ```promql
-   # Network receive rate (bytes/sec)
-   sum by (instance) (rate(node_network_receive_bytes_total{instance="localhost:9100",device!="lo"}[5m]))
+   # Network receive rate (bytes/sec) - sum across all interfaces
+   sum(rate(node_network_receive_bytes_total{instance="localhost:9100",device!="lo"}[5m]))
    ```
    
    > **Explanation:** These three queries provide a comprehensive view of system performance:
    > - The CPU query calculates the percentage of CPU being used across all cores by first finding the average idle rate, then subtracting from 100%.
    > - The memory query shows the percentage of memory currently in use by comparing available memory to total memory.
-   > - The network query measures the total bytes per second being received across all network interfaces (excluding loopback).
+   > - The network query measures the total bytes per second being received across all network interfaces (excluding loopback). We use `sum()` to combine traffic from multiple interfaces (eth0, ens5, etc.) into one total.
    > 
    > By examining these metrics together, you can identify patterns and correlations between system resources.
 2. **Build a composite dashboard panel:**

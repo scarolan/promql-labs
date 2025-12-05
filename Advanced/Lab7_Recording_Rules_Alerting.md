@@ -205,4 +205,4 @@ groups:
 
 ---
 
-# 🌟 [Continue to Lab 8: Advanced PromQL Operations](../Advanced/Lab8_Advanced_PromQL_Operations.md)
+# 🌟 [Continue to Lab 8a: Label Manipulation & Historical Comparisons](../Advanced/Lab8a_Label_Manipulation_Offset.md)

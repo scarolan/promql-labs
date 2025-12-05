@@ -8,10 +8,10 @@
 ## Instructions
 1. **Detect CPU saturation (high usage):**
    ```promql
-   max_over_time((100 * (1 - (sum by (instance) (rate(node_cpu_seconds_total{instance="localhost:9100",mode="idle"}[5m])) / count by (instance) (node_cpu_seconds_total{instance="localhost:9100",mode="idle"}))))[30m:1m])
+   max_over_time((100 * (1 - (sum(rate(node_cpu_seconds_total{instance="localhost:9100",mode="idle"}[5m])) / count(node_cpu_seconds_total{instance="localhost:9100",mode="idle"}))))[30m:1m])
    ```
    
-   > **Explanation:** This advanced query shows the highest CPU usage percentage observed in any 1-minute window over the last 30 minutes. It first calculates the average idle CPU rate across all cores, converts this to a usage percentage, then uses `max_over_time` with a subquery to find peak values. This is especially useful for detecting short-lived CPU spikes that might be missed by regular polling.
+   > **Explanation:** This advanced query shows the highest CPU usage percentage observed in any 1-minute window over the last 30 minutes. It calculates the average idle CPU rate across all cores (sum of idle rates divided by core count), converts to a usage percentage (100% - idle%), then uses `max_over_time` with a subquery to find peak values. This is especially useful for detecting short-lived CPU spikes that might be missed by regular polling.
 2. **Find CPU spikes using `increase`:**
    ```promql
    increase(node_cpu_seconds_total{instance="localhost:9100",mode="user"}[10m])

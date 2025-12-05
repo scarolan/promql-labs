@@ -26,7 +26,7 @@ Welcome to our final lab in the PromQL series, focused on histograms and quantil
 
 Histograms are essential for understanding distributions, especially for latency and response time metrics. While previous labs helped us answer questions about "how much" or "how many," histograms help us answer questions about "how fast" and "how consistent."
 
-This lab builds upon all the concepts we've learned so far and will complete our journey by showing how to analyze performance distributions, set meaningful SLOs, and create synthetic histograms for metrics that aren't already in histogram form.
+This lab builds upon all the concepts we've learned so far and will complete our journey by showing how to analyze performance distributions and set meaningful SLOs.
 
 As this is the final lab, encourage students to apply these techniques to their own infrastructure after completing the course. The skills from this lab are particularly valuable for SRE work and service reliability.
 </aside>
@@ -41,7 +41,6 @@ As this is the final lab, encourage students to apply these techniques to their 
                     * Learn how to use the histogram_quantile function
                     * Analyze latency distributions with bucketing
                     * Calculate SLO-related metrics
-                    * Create synthetic histograms for metrics
                     
 <aside class="notes">
 Let's review our objectives for this lab:
@@ -52,9 +51,7 @@ Second, we'll master the histogram_quantile function, which is the key to extrac
 
 Third, we'll analyze latency distributions with bucketing, seeing how we can track performance across different thresholds.
 
-Fourth, we'll calculate SLO-related metrics like error budgets, which are critical for modern service reliability engineering.
-
-Finally, we'll learn how to create synthetic histograms for metrics that aren't natively captured as histograms. This technique allows you to apply histogram analysis to any metric, significantly expanding your analytical capabilities.
+Finally, we'll calculate SLO-related metrics like error budgets, which are critical for modern service reliability engineering.
 
 These skills are particularly valuable because they go beyond simple averages, which can be misleading, especially for metrics with non-normal distributions like request latencies.
 </aside>
@@ -403,58 +400,6 @@ This approach to SLO tracking is powerful because it translates technical metric
 
             <section data-markdown>
                 <textarea data-template>
-                    ## Building Synthetic Histograms
-                    
-                    ```promql
-                    # Create histogram buckets from a gauge metric
-                    count_over_time((memory_usage_bytes < bool 100000000)[1h:1m])
-                    count_over_time((memory_usage_bytes < bool 200000000)[1h:1m])
-                    count_over_time((memory_usage_bytes < bool 500000000)[1h:1m])
-                    count_over_time((memory_usage_bytes < bool 1000000000)[1h:1m])
-                    count_over_time((memory_usage_bytes < bool Inf)[1h:1m])
-                    ```
-                    
-                    * Transform gauge metrics into histogram-like structure
-                    * Use boolean comparison with count_over_time
-                    * Enables histogram_quantile on non-histogram metrics
-                    * Requires manual definition of bucket thresholds
-                    
-<aside class="notes">
-This advanced technique demonstrates how to create "synthetic histograms" from regular gauge metrics, allowing you to apply histogram analysis to any metric, not just those explicitly exported as histograms.
-
-The key insight is that by using boolean comparisons with thresholds, we can create the equivalent of histogram buckets from time series samples:
-
-1. The boolean operators (< in this case) convert gauge values into 0 or 1 based on whether they're below the threshold.
-2. count_over_time then counts how many samples within our range satisfied each condition.
-3. By using multiple thresholds, we build a set of cumulative buckets that mimic a histogram's structure.
-
-Let's interpret our example:
-- The first query counts how many 1-minute samples in the past hour had memory usage below 100MB
-- The second counts samples below 200MB, and so on
-- The final "< Inf" bucket counts all samples, matching the total count in a regular histogram
-
-Once you've created these synthetic buckets, you can use histogram_quantile on them just as you would with real histogram metrics.
-
-Important considerations when teaching this technique:
-
-1. This approach is computationally expensive, so use it judiciously.
-
-2. The accuracy depends on your sampling frequency - more frequent samples give better resolution.
-
-3. You need to carefully choose appropriate bucket thresholds for the metric you're analyzing.
-
-4. To use with histogram_quantile, you need to add a "le" label to each threshold:
-   ```
-   count_over_time((memory_usage_bytes < bool 100000000)[1h:1m]) * on() group_left(le) label_replace(vector(1), "le", "100000000", "", "")
-   ```
-
-This technique is particularly valuable for analyzing the distribution of metrics that aren't exported as histograms but where understanding percentiles would be valuable - like memory usage, queue lengths, or connection counts.
-</aside>
-                </textarea>
-            </section>
-
-            <section data-markdown>
-                <textarea data-template>
                     ## Gotchas and Best Practices
                     
                     * **Bucket definition** affects accuracy - choose appropriate ranges
@@ -497,7 +442,6 @@ When teaching these concepts, concrete examples of what can go wrong help drive 
                     * Always aggregate buckets before calculating quantiles
                     * Use specific latency bands for targeted analysis
                     * Apply histogram techniques for SLO and error budget tracking
-                    * Create synthetic histograms for any metric type
                     
 <aside class="notes">
 Let's summarize the key points from this lab on histograms and quantiles:
@@ -511,8 +455,6 @@ When working with histograms across multiple instances or time periods, always a
 For more detailed analysis, consider tracking specific latency bands (e.g., <100ms, 100ms-500ms, >500ms) in addition to percentiles. This approach can reveal shifts in your distribution that percentiles might miss.
 
 Histograms are powerful tools for implementing SLO tracking and error budgets. They let you precisely measure what percentage of requests exceed your latency threshold and track how much of your error budget you've consumed.
-
-Finally, even when metrics aren't exported as histograms, you can create synthetic histograms using boolean comparisons and count_over_time. This extends the power of histogram analysis to any metric type.
 
 As this is our final lab, encourage students to apply these techniques to their own infrastructure. Emphasize that mastering histograms and quantiles is what separates basic Prometheus users from those who can derive truly meaningful insights from their metrics.
 
