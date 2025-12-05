@@ -190,7 +190,7 @@ lab4_queries = [
 lab5_queries = [
     {
         "name": "CPU saturation detection",
-        "query": "max_over_time((100 * (1 - (sum by (instance) (rate(node_cpu_seconds_total{instance=\"$INSTANCE\",mode=\"idle\"}[5m])) / count by (instance) (node_cpu_seconds_total{instance=\"$INSTANCE\",mode=\"idle\"}))))[30m:1m])",
+        "query": "max_over_time((100 * (1 - (sum(rate(node_cpu_seconds_total{instance=\"$INSTANCE\",mode=\"idle\"}[5m])) / count(node_cpu_seconds_total{instance=\"$INSTANCE\",mode=\"idle\"}))))[30m:1m])",
         "expected_type": "vector"
     },
     {
@@ -224,7 +224,7 @@ lab6_queries = [
     },
     {
         "name": "Network receive rate aggregate",
-        "query": "sum by (instance) (rate(node_network_receive_bytes_total{instance=\"$INSTANCE\",device!=\"lo\"}[5m]))",
+        "query": "sum(rate(node_network_receive_bytes_total{instance=\"$INSTANCE\",device!=\"lo\"}[5m]))",
         "expected_type": "vector"
     },
     {

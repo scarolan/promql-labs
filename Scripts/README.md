@@ -2,6 +2,40 @@
 
 This directory contains helper scripts for the PromQL Labs training.
 
+## histogram_traffic_generator.py / .sh
+
+These scripts generate HTTP traffic to Prometheus to populate the histogram metrics used in Lab 9.
+
+### Why you need this
+
+Lab 9 uses `prometheus_http_request_duration_seconds` histogram metrics. If Prometheus hasn't received enough queries, the histogram data may be sparse and some percentile calculations might return unexpected results.
+
+### Usage
+
+**Python version (recommended - cross-platform):**
+```bash
+# Default: 5 requests/second for 5 minutes
+python histogram_traffic_generator.py
+
+# Custom settings
+python histogram_traffic_generator.py --url http://localhost:9090 --duration 300 --rps 10
+```
+
+**Bash version (Linux/Mac):**
+```bash
+chmod +x histogram_traffic_generator.sh
+./histogram_traffic_generator.sh
+
+# Or with custom settings
+PROMETHEUS_URL=http://localhost:9090 DURATION=300 REQUESTS_PER_SECOND=10 ./histogram_traffic_generator.sh
+```
+
+### When to run
+
+Run this script **before** starting Lab 9 (Histograms and Quantiles). Let it run for at least 2-3 minutes to generate sufficient histogram data.
+
+---
+
 ## install-rules.sh
 
 This script helps students to easily set up Prometheus with the recording and alert rules used in the training.
