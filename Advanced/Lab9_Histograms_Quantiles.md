@@ -1,11 +1,53 @@
 # 📊 Lab 9: Histograms and Quantiles
 
+## 🎯 Scenario: The SLO Dashboard Project
+
+> *Your product manager announces: "We're committing to SLOs for our API. We need to guarantee that 95% of requests complete in under 400ms. Can you build the queries to track this?"*
+>
+> In this lab, you'll learn to work with histogram metrics—the foundation of latency monitoring and SLO tracking. Histograms let you answer questions like "What's our p95 latency?" and "What percentage of requests meet our SLO?"
+
+## Understanding Histogram Structure
+
+Before diving into queries, let's understand how Prometheus histograms work:
+
+```mermaid
+flowchart TD
+    A[📥 Observation<br/>e.g., request took 0.15s] --> B{Histogram Metric};
+
+    subgraph Prometheus Histogram Components
+        B --> C[_count<br/>Total observations];
+        B --> D[_sum<br/>Sum of all values];
+        B --> E[_bucket<br/>Cumulative counts];
+    end
+
+    C --> C1["prometheus_http_..._count = 1000<br/>(1000 total requests)"];
+    D --> D1["prometheus_http_..._sum = 45.2<br/>(45.2 seconds total)"];
+
+    E --> F{Buckets with 'le' label};
+    F --> E1["bucket{le='0.1'} = 800<br/>(800 requests ≤ 100ms)"];
+    F --> E2["bucket{le='0.4'} = 950<br/>(950 requests ≤ 400ms)"];
+    F --> E3["bucket{le='1'} = 990<br/>(990 requests ≤ 1s)"];
+    F --> E4["bucket{le='+Inf'} = 1000<br/>(all requests)"];
+
+    style A fill:#f9f,stroke:#333
+    style C fill:#ccf,stroke:#333
+    style D fill:#ccf,stroke:#333
+    style E fill:#ccf,stroke:#333
+    style C1 fill:#afa,stroke:#333
+    style D1 fill:#afa,stroke:#333
+    style E1 fill:#afa,stroke:#333
+    style E2 fill:#afa,stroke:#333
+    style E3 fill:#afa,stroke:#333
+    style E4 fill:#afa,stroke:#333
+```
+
+**Key Insight:** Buckets are *cumulative*! The `le="0.4"` bucket contains ALL requests that took ≤400ms, including those in smaller buckets.
+
 ## Objectives
 - Understand histogram metrics and their bucket structure
 - Learn how to use the histogram_quantile function for percentile analysis
 - Analyze latency distributions with bucketing
 - Calculate SLO-related metrics
-- Create synthetic histograms for metrics that aren't inherently histograms
 
 ## Instructions
 
@@ -15,12 +57,12 @@
    prometheus_http_request_duration_seconds_bucket
    ```
    
-   > **Explanation:** Histogram metrics have multiple time series with a `le` (less than or equal) label representing bucket boundaries. The value of each time series is the count of observations falling within that bucket. This allows for percentile calculation across the distribution.
+   > **Explanation:** Histogram metrics have multiple time series with a `le` (less than or equal) label representing bucket boundaries. The value of each time series is the cumulative count of observations falling within that bucket.
    >
-   > To understand the structure better, you can also examine the bucket counts and their boundaries:
+   > Look at the results—you'll see many time series with different `le` values. Each represents a bucket boundary.
    > 
    > ```promql
-   > # Filter to see specific buckets
+   > # Filter to see specific buckets for one handler
    > prometheus_http_request_duration_seconds_bucket{handler="/api/v1/query"}
    > ```
 
@@ -30,17 +72,21 @@
    histogram_quantile(0.95, sum(rate(prometheus_http_request_duration_seconds_bucket[5m])) by (le))
    ```
    
-   > **Explanation:** The `histogram_quantile` function calculates the specified quantile (0.95 = 95th percentile) from bucket data. This gives you the value below which 95% of observations fall. This query first aggregates request rates across all buckets, then calculates the 95th percentile.
+   > **Explanation:** The `histogram_quantile` function calculates the specified quantile (0.95 = 95th percentile) from bucket data. This gives you the value below which 95% of observations fall.
    >
    > **Function Signature:** `histogram_quantile(φ float, b instant-vector)`
-   > - `φ` is the quantile to calculate, between 0 and 1 (e.g., 0.5 for median, 0.95 for 95th percentile)
+   > - `φ` is the quantile to calculate (0 to 1)
    > - `b` is a vector of bucket counts with the `le` label
    >
    > **Common Quantiles:**
-   > - 0.5: Median (50th percentile)
-   > - 0.9: 90th percentile
-   > - 0.95: 95th percentile
-   > - 0.99: 99th percentile
+   > | Quantile | Meaning |
+   > |----------|---------|
+   > | 0.5 | Median (50th percentile) |
+   > | 0.9 | 90th percentile |
+   > | 0.95 | 95th percentile |
+   > | 0.99 | 99th percentile |
+
+   > 📋 **Real-World Use Case:** "What latency do 95% of our users experience?" This is the standard SLO metric for most APIs.
 
 3. **Analyze Latency by Handler:**
    ```promql
@@ -48,27 +94,32 @@
    histogram_quantile(0.5, sum by (handler, le) (rate(prometheus_http_request_duration_seconds_bucket[5m])))
    ```
    
-   > **Explanation:** This query calculates the median latency for each handler separately by keeping the `handler` label during aggregation. This allows you to compare performance across different endpoints or services.
+   > **Explanation:** This query calculates the median latency for each handler separately by keeping the `handler` label during aggregation. This allows you to compare performance across different endpoints.
 
-4. **Calculate Error Budget with Histograms:**
+4. **Calculate SLO Compliance:**
    ```promql
-   # Percentage of requests under 500ms (0.5s) SLO threshold
-   (sum(rate(prometheus_http_request_duration_seconds_bucket{le="0.5"}[5m])) / sum(rate(prometheus_http_request_duration_seconds_count[5m]))) * 100
+   # Percentage of requests under 400ms (0.4s) SLO threshold
+   (sum(rate(prometheus_http_request_duration_seconds_bucket{le="0.4"}[5m])) / sum(rate(prometheus_http_request_duration_seconds_count[5m]))) * 100
    ```
    
-   > **Explanation:** This query calculates what percentage of requests complete within the 500ms SLO threshold. It divides the count of requests in buckets under 0.5s by the total count, then multiplies by 100 to get a percentage. This is essential for SLO monitoring.
+   > **Explanation:** This query calculates what percentage of requests complete within the 400ms SLO threshold. It divides the count of requests in the ≤0.4s bucket by the total count.
+   >
+   > **Important:** We use `le="0.4"` because this matches an actual histogram bucket boundary. Always check available bucket boundaries before setting SLO thresholds!
+   >
+
+   > **Note:** We use `le="0.4"` because this matches an actual histogram bucket boundary defined by Prometheus. Always check available bucket boundaries with `prometheus_http_request_duration_seconds_bucket` before setting SLO thresholds.
    >
    > You can also calculate the error rate (requests exceeding the SLO threshold):
    >
    > ```promql
-   > # Percentage of requests exceeding 500ms SLO threshold
-   > (1 - sum(rate(prometheus_http_request_duration_seconds_bucket{le="0.5"}[5m])) / sum(rate(prometheus_http_request_duration_seconds_count[5m]))) * 100
+   > # Percentage of requests exceeding 400ms SLO threshold
+   > (1 - sum(rate(prometheus_http_request_duration_seconds_bucket{le="0.4"}[5m])) / sum(rate(prometheus_http_request_duration_seconds_count[5m]))) * 100
    > ```
    >
    > **SLO Components:**
    > - **SLI (Service Level Indicator)**: The actual measurement (request latency)
-   > - **SLO (Service Level Objective)**: The target (e.g., 99% of requests < 500ms)
-   > - **Error Budget**: Allowable amount of non-compliance (e.g., 1% of requests can exceed 500ms)
+   > - **SLO (Service Level Objective)**: The target (e.g., 99% of requests < 400ms)
+   > - **Error Budget**: Allowable amount of non-compliance (e.g., 1% of requests can exceed 400ms)
 
 5. **Working with Gauge Metrics:**
    ```promql
@@ -160,14 +211,5 @@ This analysis helps you understand:
 
 ---
 
-## 🌟 Congratulations! You've completed all the PromQL labs!
-
-You've now mastered a comprehensive set of PromQL skills, from basic queries to advanced histogram analysis. These skills will be invaluable for effective monitoring, alerting, and troubleshooting of your systems using Prometheus.
-
-### What Next?
-- Try applying these concepts to your own infrastructure metrics
-- Create your own Grafana dashboards using these advanced PromQL queries
-- Implement SLOs for your services using the histogram techniques you've learned
-- Share your knowledge with your team to improve observability practices
-
+## 🌟 [Continue to Lab 10: Join Queries & Vector Matching](../Advanced/Lab10_Join_Queries_Vector_Matching.md)
 Remember that mastering PromQL is an ongoing journey - the more you practice, the more effective you'll become at using Prometheus for observability and troubleshooting.

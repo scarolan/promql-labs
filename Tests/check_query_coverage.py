@@ -124,7 +124,8 @@ def find_all_lab_queries():
     
     for dir_path in dirs_to_scan:
         for file in os.listdir(dir_path):
-            if file.endswith('.md'):
+            # Skip quiz files - they contain illustrative examples not meant to be run
+            if file.endswith('.md') and not file.startswith('Quiz_'):
                 file_path = os.path.join(dir_path, file)
                 all_lab_queries.extend(extract_queries_from_file(file_path))
     

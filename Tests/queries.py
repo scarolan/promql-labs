@@ -319,6 +319,31 @@ lab8_queries = [
         "name": "Memory usage percent change",
         "query": "(memory_usage_percent - memory_usage_percent offset 5m) / memory_usage_percent offset 5m * 100",
         "expected_type": "vector"
+    },
+    {
+        "name": "BottomK - least used CPU modes",
+        "query": "bottomk(3, sum by (mode) (rate(node_cpu_seconds_total{instance=\"$INSTANCE\"}[5m])))",
+        "expected_type": "vector"
+    },
+    {
+        "name": "Min over time - minimum available memory",
+        "query": "min_over_time(node_memory_MemAvailable_bytes{instance=\"$INSTANCE\"}[1h:5m])",
+        "expected_type": "vector"
+    },
+    {
+        "name": "Absent check for non-existent metric",
+        "query": "absent(non_existent_metric{instance=\"$INSTANCE\"})",
+        "expected_type": "vector"
+    },
+    {
+        "name": "Absent check for disk metrics",
+        "query": "absent(node_filesystem_size_bytes{instance=\"$INSTANCE\"})",
+        "expected_type": "vector"
+    },
+    {
+        "name": "TopK filesystems by usage",
+        "query": "topk(2, 100 * (1 - (node_filesystem_free_bytes{instance=\"$INSTANCE\",fstype!=\"tmpfs\"} / node_filesystem_size_bytes{instance=\"$INSTANCE\",fstype!=\"tmpfs\"})))",
+        "expected_type": "vector"
     }
 ]
 
@@ -351,12 +376,12 @@ lab9_queries = [
     },
     {
         "name": "SLO calculation - success rate",
-        "query": "(sum(rate(prometheus_http_request_duration_seconds_bucket{le=\"0.5\"}[5m])) / sum(rate(prometheus_http_request_duration_seconds_count[5m]))) * 100",
+        "query": "(sum(rate(prometheus_http_request_duration_seconds_bucket{le=\"0.4\"}[5m])) / sum(rate(prometheus_http_request_duration_seconds_count[5m]))) * 100",
         "expected_type": "vector"
     },
     {
         "name": "SLO calculation - error rate",
-        "query": "(1 - sum(rate(prometheus_http_request_duration_seconds_bucket{le=\"0.5\"}[5m])) / sum(rate(prometheus_http_request_duration_seconds_count[5m]))) * 100",
+        "query": "(1 - sum(rate(prometheus_http_request_duration_seconds_bucket{le=\"0.4\"}[5m])) / sum(rate(prometheus_http_request_duration_seconds_count[5m]))) * 100",
         "expected_type": "vector"
     },
     {
@@ -405,7 +430,7 @@ lab10_queries = [
     },
     {
         "name": "CPU usage per core (group_left)",
-        "query": "rate(node_cpu_seconds_total{instance=\"$INSTANCE\",mode!=\"idle\"}[5m]) / on(instance) group_left(cpu) (rate(node_cpu_seconds_total{instance=\"$INSTANCE\",mode!=\"idle\"}[5m]) + rate(node_cpu_seconds_total{instance=\"$INSTANCE\",mode=\"idle\"}[5m]))",
+        "query": "sum by(instance, cpu) (rate(node_cpu_seconds_total{instance=\"$INSTANCE\",mode!=\"idle\"}[5m])) / on(instance, cpu) group_left() sum by(instance, cpu) (rate(node_cpu_seconds_total{instance=\"$INSTANCE\"}[5m])) * 100",
         "expected_type": "vector"
     },
     {
@@ -440,7 +465,7 @@ lab10_queries = [
     },
     {
         "name": "Multi-metric efficiency score",
-        "query": "((100 * (1 - avg by(instance) (rate(node_cpu_seconds_total{instance=\"$INSTANCE\",mode=\"idle\"}[5m])))) + (100 * (1 - (node_memory_MemAvailable_bytes{instance=\"$INSTANCE\"} / node_memory_MemTotal_bytes{instance=\"$INSTANCE\"}))) + (sum by(instance) (rate(node_network_transmit_bytes_total{instance=\"$INSTANCE\",device!=\"lo\"}[5m])) / 1024 / 1024)) / on(instance) (count by(instance) (node_cpu_seconds_total{instance=\"$INSTANCE\",mode=\"idle\"}) + (node_memory_MemTotal_bytes{instance=\"$INSTANCE\"} / 1024 / 1024 / 1024))",
+        "query": "((100 * (1 - avg by(instance) (rate(node_cpu_seconds_total{instance=\"$INSTANCE\",mode=\"idle\"}[5m])))) + (100 * (1 - (avg by(instance) (node_memory_MemAvailable_bytes{instance=\"$INSTANCE\"}) / avg by(instance) (node_memory_MemTotal_bytes{instance=\"$INSTANCE\"})))) + (sum by(instance) (rate(node_network_transmit_bytes_total{instance=\"$INSTANCE\",device!=\"lo\"}[5m])) / 1024 / 1024)) / on(instance) (count by(instance) (node_cpu_seconds_total{instance=\"$INSTANCE\",mode=\"idle\"}) + avg by(instance) (node_memory_MemTotal_bytes{instance=\"$INSTANCE\"}) / 1024 / 1024 / 1024)",
         "expected_type": "vector"
     },
     {
