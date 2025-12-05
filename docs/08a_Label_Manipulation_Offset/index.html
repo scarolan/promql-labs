@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lab 8a: Label Manipulation & Offset</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/theme/black.min.css">
+    <link rel="stylesheet" href="../common.css">
+</head>
+<body>
+    <div class="reveal">
+        <div class="slides">
+            <section data-markdown>
+                <textarea data-template>
+                    # 🏷️ Lab 8a: Label Manipulation & Offset
+                    
+                    Transform labels and compare metrics across time
+                    
+<aside class="notes">
+Welcome to Lab 8a, which focuses on two essential PromQL capabilities: label manipulation and the offset modifier.
+
+These features give you powerful control over how your metrics are organized and how you can compare them across time periods.
+
+Label manipulation allows you to transform, add, and combine metric labels at query time - giving you flexibility without changing your instrumentation.
+
+The offset modifier lets you look back in time and compare current values with historical data - essential for trend analysis and anomaly detection.
+
+Mastering these techniques will significantly enhance your ability to create meaningful queries and insights.
+</aside>
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## Lab Objectives
+                    
+                    By the end of this lab, you will be able to:
+                    
+                    * Transform labels using **label_replace()** and **label_join()**
+                    * Use regex capture groups for sophisticated label transformations
+                    * Compare current values with historical data using **offset**
+                    * Implement time-shifted comparisons for trend analysis
+                    
+<aside class="notes">
+In this lab, we'll focus on two core advanced PromQL techniques:
+
+First, label manipulation functions - specifically label_replace and label_join. These functions allow you to transform metric labels at query time, which is incredibly useful when you need to reshape your data for joins, create derived labels, or standardize label formats across different metrics.
+
+Second, the offset modifier, which allows you to compare current metric values with historical values. This is essential for trend analysis, week-over-week comparisons, and detecting anomalies based on historical patterns.
+
+Both of these techniques are foundational for more advanced monitoring scenarios and will prepare you for the concepts we'll cover in Lab 8b.
+</aside>
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## Label Manipulation Functions
+                    
+                    PromQL provides functions to transform labels at query time:
+                    
+                    * **label_replace()**: Transform or create labels using regex
+                    * **label_join()**: Combine multiple labels into one
+                    
+                    These functions let you:
+                    * Standardize label names across different metrics
+                    * Extract parts of labels for grouping
+                    * Create derived labels for joins and aggregations
+                    
+<aside class="notes">
+PromQL provides two powerful functions for manipulating labels at query time: label_replace and label_join.
+
+The label_replace function allows you to transform existing labels or create new ones using regular expressions. This is incredibly versatile - you can extract portions of a label, transform formats, or add entirely new labels based on patterns in existing ones.
+
+The label_join function combines multiple labels into a single new label, which is useful for creating composite keys or generating human-readable combined identifiers.
+
+Why would you need these functions? There are several common scenarios:
+
+First, standardizing labels across different metrics. When you have metrics from different sources, they might use different naming conventions. Label manipulation lets you align them for easier querying.
+
+Second, extracting parts of labels. If you have a label like "namespace/deployment/pod", you might want to extract just the deployment name for aggregation.
+
+Third, creating derived labels for joins. When you need to join two metrics but their labels don't quite match, you can use these functions to create compatible label sets.
+
+Let's explore each function in detail.
+</aside>
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## label_replace() Function
+                    
+                    ```promql
+                    label_replace(
+                      vector,
+                      "dest_label",
+                      "replacement",
+                      "source_label",
+                      "regex"
+                    )
+                    ```
+                    
+                    * **vector**: Input time series
+                    * **dest_label**: Label to create/modify
+                    * **replacement**: New value (can use capture groups)
+                    * **source_label**: Label to match against
+                    * **regex**: Pattern to match (with capture groups)
+                    
+<aside class="notes">
+The label_replace function is the more powerful of the two label manipulation functions. It takes five parameters:
+
+First, the vector - the input time series you want to transform.
+
+Second, the destination label - the name of the label you want to create or modify.
+
+Third, the replacement string - the new value for the label, which can include references to regex capture groups using $1, $2, etc.
+
+Fourth, the source label - the existing label you want to match against.
+
+Fifth, the regex - the pattern to match against the source label, typically including capture groups in parentheses.
+
+If the regex matches the source label value, the destination label is set to the replacement string. If it doesn't match, the time series is returned unchanged.
+
+The key power here is the combination of regex capture groups and the replacement string. You can extract specific parts of a label value, transform them, and create entirely new labels.
+
+For example, if you have an instance label like "server-prod-01.example.com:9100", you could extract just "prod" into a new "environment" label using a carefully crafted regex.
+</aside>
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## label_replace() Examples
+                    
+                    **Extract environment from instance name:**
+                    ```promql
+                    label_replace(
+                      node_cpu_seconds_total,
+                      "environment",
+                      "$1",
+                      "instance",
+                      ".*-(prod|staging|dev)-.*"
+                    )
+                    ```
+                    
+                    **Create a short hostname:**
+                    ```promql
+                    label_replace(
+                      up,
+                      "short_host",
+                      "$1",
+                      "instance",
+                      "([^:]+):.*"
+                    )
+                    ```
+                    
+<aside class="notes">
+Let's look at some practical examples of label_replace in action.
+
+The first example extracts an environment designation from an instance name. If your instances follow a naming pattern like "app-prod-01" or "db-staging-02", this query extracts the environment part into a new label.
+
+The regex ".*-(prod|staging|dev)-.*" matches any string containing one of these environment names, and the capture group around them lets us extract just that part. The $1 in the replacement refers to the first capture group.
+
+The second example creates a short hostname from the full instance address. The regex "([^:]+):.*" captures everything before the colon (the hostname) and discards the port number. This is useful when you want to group metrics by hostname without the port.
+
+Some important notes about label_replace:
+- If the regex doesn't match, the original time series is returned unchanged (the destination label is not added)
+- You can use $0 to reference the entire matched string
+- You can use multiple capture groups ($1, $2, etc.) in the replacement
+- The regex must match the entire source label value, so use .* at the beginning and end if needed
+
+These patterns are essential for creating flexible queries that can adapt to different naming conventions.
+</aside>
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## label_join() Function
+                    
+                    ```promql
+                    label_join(
+                      vector,
+                      "dest_label",
+                      "separator",
+                      "source_label1",
+                      "source_label2",
+                      ...
+                    )
+                    ```
+                    
+                    **Example: Create combined identifier**
+                    ```promql
+                    label_join(
+                      up{job="node-exporter"},
+                      "host_job",
+                      " - ",
+                      "instance",
+                      "job"
+                    )
+                    ```
+                    
+                    Creates: `host_job="localhost:9100 - node-exporter"`
+                    
+<aside class="notes">
+The label_join function is simpler than label_replace but very useful for combining multiple labels into one.
+
+It takes the following parameters:
+- The input vector
+- The destination label name
+- A separator string that will be placed between the combined values
+- One or more source labels to combine
+
+The function creates a new label by concatenating the values of all source labels, separated by the specified separator.
+
+In the example shown, we're combining the instance and job labels into a new "host_job" label, separated by " - ". This creates a human-readable combined identifier like "localhost:9100 - node-exporter".
+
+Common use cases for label_join include:
+- Creating composite keys for aggregation
+- Generating human-readable identifiers for dashboards
+- Preparing labels for external systems that expect specific formats
+- Creating unique identifiers when single labels aren't sufficient
+
+The label_join function always creates the destination label (unlike label_replace which only acts when the regex matches). If any source labels don't exist on a time series, they're simply omitted from the result.
+</aside>
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## The Offset Modifier
+                    
+                    Compare current values with historical data:
+                    
+                    ```promql
+                    # Current memory usage
+                    node_memory_MemAvailable_bytes
+                    
+                    # Memory usage 1 hour ago
+                    node_memory_MemAvailable_bytes offset 1h
+                    
+                    # Memory usage 1 day ago
+                    node_memory_MemAvailable_bytes offset 1d
+                    ```
+                    
+                    * Shifts all timestamps back by the specified duration
+                    * Works with any instant vector or range vector
+                    * Essential for trend analysis and anomaly detection
+                    
+<aside class="notes">
+The offset modifier is one of the most useful features in PromQL for trend analysis and historical comparisons.
+
+When you add "offset" followed by a duration to a query, Prometheus shifts all the timestamps back by that amount. This lets you query what a metric's value was at some point in the past.
+
+In the examples shown:
+- The first query returns current memory availability
+- The second query returns what memory availability was 1 hour ago
+- The third query returns what it was 1 day ago
+
+The offset modifier works with both instant vectors and range vectors. For example, you could calculate the rate of change from 1 day ago:
+
+```promql
+rate(http_requests_total[5m] offset 1d)
+```
+
+This gives you the request rate from 24 hours ago, which you can then compare with the current rate.
+
+The offset modifier is essential for:
+- Week-over-week or day-over-day comparisons
+- Detecting anomalies by comparing current values to historical baselines
+- Calculating absolute change over time periods
+- Trend analysis and capacity planning
+</aside>
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## Offset Use Cases
+                    
+                    **Week-over-week comparison:**
+                    ```promql
+                    rate(http_requests_total[5m]) 
+                    - 
+                    rate(http_requests_total[5m] offset 7d)
+                    ```
+                    
+                    **Percentage change from yesterday:**
+                    ```promql
+                    (node_memory_MemAvailable_bytes 
+                     - node_memory_MemAvailable_bytes offset 1d)
+                    / 
+                    node_memory_MemAvailable_bytes offset 1d * 100
+                    ```
+                    
+                    **Detect unusual activity:**
+                    ```promql
+                    rate(errors_total[5m]) 
+                    > 2 * rate(errors_total[5m] offset 1d)
+                    ```
+                    
+<aside class="notes">
+Let's explore some practical use cases for the offset modifier.
+
+The first example shows a week-over-week comparison of request rates. By subtracting last week's rate from this week's rate, you get the absolute difference. A positive value means traffic is higher than last week; negative means it's lower.
+
+The second example calculates the percentage change in available memory compared to yesterday. This is a classic formula:
+(current - historical) / historical * 100
+
+This tells you what percentage memory has changed, which is more meaningful than the absolute byte difference.
+
+The third example demonstrates anomaly detection. It triggers when the current error rate is more than twice what it was at the same time yesterday. This is a simple but effective way to detect unusual activity.
+
+Some important considerations when using offset:
+- Make sure you have sufficient data retention (you can't query data that's been deleted)
+- Consider the semantic meaning of your comparisons (comparing weekday to weekend might not be meaningful)
+- Account for time zones if your traffic patterns are timezone-dependent
+- Use appropriate durations for your use case (1d for daily patterns, 7d for weekly patterns)
+
+These patterns form the foundation for context-aware alerting that accounts for normal variations in your metrics.
+</aside>
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## 🧪 Hands-On Exercise
+                    
+                    Try these queries in the Prometheus UI:
+                    
+                    **1. Extract hostname from instance:**
+                    ```promql
+                    label_replace(up, "hostname", "$1", "instance", "([^:]+):.*")
+                    ```
+                    
+                    **2. Compare current vs historical memory:**
+                    ```promql
+                    node_memory_MemAvailable_bytes 
+                    - node_memory_MemAvailable_bytes offset 5m
+                    ```
+                    
+                    **3. Calculate memory change percentage:**
+                    ```promql
+                    100 * (node_memory_MemAvailable_bytes 
+                    - node_memory_MemAvailable_bytes offset 5m)
+                    / node_memory_MemAvailable_bytes offset 5m
+                    ```
+                    
+<aside class="notes">
+Let's put these concepts into practice with some hands-on exercises.
+
+Exercise 1 demonstrates label_replace to extract the hostname from an instance label. The regex captures everything before the colon, effectively stripping the port number. After running this query, you'll see a new "hostname" label on each time series.
+
+Exercise 2 shows a simple offset comparison - current memory minus memory from 5 minutes ago. The result shows the absolute change in bytes. Positive values mean memory availability increased; negative means it decreased.
+
+Exercise 3 extends this to calculate a percentage change. This is more useful for understanding the magnitude of change relative to the total. A change of 100MB might be significant on a 1GB server but trivial on a 64GB server.
+
+As you run these queries, observe:
+- How the label_replace creates the new label only when the regex matches
+- How offset shifts the data back in time
+- How arithmetic operations work between offset and non-offset queries
+
+These techniques form the foundation for the more advanced topics we'll cover in Lab 8b.
+</aside>
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    ## Summary
+                    
+                    * **label_replace()** transforms labels using regex
+                      - Extract parts of labels with capture groups
+                      - Create derived labels for joins and grouping
+                    
+                    * **label_join()** combines multiple labels into one
+                      - Create composite identifiers
+                      - Generate human-readable combined labels
+                    
+                    * **offset** modifier enables historical comparisons
+                      - Week-over-week and day-over-day analysis
+                      - Anomaly detection based on historical patterns
+                    
+<aside class="notes">
+Let's summarize what we've learned in Lab 8a.
+
+Label manipulation functions give you powerful control over your metric labels at query time:
+
+label_replace is the more powerful function, using regular expressions to transform or create labels. The key capability is using capture groups to extract specific parts of label values and use them in new labels. This is essential for standardizing labels across different metrics and creating derived labels for complex queries.
+
+label_join is simpler but equally useful for combining multiple labels into a single new label. This is great for creating composite identifiers or human-readable combined labels for dashboards.
+
+The offset modifier is essential for any time-based analysis. It lets you compare current values with historical data, enabling:
+- Week-over-week and day-over-day comparisons
+- Percentage change calculations
+- Anomaly detection based on historical patterns
+- Trend analysis for capacity planning
+
+These techniques form the foundation for more advanced PromQL patterns. In Lab 8b, we'll build on these concepts with subqueries, ranking functions, and missing metric detection.
+</aside>
+                </textarea>
+            </section>
+
+            <section data-markdown>
+                <textarea data-template>
+                    # 🌟 Great job!
+                    
+                    Continue to Lab 8b: Subqueries, TopK & Absent
+                    
+                    <small>Navigate: [All Slides](../index.html) | [Next Lab](../08b_Subqueries_TopK_Absent/index.html)</small>
+                    
+<aside class="notes">
+Congratulations on completing Lab 8a! You've learned two essential advanced PromQL techniques:
+
+Label manipulation functions give you the flexibility to reshape your metric labels at query time, enabling more sophisticated joins and aggregations.
+
+The offset modifier opens up powerful historical analysis capabilities, letting you compare current metrics with past values for trend analysis and anomaly detection.
+
+In Lab 8b, we'll continue with more advanced topics:
+- Subqueries for complex time-based analysis
+- The topk and bottomk functions for identifying outliers
+- The absent function for detecting missing metrics
+
+These techniques will complete your advanced PromQL toolkit and prepare you for sophisticated monitoring scenarios.
+
+Take a moment to experiment with label manipulation and offset queries on your own metrics before moving on.
+</aside>
+                </textarea>
+            </section>
+        </div>
+    </div>
+    <!-- Include common scripts -->
+    <script src="../common-scripts.js"></script>
+</body>
+</html>
