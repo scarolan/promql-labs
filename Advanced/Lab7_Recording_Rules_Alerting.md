@@ -205,4 +205,4 @@ groups:
 
 ---
 
-# 🌟 [Continue to Lab 8a: Label Manipulation & Historical Comparisons](../Advanced/Lab8a_Label_Manipulation_Offset.md)
+# 🌟 [Continue to Lab 8: Label Manipulation & Offset](../Advanced/Lab8_Label_Manipulation_Offset.md)

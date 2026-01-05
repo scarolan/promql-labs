@@ -60,10 +60,10 @@ This approach is particularly useful for monitoring production systems where you
 
 ---
 
-## � Before You Continue...
+## 📝 Before You Continue...
 
 Take the [Beginner Checkpoint Quiz](Quiz_Beginner_Checkpoint.md) to test your understanding!
 
 ---
 
-## �🌟 Great job! You're ready for the [Intermediate Labs](../Intermediate/README.md).
+## 🌟 Great job! You're ready for the [Intermediate Labs](../Intermediate/README.md).

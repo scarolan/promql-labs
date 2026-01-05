@@ -23,10 +23,10 @@ This training consists of **twelve hands-on labs** organized into three difficul
 - **Lab 5:** [Advanced CPU Anomaly Detection](Advanced/Lab5_Advanced_CPU_Anomaly.md) - Find unusual patterns
 - **Lab 6:** [Correlating Metrics & Dashboards](Advanced/Lab6_Correlating_Metrics.md) - Connect multiple metrics
 - **Lab 7:** [Recording Rules and Alerting](Advanced/Lab7_Recording_Rules_Alerting.md) - Operationalize monitoring
-- **Lab 8a:** [Label Manipulation & Historical Comparisons](Advanced/Lab8a_Label_Manipulation_Offset.md) - Master label_replace, label_join, and offset
-- **Lab 8b:** [Subqueries, Ranking & Missing Data](Advanced/Lab8b_Subqueries_TopK_Absent.md) - Use subqueries, topk/bottomk, and absent()
-- **Lab 9:** [Histograms and Quantiles](Advanced/Lab9_Histograms_Quantiles.md) - Work with histogram metrics, percentiles, and SLOs
-- **Lab 10:** [Join Queries & Vector Matching](Advanced/Lab10_Join_Queries_Vector_Matching.md) - Master PromQL joins, vector matching, and complex multi-metric operations
+- **Lab 8:** [Label Manipulation & Offset](Advanced/Lab8_Label_Manipulation_Offset.md) - Master label_replace, label_join, and offset
+- **Lab 9:** [Subqueries, TopK & Absent](Advanced/Lab9_Subqueries_TopK_Absent.md) - Use subqueries, topk/bottomk, and absent()
+- **Lab 10:** [Histograms and Quantiles](Advanced/Lab10_Histograms_Quantiles.md) - Work with histogram metrics, percentiles, and SLOs
+- **Lab 11:** [Join Queries & Vector Matching](Advanced/Lab11_Join_Queries_Vector_Matching.md) - Master PromQL joins, vector matching, and complex multi-metric operations
 - 📝 **[Advanced Checkpoint Quiz](Advanced/Quiz_Advanced_Checkpoint.md)**
 
 ## 🚀 Prerequisites

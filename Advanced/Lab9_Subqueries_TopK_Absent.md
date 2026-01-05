@@ -1,4 +1,4 @@
-# 🔬 Lab 8b: Subqueries, Ranking & Missing Data Detection
+# 🔬 Lab 9: Subqueries, TopK & Absent
 
 ## 🎯 Scenario: The Performance Investigation
 
@@ -152,4 +152,4 @@ absent(node_filesystem_size_bytes{instance="localhost:9100"})
 
 ---
 
-# 🌟 [Continue to Lab 9: Histograms and Quantiles](../Advanced/Lab9_Histograms_Quantiles.md)
+# 🌟 [Continue to Lab 10: Histograms and Quantiles](../Advanced/Lab10_Histograms_Quantiles.md)

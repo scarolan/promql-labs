@@ -1,4 +1,4 @@
-# 🔗 Lab 10: Join Queries & Vector Matching
+# 🔗 Lab 11: Join Queries & Vector Matching
 
 ## 🎯 Scenario: The Cross-Metric Investigation
 
@@ -216,11 +216,11 @@ node_load1{instance="localhost:9100"} / on(instance) (node_memory_MemAvailable_b
 
 You've now mastered a comprehensive set of PromQL skills, from basic queries to advanced vector matching and joins. These skills will be invaluable for effective monitoring, alerting, and troubleshooting of your systems using Prometheus.
 
-### � Final Challenge
+### 📝 Final Challenge
 
 Before you go, take the [Advanced Checkpoint Quiz](Quiz_Advanced_Checkpoint.md) to test your mastery!
 
-### �🏆 Skills You've Gained:
+### 🏆 Skills You've Gained:
 - ✅ Basic metric queries and label filtering
 - ✅ Rate calculations and aggregations
 - ✅ Memory, filesystem, and network monitoring

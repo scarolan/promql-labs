@@ -1,4 +1,4 @@
-# 📊 Lab 9: Histograms and Quantiles
+# 📊 Lab 10: Histograms and Quantiles
 
 ## 🎯 Scenario: The SLO Dashboard Project
 
@@ -211,5 +211,5 @@ This analysis helps you understand:
 
 ---
 
-## 🌟 [Continue to Lab 10: Join Queries & Vector Matching](../Advanced/Lab10_Join_Queries_Vector_Matching.md)
+## 🌟 [Continue to Lab 11: Join Queries & Vector Matching](../Advanced/Lab11_Join_Queries_Vector_Matching.md)
 Remember that mastering PromQL is an ongoing journey - the more you practice, the more effective you'll become at using Prometheus for observability and troubleshooting.

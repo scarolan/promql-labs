@@ -1,4 +1,4 @@
-# 🏷️ Lab 8a: Label Manipulation & Historical Comparisons
+# 🏷️ Lab 8: Label Manipulation & Offset
 
 ## 🎯 Scenario: The Capacity Planning Investigation
 
@@ -142,4 +142,4 @@ Create a query that:
 
 ---
 
-# 🌟 [Continue to Lab 8b: Subqueries, Ranking & Missing Data](../Advanced/Lab8b_Subqueries_TopK_Absent.md)
+# 🌟 [Continue to Lab 9: Subqueries, TopK & Absent](../Advanced/Lab9_Subqueries_TopK_Absent.md)
