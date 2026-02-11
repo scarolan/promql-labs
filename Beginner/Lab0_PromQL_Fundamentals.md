@@ -49,7 +49,7 @@
    sum(node_cpu_seconds_total{instance="localhost:9100",mode="system"})
    ```
    
-   ```
+   ```promql
    # Get the average
    avg(node_cpu_seconds_total{instance="localhost:9100",mode="system"})
    ```

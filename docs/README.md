@@ -14,8 +14,10 @@ The slide decks are organized into modules that correspond to the lab exercises:
 - **05_Advanced_CPU_Anomaly**: Advanced techniques for CPU anomaly detection
 - **06_Correlating_Metrics**: Methods for correlating different metrics
 - **07_Recording_Rules_Alerting**: Working with recording rules and alerts
-- **08_Advanced_PromQL_Operations**: Complex PromQL functions and operations
-- **09_Histograms_Quantiles**: Understanding histogram metrics and quantiles
+- **08_Label_Manipulation_Offset**: Label manipulation and time-based analysis with offset
+- **09_Subqueries_TopK_Absent**: Subqueries, ranking, and missing metric detection
+- **10_Histograms_Quantiles**: Understanding histogram metrics and quantiles
+- **11_Join_Queries_Vector_Matching**: Join operations and vector matching techniques
 - **Prometheus_Overview**: General overview of Prometheus and its architecture
 
 ## Usage
